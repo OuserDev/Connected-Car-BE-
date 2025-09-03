@@ -1,6 +1,26 @@
-/.claude
+# 개발 환경 파일들
 __pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+
+# 프로젝트 임시 파일들
 CLAUDE.md
 pjt/
-copilot-instructions.md
-.github/
+logs/
+
+# IDE 관련
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS 관련
+.DS_Store
+Thumbs.db
+
+# 환경 설정
+.env
+.env.local
