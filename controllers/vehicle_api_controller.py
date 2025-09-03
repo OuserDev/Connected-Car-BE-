@@ -1,194 +1,200 @@
-# 차량 상태 API 컨트롤러
-# car-api 서버에서 실시간 차량 상태를 가져오는 API 엔드포인트
-import json
-import os
-import random
+# MySQL 기반 외부 API 통신 컨트롤러 (car-api 서버 연동)
+
+from flask import Blueprint, jsonify, request, session
+from utils.database import CarDatabase, CarHistoryDatabase
+from utils.auth import login_required
 import requests
+import json
 from datetime import datetime
-from flask import Blueprint, jsonify, request
 
 vehicle_api_bp = Blueprint('vehicle_api', __name__)
 
 # car-api 서버 설정
-CAR_API_BASE_URL = "http://127.0.0.1:9000"
+CAR_API_BASE_URL = 'http://localhost:9000'
+CAR_API_TIMEOUT = 10  # 10초 타임아웃
 
-# car-api 서버에서 차량 상태 가져오기
-def get_vehicle_status_from_api(vehicle_id):
-    """car-api 서버에서 실시간 차량 상태 조회"""
+# car-api 서버 통신 헬퍼 함수
+def call_car_api(endpoint, method='GET', data=None, timeout=CAR_API_TIMEOUT):
+    """car-api 서버 HTTP 통신 헬퍼"""
     try:
-        response = requests.get(f"{CAR_API_BASE_URL}/api/vehicle/{vehicle_id}/status")
-        if response.status_code == 200:
-            return response.json()
-        else:
-            print(f"car-api 서버 응답 오류: {response.status_code}")
-            return None
-    except requests.exceptions.RequestException as e:
-        print(f"car-api 서버 연결 실패: {e}")
-        return None
-
-# car-api 서버로 차량 제어 명령 전송
-def send_vehicle_control(vehicle_id, action):
-    """car-api 서버로 차량 제어 명령 전송"""
-    try:
-        response = requests.post(f"{CAR_API_BASE_URL}/api/vehicle/{vehicle_id}/control", 
-                               params={"action": action})
-        if response.status_code == 200:
-            return response.json()
-        else:
-            print(f"car-api 서버 제어 명령 오류: {response.status_code}")
-            return None
-    except requests.exceptions.RequestException as e:
-        print(f"car-api 서버 연결 실패: {e}")
-        return None
-
-def convert_action_to_api_format(action):
-    """BE 액션을 car-api 형식으로 변환"""
-    action_map = {
-        'start_engine': 'engine_on',
-        'stop_engine': 'engine_off',
-        'lock_door': 'door_lock',
-        'unlock_door': 'door_unlock',
-        'start_ac': 'ac_on',
-        'stop_ac': 'ac_off',
-        'start_heater': 'heater_on',
-        'stop_heater': 'heater_off'
-    }
-    return action_map.get(action)
-
-# GET /api/vehicle/{vehicle_id}/status
-@vehicle_api_bp.route('/api/vehicle/<int:vehicle_id>/status', methods=['GET'])
-def get_vehicle_status(vehicle_id):
-    """
-    특정 차량의 실시간 상태 정보를 car-api 서버에서 조회
-    vehicle_id: 차량 ID
-    반환값: 차량의 현재 상태 (엔진, 도어, 연료, 배터리, 에어컨, 타이어압력, 주행거리, 위치)
-    """
-    try:
-        # car-api 서버에서 실시간 상태 조회
-        status = get_vehicle_status_from_api(vehicle_id)
+        url = f'{CAR_API_BASE_URL}{endpoint}'
         
-        if not status:
+        if method == 'GET':
+            response = requests.get(url, timeout=timeout)
+        elif method == 'POST':
+            response = requests.post(url, json=data, timeout=timeout)
+        elif method == 'PUT':
+            response = requests.put(url, json=data, timeout=timeout)
+        else:
+            raise ValueError(f'지원하지 않는 HTTP 메서드: {method}')
+        
+        response.raise_for_status()
+        return response.json()
+        
+    except requests.ConnectionError:
+        return {'success': False, 'error': 'car-api 서버에 연결할 수 없습니다'}
+    except requests.Timeout:
+        return {'success': False, 'error': 'car-api 서버 응답 시간 초과'}
+    except requests.HTTPError as e:
+        return {'success': False, 'error': f'car-api 서버 오류: {e.response.status_code}'}
+    except Exception as e:
+        return {'success': False, 'error': f'통신 오류: {str(e)}'}
+
+# 실시간 차량 상태 조회 API
+@vehicle_api_bp.route('/api/vehicle/<int:vehicle_id>/status', methods=['GET'])
+@login_required
+def get_vehicle_status(vehicle_id):
+    """car-api에서 실시간 차량 상태 조회"""
+    try:
+        user_id = session.get('user_id')
+        
+        # 소유권 확인 (BE 데이터베이스에서)
+        if not CarDatabase.verify_car_ownership(user_id, vehicle_id):
+            return jsonify({'error': '해당 차량에 대한 권한이 없습니다'}), 403
+        
+        # car-api에서 실시간 상태 조회
+        api_response = call_car_api(f'/api/vehicle/{vehicle_id}/status')
+        
+        if not api_response.get('success', True):
             return jsonify({
                 'success': False,
-                'message': '차량 상태 정보를 찾을 수 없습니다.'
-            }), 404
+                'error': api_response.get('error', 'car-api 통신 실패'),
+                'fallback_data': {
+                    'message': 'car-api 서버가 응답하지 않습니다. 기본값을 표시합니다.',
+                    'vehicle_id': vehicle_id,
+                    'status': 'unknown'
+                }
+            }), 503
         
-        # 실시간 데이터 시뮬레이션 (일부 값들을 약간 변경)
-        simulated_status = simulate_real_time_data(status.copy())
+        # BE 데이터베이스에서 차량 기본 정보 조회
+        car_info = CarDatabase.get_car_by_id(vehicle_id)
+        
+        # 실시간 상태와 기본 정보 결합
+        combined_data = {
+            'vehicle_id': vehicle_id,
+            'license_plate': car_info['license_plate'] if car_info else 'Unknown',
+            'model': car_info.get('model', 'Unknown'),
+            'real_time_status': api_response.get('data', {}),
+            'last_updated': datetime.now().isoformat()
+        }
         
         return jsonify({
             'success': True,
-            'data': simulated_status
+            'data': combined_data
         })
         
     except Exception as e:
-        return jsonify({
-            'success': False,
-            'message': f'차량 상태 조회 중 오류 발생: {str(e)}'
-        }), 500
+        return jsonify({'error': f'차량 상태 조회 실패: {str(e)}'}), 500
 
 # 차량 원격 제어 API
 @vehicle_api_bp.route('/api/vehicle/<int:vehicle_id>/control', methods=['POST'])
+@login_required
 def control_vehicle(vehicle_id):
-    """
-    차량 원격 제어 (시동, 도어, 에어컨 등) - car-api 서버로 명령 전송
-    vehicle_id: 차량 ID
-    요청 데이터: {"action": "start_engine|stop_engine|lock_door|unlock_door|start_ac|stop_ac", "params": {...}}
-    반환값: 제어 결과 및 변경된 상태
-    """
+    """car-api로 차량 원격 제어 명령 전송"""
     try:
-        request_data = request.get_json()
-        action = request_data.get('action')
-        params = request_data.get('params', {})
+        user_id = session.get('user_id')
+        data = request.get_json()
         
-        # action을 car-api가 이해하는 형식으로 변환
-        api_action = convert_action_to_api_format(action)
+        if not data or not data.get('command'):
+            return jsonify({'error': '제어 명령이 필요합니다'}), 400
         
-        if not api_action:
+        # 소유권 확인 (BE 데이터베이스에서)
+        if not CarDatabase.verify_car_ownership(user_id, vehicle_id):
+            return jsonify({'error': '해당 차량에 대한 권한이 없습니다'}), 403
+        
+        command = data.get('command')
+        parameters = data.get('parameters', {})
+        
+        # 지원되는 명령어 검증
+        supported_commands = [
+            'engine_start', 'engine_stop',
+            'door_lock', 'door_unlock',
+            'climate_on', 'climate_off',
+            'set_temperature', 'set_fan_speed',
+            'toggle_auto_mode', 'reset_trip_meter',
+            'update_location'
+        ]
+        
+        if command not in supported_commands:
+            return jsonify({'error': f'지원하지 않는 명령어입니다: {command}'}), 400
+        
+        # car-api로 제어 명령 전송
+        control_data = {
+            'command': command,
+            'parameters': parameters
+        }
+        
+        api_response = call_car_api(
+            f'/api/vehicle/{vehicle_id}/control',
+            method='POST',
+            data=control_data
+        )
+        
+        # BE 데이터베이스에 제어 이력 추가
+        CarHistoryDatabase.add_history(
+            car_id=vehicle_id,
+            action=command,
+            user_id=user_id,
+            parameters=parameters
+        )
+        
+        if not api_response.get('success', True):
+            # car-api 통신 실패 시에도 이력은 남기되 실패로 표시
             return jsonify({
                 'success': False,
-                'message': '잘못된 제어 명령입니다.'
-            }), 400
-        
-        # car-api 서버로 제어 명령 전송
-        result = send_vehicle_control(vehicle_id, api_action)
-        
-        if not result:
-            return jsonify({
-                'success': False,
-                'message': '차량 제어 명령 전송에 실패했습니다.'
-            }), 500
+                'error': api_response.get('error', 'car-api 제어 실패'),
+                'message': '명령이 기록되었지만 차량에 전달되지 않았을 수 있습니다'
+            }), 503
         
         return jsonify({
             'success': True,
-            'message': '차량 제어가 완료되었습니다.',
-            'data': result.get('data', {})
+            'message': f'차량 제어 명령({command})이 성공적으로 실행되었습니다',
+            'data': api_response.get('data', {}),
+            'executed_at': datetime.now().isoformat()
         })
+        
+    except Exception as e:
+        # 오류 발생 시에도 이력에 실패 기록
+        try:
+            CarHistoryDatabase.add_history(
+                car_id=vehicle_id,
+                action=f"failed_{data.get('command', 'unknown')}",
+                user_id=user_id,
+                parameters={'error': str(e)}
+            )
+        except:
+            pass  # 이력 기록 실패는 무시
+        
+        return jsonify({'error': f'차량 제어 실패: {str(e)}'}), 500
+
+# car-api 서버 상태 확인 API
+@vehicle_api_bp.route('/api/car-api/health', methods=['GET'])
+@login_required
+def check_car_api_health():
+    """car-api 서버 상태 확인"""
+    try:
+        # car-api 서버 헬스체크
+        api_response = call_car_api('/', timeout=5)
+        
+        if api_response.get('success', True):
+            return jsonify({
+                'success': True,
+                'message': 'car-api 서버가 정상 작동 중입니다',
+                'car_api_status': 'healthy',
+                'response_data': api_response
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'message': 'car-api 서버가 응답하지 않습니다',
+                'car_api_status': 'unhealthy',
+                'error': api_response.get('error')
+            }), 503
             
     except Exception as e:
         return jsonify({
             'success': False,
-            'message': f'차량 제어 중 오류 발생: {str(e)}'
-        }), 500
-
-# 실시간 데이터 시뮬레이션 함수
-def simulate_real_time_data(status):
-    """
-    실제 차량처럼 일부 데이터를 실시간으로 변화시킴
-    배터리 전압, 현재 온도, GPS 위치 등을 약간씩 변경
-    """
-    # 배터리 전압 ±0.1V 변화
-    if 'battery' in status:
-        current_battery = status['battery']
-        status['battery'] = round(current_battery + random.uniform(-0.1, 0.1), 1)
-    
-    # 실내 온도 ±1도 변화
-    if 'climate' in status and 'current_temp' in status['climate']:
-        current_temp = status['climate']['current_temp']
-        status['climate']['current_temp'] = current_temp + random.randint(-1, 1)
-    
-    # GPS 위치 약간 변화 (±0.001도)
-    if 'location' in status:
-        status['location']['lat'] += random.uniform(-0.001, 0.001)
-        status['location']['lng'] += random.uniform(-0.001, 0.001)
-        status['location']['lat'] = round(status['location']['lat'], 6)
-        status['location']['lng'] = round(status['location']['lng'], 6)
-    
-    # 타임스탬프 업데이트
-    current_time = datetime.now().isoformat()
-    if 'tire_pressure' in status:
-        status['tire_pressure']['last_checked'] = current_time
-    if 'odometer' in status:
-        status['odometer']['last_updated'] = current_time
-    
-    return status
-
-# 차량 히스토리 조회 API  
-@vehicle_api_bp.route('/api/vehicle/<int:vehicle_id>/history', methods=['GET'])
-def get_vehicle_history(vehicle_id):
-    """
-    특정 차량의 제어 이력 조회 - BE 데이터베이스에서 조회
-    vehicle_id: 차량 ID
-    반환값: 차량 제어 이력 목록
-    """
-    try:
-        from ..models.vehicle import VehicleModel
-        vehicle_model = VehicleModel()
-        
-        history = vehicle_model.get_car_history(vehicle_id)
-        if history is None:
-            return jsonify({
-                'success': False,
-                'message': '차량을 찾을 수 없습니다.'
-            }), 404
-            
-        return jsonify({
-            'success': True,
-            'data': history
-        })
-        
-    except Exception as e:
-        return jsonify({
-            'success': False,
-            'message': f'차량 이력 조회 중 오류 발생: {str(e)}'
+            'message': 'car-api 서버 상태 확인 실패',
+            'car_api_status': 'unknown',
+            'error': str(e)
         }), 500

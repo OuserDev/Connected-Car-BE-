@@ -1,311 +1,319 @@
+# MySQL 기반 차량 컨트롤러 (로컬 데이터 관리)
+
 from flask import Blueprint, jsonify, request, session
-from models.vehicle import VehicleModel
-from models.user import UserModel
+from utils.database import CarDatabase, CarHistoryDatabase, VehicleSpecDatabase, DatabaseHelper
+from utils.auth import login_required
 import json
 import os
+from datetime import datetime
 
 vehicle_bp = Blueprint('vehicle', __name__)
-vehicle_model = VehicleModel()
-user_model = UserModel()
 
+# 차량 등록 API (MySQL 기반)
 @vehicle_bp.route('/api/cars/register', methods=['POST'])
+@login_required
 def register_car():
-    if 'user_id' not in session:
-        return jsonify({'error': 'Authentication required'}), 401
-    
-    data = request.get_json()
-    if not data:
-        return jsonify({'error': 'JSON data required'}), 400
-    
-    # 차량 ID 또는 VIN으로 기존 차량 매칭
-    car_id = data.get('car_id')
-    vin = data.get('vin')
-    license_plate = data.get('license_plate', '')
-    
-    if not car_id and not vin and not license_plate:
-        return jsonify({'error': 'Car ID, VIN, or license plate is required'}), 400
-    
-    user_id = session['user_id']
-    
-    # 차량 찾기
-    car = None
-    if car_id:
-        car = vehicle_model.get_car_by_id(car_id)
-    elif vin:
-        car = vehicle_model.get_car_by_vin(vin)
-    elif license_plate:
-        car = vehicle_model.get_car_by_license(license_plate)
-    
-    if not car:
-        return jsonify({'error': 'Car not found'}), 404
-    
-    # 이미 등록된 차량인지 확인
-    if car.get('owner_id') is not None:
-        return jsonify({'error': 'Car is already registered to another user'}), 409
-    
-    # 차량을 사용자에게 할당
-    updated_car = vehicle_model.assign_car_to_user(car['id'], user_id)
-    if not updated_car:
-        return jsonify({'error': 'Failed to register car'}), 500
-    
-    # 사용자 정보에도 차량 추가
-    user_model.add_car_to_user(user_id, car['id'])
-    
-    return jsonify({
-        'message': 'Car registered successfully',
-        'car': updated_car
-    })
-
-@vehicle_bp.route('/api/cars', methods=['GET'])
-def get_my_cars():
-    if 'user_id' not in session:
-        return jsonify({'error': 'Authentication required'}), 401
-    
-    user_id = session['user_id']
-    cars = vehicle_model.get_cars_by_owner(user_id)
-    return jsonify({'cars': cars})
-
-@vehicle_bp.route('/api/cars/available', methods=['GET'])
-def get_available_cars():
-    if 'user_id' not in session:
-        return jsonify({'error': 'Authentication required'}), 401
-    
-    cars = vehicle_model.get_unregistered_cars()
-    return jsonify({'cars': cars})
-
-
-# 구버전 status/command API는 제거됨
-# 대신 /api/vehicle/{id}/status 와 /api/vehicle/{id}/control 사용
-
-@vehicle_bp.route('/api/car/<int:car_id>/history')
-
-def get_vehicle_real_time_status(vehicle_id):
-    """
-    차량의 실시간 상태 정보를 vehicle_status.json에서 조회
-    vehicle_id: 차량 ID
-    반환값: 실시간 차량 상태 딕셔너리
-    """
+    """새 차량 등록 (MySQL 기반)"""
     try:
-        # vehicle_status.json 파일 경로
-        status_file = os.path.join(os.path.dirname(__file__), '..', 'data', 'vehicle_status.json')
+        user_id = session.get('user_id')
+        data = request.get_json()
         
-        with open(status_file, 'r', encoding='utf-8') as f:
-            data = json.load(f)
+        if not data:
+            return jsonify({'error': 'JSON 데이터가 필요합니다'}), 400
         
-        vehicle_status = data.get('vehicle_status', {})
-        status = vehicle_status.get(str(vehicle_id), {})
+        # 필수 필드 검증
+        required_fields = ['model_id', 'license_plate', 'vin']
+        for field in required_fields:
+            if not data.get(field):
+                return jsonify({'error': f'{field}는 필수 입력 항목입니다'}), 400
         
-        # 기본 상태값 설정 (데이터가 없는 경우)
-        if not status:
-            status = {
-                "engine_state": "off",
-                "door_state": "locked", 
-                "fuel": 0,
-                "battery": 12.0,
-                "voltage": "12V",
-                "climate": {
-                    "ac_state": "off",
-                    "heater_state": "off",
-                    "target_temp": 22,
-                    "current_temp": 20,
-                    "fan_speed": 0,
-                    "auto_mode": False
-                },
-                "tire_pressure": {
-                    "front_left": 2.3,
-                    "front_right": 2.3,
-                    "rear_left": 2.3,
-                    "rear_right": 2.3,
-                    "recommended": 2.3,
-                    "unit": "bar",
-                    "warning_threshold": 1.8,
-                    "last_checked": "2024-01-01T00:00:00Z"
-                },
-                "odometer": {
-                    "total_km": 0,
-                    "trip_a_km": 0,
-                    "trip_b_km": 0,
-                    "last_updated": "2024-01-01T00:00:00Z"
-                },
-                "location": {
-                    "lat": 37.5665,
-                    "lng": 126.9780
-                }
-            }
+        # 중복 검사 (VIN, 번호판)
+        existing_car_query = "SELECT id FROM cars WHERE vin = %s OR license_plate = %s"
+        existing = DatabaseHelper.execute_query(existing_car_query, (data['vin'], data['license_plate']))
         
-        return status
+        if existing:
+            return jsonify({'error': '이미 등록된 차량입니다 (VIN 또는 번호판 중복)'}), 409
+        
+        # 차량 등록
+        car_id = CarDatabase.register_car(
+            owner_id=user_id,
+            model_id=data['model_id'],
+            license_plate=data['license_plate'],
+            vin=data['vin']
+        )
+        
+        # 등록 이력 추가
+        CarHistoryDatabase.add_history(
+            car_id=car_id,
+            action='car_registered',
+            user_id=user_id
+        )
+        
+        # 등록된 차량 정보 조회
+        registered_car = CarDatabase.get_car_by_id(car_id)
+        
+        return jsonify({
+            'success': True,
+            'message': '차량이 성공적으로 등록되었습니다',
+            'data': registered_car
+        })
         
     except Exception as e:
-        print(f"차량 상태 조회 중 오류: {e}")
-        # 오류 발생 시 기본값 반환
-        return {
-            "engine_state": "off",
-            "door_state": "locked",
-            "fuel": 0,
-            "battery": 12.0,
-            "voltage": "12V"
-        }
+        return jsonify({'error': f'차량 등록 실패: {str(e)}'}), 500
 
-@vehicle_bp.route('/api/car/<int:car_id>/command', methods=['POST'])
-def execute_command(car_id):
-    if 'user_id' not in session:
-        return jsonify({'error': 'Authentication required'}), 401
-    
-    action = request.args.get('action')
-    value = request.args.get('value')  # 온도, 팬속도 등의 값
-    
-    if not action:
-        return jsonify({'error': 'Action parameter is required'}), 400
-    
-    user_id = session['user_id']
-    
-    # 소유권 검증 포함하여 명령 실행
-    result = vehicle_model.execute_command(car_id, action, user_id, value)
-    if result:
-        response = {
-            'message': f'{action} executed on car {car_id}',
-            'car_id': car_id,
-            'action': action,
-            'status': 'success'
-        }
-        if value is not None:
-            response['value'] = value
-        return jsonify(response)
-    
-    # 차량이 존재하지 않거나 권한이 없는 경우
-    car = vehicle_model.get_car_by_id(car_id)
-    if not car:
-        return jsonify({'error': 'Car not found'}), 404
-    else:
-        return jsonify({'error': 'Access denied - not your car'}), 403
+# 내 차량 목록 조회 API (MySQL 기반)
+@vehicle_bp.route('/api/cars', methods=['GET'])
+@login_required
+def get_my_cars():
+    """로그인한 사용자의 차량 목록 조회 (MySQL 기반)"""
+    try:
+        user_id = session.get('user_id')
+        
+        # 사용자 소유 차량 목록 조회
+        cars = CarDatabase.get_cars_by_owner(user_id)
+        
+        return jsonify({
+            'success': True,
+            'data': cars,
+            'count': len(cars)
+        })
+        
+    except Exception as e:
+        return jsonify({'error': f'차량 목록 조회 실패: {str(e)}'}), 500
 
-@vehicle_bp.route('/api/car/<int:car_id>/history')
+# 차량 상세 정보 조회 API (MySQL 기반)
+@vehicle_bp.route('/api/car/<int:car_id>', methods=['GET'])
+@login_required
+def get_car_details(car_id):
+    """차량 상세 정보 조회 (MySQL 기반)"""
+    try:
+        user_id = session.get('user_id')
+        
+        # 소유권 확인
+        if not CarDatabase.verify_car_ownership(user_id, car_id):
+            return jsonify({'error': '해당 차량에 대한 권한이 없습니다'}), 403
+        
+        # 차량 정보 조회
+        car = CarDatabase.get_car_by_id(car_id)
+        if not car:
+            return jsonify({'error': '차량을 찾을 수 없습니다'}), 404
+        
+        return jsonify({
+            'success': True,
+            'data': car
+        })
+        
+    except Exception as e:
+        return jsonify({'error': f'차량 정보 조회 실패: {str(e)}'}), 500
+
+# 차량 제어 이력 조회 API (MySQL 기반)
+@vehicle_bp.route('/api/car/<int:car_id>/history', methods=['GET'])
+@login_required
 def get_car_history(car_id):
-    if 'user_id' not in session:
-        return jsonify({'error': 'Authentication required'}), 401
-    
-    user_id = session['user_id']
-    
-    # 사용자는 본인 소유 차량의 이력만 조회 가능
-    if not vehicle_model.is_owner(car_id, user_id):
-        return jsonify({'error': 'Access denied - not your car'}), 403
-    
-    history = vehicle_model.get_car_history(car_id)
-    if history is not None:
-        return jsonify(history)
-    return jsonify({'error': 'Car not found'}), 404
+    """차량 제어 이력 조회 (MySQL 기반)"""
+    try:
+        user_id = session.get('user_id')
+        
+        # 소유권 확인
+        if not CarDatabase.verify_car_ownership(user_id, car_id):
+            return jsonify({'error': '해당 차량에 대한 권한이 없습니다'}), 403
+        
+        # 이력 조회 (최근 50개)
+        limit = request.args.get('limit', 50, type=int)
+        history = CarHistoryDatabase.get_car_history(car_id, limit)
+        
+        return jsonify({
+            'success': True,
+            'data': history,
+            'count': len(history)
+        })
+        
+    except Exception as e:
+        return jsonify({'error': f'차량 이력 조회 실패: {str(e)}'}), 500
 
-@vehicle_bp.route('/api/car/<int:car_id>/location')
-def get_car_location(car_id):
-    if 'user_id' not in session:
-        return jsonify({'error': 'Authentication required'}), 401
-    
-    user_id = session['user_id']
-    
-    # 사용자는 본인 소유 차량의 위치만 조회 가능
-    if not vehicle_model.is_owner(car_id, user_id):
-        return jsonify({'error': 'Access denied - not your car'}), 403
-    
-    location_info = vehicle_model.get_and_update_location(car_id, user_id)
-    if location_info:
-        return jsonify(location_info)
-    return jsonify({'error': 'Car not found'}), 404
+# 차량 위치 정보 관리 API (MySQL 기반)
+@vehicle_bp.route('/api/car/<int:car_id>/location', methods=['GET', 'POST'])
+@login_required
+def manage_car_location(car_id):
+    """차량 위치 정보 조회/업데이트 (MySQL 기반)"""
+    try:
+        user_id = session.get('user_id')
+        
+        # 소유권 확인
+        if not CarDatabase.verify_car_ownership(user_id, car_id):
+            return jsonify({'error': '해당 차량에 대한 권한이 없습니다'}), 403
+        
+        if request.method == 'GET':
+            # 위치 정보 조회 - car-api에서 실시간 위치 가져와야 함
+            # 현재는 기본 위치 반환
+            return jsonify({
+                'success': True,
+                'data': {
+                    'car_id': car_id,
+                    'location': {
+                        'lat': 37.5665,
+                        'lng': 126.978,
+                        'address': '서울특별시 중구 명동'
+                    },
+                    'last_updated': datetime.now().isoformat()
+                }
+            })
+        
+        elif request.method == 'POST':
+            # 위치 업데이트 명령 (실제로는 car-api로 전달)
+            data = request.get_json()
+            
+            # 이력 추가
+            CarHistoryDatabase.add_history(
+                car_id=car_id,
+                action='location_update_requested',
+                user_id=user_id,
+                parameters=data
+            )
+            
+            return jsonify({
+                'success': True,
+                'message': '위치 업데이트 요청이 전송되었습니다'
+            })
+            
+    except Exception as e:
+        return jsonify({'error': f'위치 정보 처리 실패: {str(e)}'}), 500
 
-@vehicle_bp.route('/api/car/<int:car_id>/horn', methods=['POST'])
-def horn_and_locate(car_id):
-    if 'user_id' not in session:
-        return jsonify({'error': 'Authentication required'}), 401
-    
-    user_id = session['user_id']
-    
-    # 사용자는 본인 소유 차량만 제어 가능
-    if not vehicle_model.is_owner(car_id, user_id):
-        return jsonify({'error': 'Access denied - not your car'}), 403
-    
-    result = vehicle_model.horn_and_locate(car_id, user_id)
-    if result:
-        return jsonify(result)
-    return jsonify({'error': 'Car not found'}), 404
+# 차량 진단 정보 API (MySQL 기반)
+@vehicle_bp.route('/api/car/<int:car_id>/diagnostics', methods=['GET'])
+@login_required
+def get_car_diagnostics(car_id):
+    """차량 진단 정보 조회 (MySQL 기반)"""
+    try:
+        user_id = session.get('user_id')
+        
+        # 소유권 확인
+        if not CarDatabase.verify_car_ownership(user_id, car_id):
+            return jsonify({'error': '해당 차량에 대한 권한이 없습니다'}), 403
+        
+        # 차량 기본 정보 조회
+        car = CarDatabase.get_car_by_id(car_id)
+        if not car:
+            return jsonify({'error': '차량을 찾을 수 없습니다'}), 404
+        
+        # 최근 제어 이력 조회 (진단용)
+        recent_history = CarHistoryDatabase.get_car_history(car_id, 10)
+        
+        # 진단 정보 구성
+        diagnostics = {
+            'car_id': car_id,
+            'license_plate': car['license_plate'],
+            'model': car.get('model', 'Unknown'),
+            'voltage': car.get('voltage', '12V'),
+            'last_activity': recent_history[0]['timestamp'].isoformat() if recent_history else None,
+            'total_commands': len(recent_history),
+            'recent_commands': [
+                {
+                    'action': h['action'],
+                    'timestamp': h['timestamp'].isoformat(),
+                    'result': h.get('result', 'success')
+                } for h in recent_history[:5]
+            ]
+        }
+        
+        return jsonify({
+            'success': True,
+            'data': diagnostics
+        })
+        
+    except Exception as e:
+        return jsonify({'error': f'진단 정보 조회 실패: {str(e)}'}), 500
 
-@vehicle_bp.route('/api/car/<int:car_id>/tire-pressure')
-def check_tire_pressure(car_id):
-    if 'user_id' not in session:
-        return jsonify({'error': 'Authentication required'}), 401
-    
-    user_id = session['user_id']
-    
-    # 사용자는 본인 소유 차량의 타이어 압력만 조회 가능
-    if not vehicle_model.is_owner(car_id, user_id):
-        return jsonify({'error': 'Access denied - not your car'}), 403
-    
-    pressure_info = vehicle_model.check_tire_pressure(car_id, user_id)
-    if pressure_info:
-        return jsonify(pressure_info)
-    return jsonify({'error': 'Car not found or no tire pressure data'}), 404
+# 차량 스펙 정보 조회 API (MySQL 기반)
+@vehicle_bp.route('/api/vehicle-specs', methods=['GET'])
+@login_required
+def get_vehicle_specs():
+    """모든 차량 스펙 정보 조회 (MySQL 기반)"""
+    try:
+        # 카테고리 필터
+        category = request.args.get('category')
+        
+        if category:
+            specs = VehicleSpecDatabase.get_specs_by_category(category)
+        else:
+            specs = VehicleSpecDatabase.get_all_specs()
+        
+        return jsonify({
+            'success': True,
+            'data': specs,
+            'count': len(specs)
+        })
+        
+    except Exception as e:
+        return jsonify({'error': f'차량 스펙 조회 실패: {str(e)}'}), 500
 
-@vehicle_bp.route('/api/car/<int:car_id>/tire-pressure/simulate', methods=['POST'])
-def simulate_tire_pressure(car_id):
-    if 'user_id' not in session:
-        return jsonify({'error': 'Authentication required'}), 401
-    
-    user_id = session['user_id']
-    
-    # 사용자는 본인 소유 차량만 시뮬레이션 가능
-    if not vehicle_model.is_owner(car_id, user_id):
-        return jsonify({'error': 'Access denied - not your car'}), 403
-    
-    result = vehicle_model.simulate_tire_pressure_change(car_id, user_id)
-    if result:
-        return jsonify(result)
-    return jsonify({'error': 'Car not found or no tire pressure data'}), 404
+# 특정 차량 스펙 조회 API (MySQL 기반)
+@vehicle_bp.route('/api/vehicle-specs/<int:spec_id>', methods=['GET'])
+@login_required
+def get_vehicle_spec_by_id(spec_id):
+    """특정 차량 스펙 정보 조회 (MySQL 기반)"""
+    try:
+        spec = VehicleSpecDatabase.get_spec_by_id(spec_id)
+        
+        if not spec:
+            return jsonify({'error': '차량 스펙을 찾을 수 없습니다'}), 404
+        
+        return jsonify({
+            'success': True,
+            'data': spec
+        })
+        
+    except Exception as e:
+        return jsonify({'error': f'차량 스펙 조회 실패: {str(e)}'}), 500
 
-@vehicle_bp.route('/api/car/<int:car_id>/driving-statistics')
-def get_driving_statistics(car_id):
-    if 'user_id' not in session:
-        return jsonify({'error': 'Authentication required'}), 401
-    
-    user_id = session['user_id']
-    
-    # 사용자는 본인 소유 차량의 주행 통계만 조회 가능
-    if not vehicle_model.is_owner(car_id, user_id):
-        return jsonify({'error': 'Access denied - not your car'}), 403
-    
-    stats = vehicle_model.get_driving_statistics(car_id, user_id)
-    if stats:
-        return jsonify(stats)
-    return jsonify({'error': 'Car not found'}), 404
+# 미등록 차량 목록 조회 API (관리자용 - 주석 처리)
+# @vehicle_bp.route('/api/cars/unregistered', methods=['GET'])
+# @login_required
+# def get_unregistered_cars():
+#     """미등록 차량 목록 조회 (관리자 전용)"""
+#     # 관리자 기능은 별도 관리자 VM에서 구현
+#     pass
 
-@vehicle_bp.route('/api/car/<int:car_id>/trip-history')
-def get_trip_history(car_id):
-    if 'user_id' not in session:
-        return jsonify({'error': 'Authentication required'}), 401
-    
-    user_id = session['user_id']
-    limit = request.args.get('limit', 10, type=int)
-    
-    # 사용자는 본인 소유 차량의 주행 이력만 조회 가능
-    if not vehicle_model.is_owner(car_id, user_id):
-        return jsonify({'error': 'Access denied - not your car'}), 403
-    
-    trips = vehicle_model.get_trip_history(car_id, user_id, limit)
-    if trips:
-        return jsonify(trips)
-    return jsonify({'error': 'Car not found'}), 404
+# 차량 소유권 이전 API (관리자용 - 주석 처리)
+# @vehicle_bp.route('/api/car/<int:car_id>/transfer', methods=['POST'])
+# @login_required
+# def transfer_car_ownership(car_id):
+#     """차량 소유권 이전 (관리자 전용)"""
+#     # 관리자 기능은 별도 관리자 VM에서 구현
+#     pass
 
-@vehicle_bp.route('/api/car/<int:car_id>/simulate-trip', methods=['POST'])
-def simulate_trip(car_id):
-    if 'user_id' not in session:
-        return jsonify({'error': 'Authentication required'}), 401
-    
-    user_id = session['user_id']
-    
-    # 사용자는 본인 소유 차량만 시뮬레이션 가능
-    if not vehicle_model.is_owner(car_id, user_id):
-        return jsonify({'error': 'Access denied - not your car'}), 403
-    
-    result = vehicle_model.simulate_new_trip(car_id, user_id)
-    if result:
-        return jsonify(result)
-    return jsonify({'error': 'Car not found'}), 404
-
-# 관리자 전용 차량 할당 기능 제거됨 - 별도 관리자 VM에서 구현 예정
+# 차량 삭제 API (MySQL 기반)
+@vehicle_bp.route('/api/car/<int:car_id>', methods=['DELETE'])
+@login_required
+def delete_car(car_id):
+    """차량 등록 해제 (MySQL 기반)"""
+    try:
+        user_id = session.get('user_id')
+        
+        # 소유권 확인
+        if not CarDatabase.verify_car_ownership(user_id, car_id):
+            return jsonify({'error': '해당 차량에 대한 권한이 없습니다'}), 403
+        
+        # 차량 정보 조회
+        car = CarDatabase.get_car_by_id(car_id)
+        if not car:
+            return jsonify({'error': '차량을 찾을 수 없습니다'}), 404
+        
+        # 소유권 해제 (owner_id를 NULL로 설정)
+        query = "UPDATE cars SET owner_id = NULL WHERE id = %s"
+        DatabaseHelper.execute_update(query, (car_id,))
+        
+        # 해제 이력 추가
+        CarHistoryDatabase.add_history(
+            car_id=car_id,
+            action='car_unregistered',
+            user_id=user_id
+        )
+        
+        return jsonify({
+            'success': True,
+            'message': '차량 등록이 해제되었습니다'
+        })
+        
+    except Exception as e:
+        return jsonify({'error': f'차량 등록 해제 실패: {str(e)}'}), 500

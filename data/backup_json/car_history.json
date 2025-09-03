@@ -40,5 +40,17 @@
     "car_id": 4,
     "action": "engine_on",
     "timestamp": "2025-09-03T16:54:13.918810Z"
+  },
+  {
+    "id": 8,
+    "car_id": 9,
+    "action": "ac_on",
+    "timestamp": "2025-09-03T17:20:54.493741Z"
+  },
+  {
+    "id": 9,
+    "car_id": 9,
+    "action": "ac_off",
+    "timestamp": "2025-09-03T17:20:55.349095Z"
   }
 ]
