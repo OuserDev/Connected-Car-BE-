@@ -2,367 +2,43 @@
   {
     "id": 1,
     "car_id": 1,
-    "action": "engine_on",
-    "timestamp": "2025-09-03T09:30:56.549405Z"
+    "action": "ac_on",
+    "timestamp": "2025-09-03T16:37:44.183882Z"
   },
   {
     "id": 2,
     "car_id": 1,
-    "action": "door_open",
-    "timestamp": "2025-09-03T09:30:59.919283Z"
+    "action": "heater_off",
+    "timestamp": "2025-09-03T16:37:45.896971Z"
   },
   {
     "id": 3,
     "car_id": 1,
-    "action": "engine_on",
-    "timestamp": "2025-09-03T10:48:33.005067Z"
+    "action": "engine_off",
+    "timestamp": "2025-09-03T16:37:50.971477Z"
   },
   {
     "id": 4,
     "car_id": 1,
     "action": "engine_on",
-    "timestamp": "2025-09-03T10:48:34.563395Z"
+    "timestamp": "2025-09-03T16:37:51.454313Z"
   },
   {
     "id": 5,
     "car_id": 1,
     "action": "engine_off",
-    "timestamp": "2025-09-03T10:48:34.817884Z"
+    "timestamp": "2025-09-03T16:37:56.161143Z"
   },
   {
     "id": 6,
     "car_id": 1,
     "action": "engine_on",
-    "timestamp": "2025-09-03T10:48:35.585038Z"
+    "timestamp": "2025-09-03T16:38:03.549701Z"
   },
   {
     "id": 7,
-    "car_id": 1,
-    "action": "engine_off",
-    "timestamp": "2025-09-03T10:48:36.388931Z"
-  },
-  {
-    "id": 8,
-    "car_id": 1,
-    "action": "door_lock",
-    "timestamp": "2025-09-03T10:48:36.638241Z"
-  },
-  {
-    "id": 9,
-    "car_id": 1,
-    "action": "door_unlock",
-    "timestamp": "2025-09-03T10:48:37.033638Z"
-  },
-  {
-    "id": 10,
-    "car_id": 1,
-    "action": "door_lock",
-    "timestamp": "2025-09-03T10:48:37.833674Z"
-  },
-  {
-    "id": 11,
-    "car_id": 1,
-    "action": "door_unlock",
-    "timestamp": "2025-09-03T10:48:38.095770Z"
-  },
-  {
-    "id": 12,
-    "car_id": 1,
-    "action": "engine_on",
-    "timestamp": "2025-09-03T11:02:22.291592Z"
-  },
-  {
-    "id": 13,
-    "car_id": 1,
-    "action": "engine_off",
-    "timestamp": "2025-09-03T11:02:22.599777Z"
-  },
-  {
-    "id": 14,
-    "car_id": 1,
-    "action": "engine_on",
-    "timestamp": "2025-09-03T11:02:23.206281Z"
-  },
-  {
-    "id": 15,
-    "car_id": 1,
-    "action": "door_lock",
-    "timestamp": "2025-09-03T11:02:27.404801Z"
-  },
-  {
-    "id": 16,
-    "car_id": 1,
-    "action": "engine_off",
-    "timestamp": "2025-09-03T11:08:16.212160Z"
-  },
-  {
-    "id": 17,
-    "car_id": 1,
-    "action": "engine_on",
-    "timestamp": "2025-09-03T11:08:17.843466Z"
-  },
-  {
-    "id": 18,
-    "car_id": 1,
-    "action": "engine_off",
-    "timestamp": "2025-09-03T11:08:18.995075Z"
-  },
-  {
-    "id": 19,
-    "car_id": 1,
-    "action": "engine_on",
-    "timestamp": "2025-09-03T11:08:20.119249Z"
-  },
-  {
-    "id": 20,
-    "car_id": 1,
-    "action": "door_unlock",
-    "timestamp": "2025-09-03T11:08:21.423566Z"
-  },
-  {
-    "id": 21,
-    "car_id": 1,
-    "action": "door_lock",
-    "timestamp": "2025-09-03T11:08:22.317556Z"
-  },
-  {
-    "id": 22,
-    "car_id": 1,
-    "action": "engine_off",
-    "timestamp": "2025-09-03T11:13:51.637342Z"
-  },
-  {
-    "id": 23,
-    "car_id": 1,
-    "action": "door_unlock",
-    "timestamp": "2025-09-03T11:13:54.689598Z"
-  },
-  {
-    "id": 24,
-    "car_id": 1,
-    "action": "engine_on",
-    "timestamp": "2025-09-03T11:17:06.226229Z"
-  },
-  {
-    "id": 25,
-    "car_id": 1,
-    "action": "engine_on",
-    "timestamp": "2025-09-03T14:27:09.484260Z"
-  },
-  {
-    "id": 26,
-    "car_id": 1,
-    "action": "engine_off",
-    "timestamp": "2025-09-03T14:27:10.180249Z"
-  },
-  {
-    "id": 27,
-    "car_id": 1,
-    "action": "engine_on",
-    "timestamp": "2025-09-03T14:27:11.028966Z"
-  },
-  {
-    "id": 28,
-    "car_id": 1,
-    "action": "engine_off",
-    "timestamp": "2025-09-03T14:27:11.523437Z"
-  },
-  {
-    "id": 29,
-    "car_id": 1,
-    "action": "door_lock",
-    "timestamp": "2025-09-03T14:27:13.231530Z"
-  },
-  {
-    "id": 30,
-    "car_id": 1,
-    "action": "door_lock",
-    "timestamp": "2025-09-03T14:27:13.734431Z"
-  },
-  {
-    "id": 31,
-    "car_id": 1,
-    "action": "door_unlock",
-    "timestamp": "2025-09-03T14:27:14.409382Z"
-  },
-  {
-    "id": 32,
-    "car_id": 9,
-    "action": "fan_speed",
-    "timestamp": "2025-09-03T14:39:54.134608Z"
-  },
-  {
-    "id": 33,
-    "car_id": 9,
-    "action": "fan_speed",
-    "timestamp": "2025-09-03T14:39:55.303414Z"
-  },
-  {
-    "id": 34,
-    "car_id": 9,
-    "action": "ac_off",
-    "timestamp": "2025-09-03T14:39:57.926722Z"
-  },
-  {
-    "id": 35,
-    "car_id": 9,
-    "action": "ac_on",
-    "timestamp": "2025-09-03T14:39:58.995338Z"
-  },
-  {
-    "id": 36,
-    "car_id": 9,
-    "action": "ac_off",
-    "timestamp": "2025-09-03T14:40:00.218417Z"
-  },
-  {
-    "id": 37,
-    "car_id": 9,
-    "action": "ac_on",
-    "timestamp": "2025-09-03T14:40:00.957178Z"
-  },
-  {
-    "id": 38,
-    "car_id": 9,
-    "action": "heater_on",
-    "timestamp": "2025-09-03T14:40:05.584712Z"
-  },
-  {
-    "id": 39,
-    "car_id": 9,
-    "action": "ac_on",
-    "timestamp": "2025-09-03T14:40:06.789313Z"
-  },
-  {
-    "id": 40,
-    "car_id": 9,
-    "action": "heater_on",
-    "timestamp": "2025-09-03T14:40:07.367977Z"
-  },
-  {
-    "id": 41,
-    "car_id": 9,
-    "action": "ac_on",
-    "timestamp": "2025-09-03T14:40:07.934971Z"
-  },
-  {
-    "id": 42,
-    "car_id": 9,
-    "action": "heater_on",
-    "timestamp": "2025-09-03T14:40:08.522700Z"
-  },
-  {
-    "id": 43,
-    "car_id": 9,
-    "action": "ac_on",
-    "timestamp": "2025-09-03T14:40:08.832531Z"
-  },
-  {
-    "id": 44,
-    "car_id": 9,
-    "action": "heater_on",
-    "timestamp": "2025-09-03T14:40:09.253574Z"
-  },
-  {
-    "id": 45,
-    "car_id": 9,
-    "action": "ac_on",
-    "timestamp": "2025-09-03T14:40:09.829269Z"
-  },
-  {
-    "id": 46,
-    "car_id": 9,
-    "action": "heater_on",
-    "timestamp": "2025-09-03T14:40:10.158435Z"
-  },
-  {
-    "id": 47,
-    "car_id": 9,
-    "action": "temp_set",
-    "timestamp": "2025-09-03T14:40:11.048570Z"
-  },
-  {
-    "id": 48,
-    "car_id": 9,
-    "action": "temp_set",
-    "timestamp": "2025-09-03T14:40:13.536242Z"
-  },
-  {
-    "id": 49,
-    "car_id": 9,
-    "action": "temp_set",
-    "timestamp": "2025-09-03T14:40:16.326544Z"
-  },
-  {
-    "id": 50,
-    "car_id": 1,
-    "action": "horn",
-    "timestamp": "2025-09-03T14:45:35.392303Z"
-  },
-  {
-    "id": 51,
-    "car_id": 2,
-    "action": "horn",
-    "timestamp": "2025-09-03T14:45:37.720340Z"
-  },
-  {
-    "id": 52,
-    "car_id": 1,
-    "action": "horn",
-    "timestamp": "2025-09-03T14:45:49.158000Z"
-  },
-  {
-    "id": 53,
-    "car_id": 1,
-    "action": "horn",
-    "timestamp": "2025-09-03T14:45:49.738560Z"
-  },
-  {
-    "id": 54,
-    "car_id": 1,
-    "action": "horn",
-    "timestamp": "2025-09-03T14:45:50.316694Z"
-  },
-  {
-    "id": 55,
-    "car_id": 1,
-    "action": "horn",
-    "timestamp": "2025-09-03T14:45:52.285632Z"
-  },
-  {
-    "id": 56,
-    "car_id": 1,
-    "action": "horn",
-    "timestamp": "2025-09-03T14:45:53.308691Z"
-  },
-  {
-    "id": 57,
-    "car_id": 1,
-    "action": "horn",
-    "timestamp": "2025-09-03T14:45:55.333270Z"
-  },
-  {
-    "id": 58,
-    "car_id": 1,
-    "action": "horn",
-    "timestamp": "2025-09-03T14:45:56.023803Z"
-  },
-  {
-    "id": 59,
-    "car_id": 9,
-    "action": "engine_on",
-    "timestamp": "2025-09-03T15:10:23.145618Z"
-  },
-  {
-    "id": 60,
     "car_id": 4,
-    "action": "ac_off",
-    "timestamp": "2025-09-03T15:40:17.639619Z"
-  },
-  {
-    "id": 61,
-    "car_id": 4,
-    "action": "ac_on",
-    "timestamp": "2025-09-03T15:40:18.788961Z"
+    "action": "engine_on",
+    "timestamp": "2025-09-03T16:54:13.918810Z"
   }
 ]

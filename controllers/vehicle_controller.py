@@ -74,34 +74,10 @@ def get_available_cars():
     return jsonify({'cars': cars})
 
 
-@vehicle_bp.route('/api/car/<int:car_id>/status')
-def get_car_status(car_id):
-    """
-    차량 상태 조회 - 등록 정보 + 실시간 상태 조합
-    car_id: 차량 ID
-    반환값: 차량 등록 정보와 실시간 상태를 결합한 데이터
-    """
-    if 'user_id' not in session:
-        return jsonify({'error': 'Authentication required'}), 401
+# 구버전 status/command API는 제거됨
+# 대신 /api/vehicle/{id}/status 와 /api/vehicle/{id}/control 사용
 
-    user_id = session['user_id']
-    
-    # 사용자는 본인 소유 차량만 조회 가능
-    if not vehicle_model.is_owner(car_id, user_id):
-        return jsonify({'error': 'Access denied - not your car'}), 403
-
-    # 차량 등록 정보 조회
-    car_info = vehicle_model.get_car_by_id(car_id)
-    if not car_info:
-        return jsonify({'error': 'Car not found'}), 404
-    
-    # 실시간 차량 상태 조회
-    vehicle_status = get_vehicle_real_time_status(car_id)
-    
-    # 등록 정보와 상태 정보 결합
-    combined_data = {**car_info, **vehicle_status}
-    
-    return jsonify(combined_data)
+@vehicle_bp.route('/api/car/<int:car_id>/history')
 
 def get_vehicle_real_time_status(vehicle_id):
     """
