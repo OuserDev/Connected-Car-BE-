@@ -1,0 +1,354 @@
+{
+    "vehicle_status": {
+        "1": {
+            "engine_state": "off",
+            "door_state": "unlocked",
+            "fuel": 75,
+            "battery": 12.6,
+            "voltage": "12V",
+            "climate": {
+                "ac_state": "off",
+                "heater_state": "off",
+                "target_temp": 22,
+                "current_temp": 20,
+                "fan_speed": 0,
+                "auto_mode": false
+            },
+            "tire_pressure": {
+                "front_left": 2.3,
+                "front_right": 2.2,
+                "rear_left": 2.4,
+                "rear_right": 2.3,
+                "recommended": 2.3,
+                "unit": "bar",
+                "warning_threshold": 1.8,
+                "last_checked": "2024-01-15T10:00:00Z"
+            },
+            "odometer": {
+                "total_km": 15420,
+                "trip_a_km": 523.7,
+                "trip_b_km": 87.3,
+                "last_updated": "2024-01-15T10:00:00Z"
+            },
+            "location": {
+                "lat": 37.5665,
+                "lng": 126.978
+            }
+        },
+        "2": {
+            "engine_state": "off",
+            "door_state": "locked",
+            "fuel": 100,
+            "battery": 12.8,
+            "voltage": "12V",
+            "climate": {
+                "ac_state": "off",
+                "heater_state": "off",
+                "target_temp": 24,
+                "current_temp": 18,
+                "fan_speed": 0,
+                "auto_mode": false
+            },
+            "tire_pressure": {
+                "front_left": 2.0,
+                "front_right": 2.3,
+                "rear_left": 2.1,
+                "rear_right": 2.3,
+                "recommended": 2.2,
+                "unit": "bar",
+                "warning_threshold": 1.8,
+                "last_checked": "2025-09-03T14:50:28.416962Z"
+            },
+            "odometer": {
+                "total_km": 8750,
+                "trip_a_km": 234.1,
+                "trip_b_km": 45.8,
+                "last_updated": "2024-01-10T09:30:00Z"
+            },
+            "location": {
+                "lat": 37.5172,
+                "lng": 127.0473
+            }
+        },
+        "3": {
+            "engine_state": "off",
+            "door_state": "unlocked",
+            "fuel": 90,
+            "battery": 12.4,
+            "voltage": "12V",
+            "climate": {
+                "ac_state": "off",
+                "heater_state": "off",
+                "target_temp": 23,
+                "current_temp": 22,
+                "fan_speed": 0,
+                "auto_mode": false
+            },
+            "tire_pressure": {
+                "front_left": 2.5,
+                "front_right": 2.4,
+                "rear_left": 2.5,
+                "rear_right": 2.4,
+                "recommended": 2.5,
+                "unit": "bar",
+                "warning_threshold": 1.9,
+                "last_checked": "2024-01-08T11:15:00Z"
+            },
+            "odometer": {
+                "total_km": 45200,
+                "trip_a_km": 1250.4,
+                "trip_b_km": 189.7,
+                "last_updated": "2024-01-08T11:15:00Z"
+            },
+            "location": {
+                "lat": 37.5502,
+                "lng": 126.9876
+            }
+        },
+        "4": {
+            "engine_state": "off",
+            "door_state": "locked",
+            "fuel": 60,
+            "battery": 12.4,
+            "voltage": "12V",
+            "climate": {
+                "ac_state": "off",
+                "heater_state": "off",
+                "target_temp": 21,
+                "current_temp": 19,
+                "fan_speed": 0,
+                "auto_mode": false
+            },
+            "tire_pressure": {
+                "front_left": 2.4,
+                "front_right": 2.3,
+                "rear_left": 2.4,
+                "rear_right": 2.3,
+                "recommended": 2.4,
+                "unit": "bar",
+                "warning_threshold": 1.9,
+                "last_checked": "2024-01-05T14:20:00Z"
+            },
+            "odometer": {
+                "total_km": 22100,
+                "trip_a_km": 675.2,
+                "trip_b_km": 120.9,
+                "last_updated": "2024-01-05T14:20:00Z"
+            },
+            "location": {
+                "lat": 37.5465,
+                "lng": 126.9648
+            }
+        },
+        "5": {
+            "engine_state": "off",
+            "door_state": "locked",
+            "fuel": 85,
+            "battery": 12.7,
+            "voltage": "12V",
+            "climate": {
+                "ac_state": "off",
+                "heater_state": "off",
+                "target_temp": 25,
+                "current_temp": 23,
+                "fan_speed": 0,
+                "auto_mode": false
+            },
+            "tire_pressure": {
+                "front_left": 2.6,
+                "front_right": 2.5,
+                "rear_left": 2.6,
+                "rear_right": 2.5,
+                "recommended": 2.6,
+                "unit": "bar",
+                "warning_threshold": 2.0,
+                "last_checked": "2024-01-12T16:45:00Z"
+            },
+            "odometer": {
+                "total_km": 12680,
+                "trip_a_km": 892.3,
+                "trip_b_km": 156.4,
+                "last_updated": "2024-01-12T16:45:00Z"
+            },
+            "location": {
+                "lat": 37.4979,
+                "lng": 127.0276
+            }
+        },
+        "6": {
+            "engine_state": "off",
+            "door_state": "locked",
+            "fuel": 70,
+            "battery": 12.5,
+            "voltage": "12V",
+            "climate": {
+                "ac_state": "off",
+                "heater_state": "off",
+                "target_temp": 22,
+                "current_temp": 20,
+                "fan_speed": 0,
+                "auto_mode": false
+            },
+            "tire_pressure": {
+                "front_left": 2.7,
+                "front_right": 2.6,
+                "rear_left": 2.7,
+                "rear_right": 2.6,
+                "recommended": 2.7,
+                "unit": "bar",
+                "warning_threshold": 2.1,
+                "last_checked": "2024-01-20T08:30:00Z"
+            },
+            "odometer": {
+                "total_km": 32450,
+                "trip_a_km": 1587.9,
+                "trip_b_km": 298.6,
+                "last_updated": "2024-01-20T08:30:00Z"
+            },
+            "location": {
+                "lat": 37.5326,
+                "lng": 126.9226
+            }
+        },
+        "7": {
+            "engine_state": "off",
+            "door_state": "locked",
+            "fuel": 0,
+            "battery": 75.5,
+            "voltage": "800V/12V",
+            "climate": {
+                "ac_state": "off",
+                "heater_state": "off",
+                "target_temp": 23,
+                "current_temp": 21,
+                "fan_speed": 0,
+                "auto_mode": false
+            },
+            "tire_pressure": {
+                "front_left": 2.8,
+                "front_right": 2.7,
+                "rear_left": 2.8,
+                "rear_right": 2.7,
+                "recommended": 2.8,
+                "unit": "bar",
+                "warning_threshold": 2.2,
+                "last_checked": "2024-01-25T13:10:00Z"
+            },
+            "odometer": {
+                "total_km": 3280,
+                "trip_a_km": 145.7,
+                "trip_b_km": 28.9,
+                "last_updated": "2024-01-25T13:10:00Z"
+            },
+            "location": {
+                "lat": 37.5086,
+                "lng": 127.0633
+            }
+        },
+        "8": {
+            "engine_state": "off",
+            "door_state": "locked",
+            "fuel": 0,
+            "battery": 82.3,
+            "voltage": "400V/12V",
+            "climate": {
+                "ac_state": "off",
+                "heater_state": "off",
+                "target_temp": 24,
+                "current_temp": 22,
+                "fan_speed": 0,
+                "auto_mode": false
+            },
+            "tire_pressure": {
+                "front_left": 1.7,
+                "front_right": 2.6,
+                "rear_left": 2.6,
+                "rear_right": 2.6,
+                "recommended": 2.6,
+                "unit": "bar",
+                "warning_threshold": 2.0,
+                "last_checked": "2024-01-30T07:45:00Z"
+            },
+            "odometer": {
+                "total_km": 1850,
+                "trip_a_km": 76.4,
+                "trip_b_km": 15.2,
+                "last_updated": "2024-01-30T07:45:00Z"
+            },
+            "location": {
+                "lat": 37.4813,
+                "lng": 126.9524
+            }
+        },
+        "9": {
+            "engine_state": "on",
+            "door_state": "locked",
+            "fuel": 79.0,
+            "battery": 12.6,
+            "voltage": "12V",
+            "climate": {
+                "ac_state": "off",
+                "heater_state": "on",
+                "target_temp": 24,
+                "current_temp": 20,
+                "fan_speed": 0,
+                "auto_mode": false
+            },
+            "tire_pressure": {
+                "front_left": 2.3,
+                "front_right": 2.2,
+                "rear_left": 2.3,
+                "rear_right": 2.2,
+                "recommended": 2.3,
+                "unit": "bar",
+                "warning_threshold": 1.8,
+                "last_checked": "2025-09-03T15:09:33.917959Z"
+            },
+            "odometer": {
+                "total_km": 18759.3,
+                "trip_a_km": 466.1,
+                "trip_b_km": 98.6,
+                "last_updated": "2025-09-03T15:13:46.948387Z"
+            },
+            "location": {
+                "lat": 37.544168,
+                "lng": 126.948944
+            }
+        },
+        "10": {
+            "engine_state": "off",
+            "door_state": "locked",
+            "fuel": 45,
+            "battery": 12.3,
+            "voltage": "12V",
+            "climate": {
+                "ac_state": "off",
+                "heater_state": "off",
+                "target_temp": 20,
+                "current_temp": 18,
+                "fan_speed": 0,
+                "auto_mode": false
+            },
+            "tire_pressure": {
+                "front_left": 1.9,
+                "front_right": 1.8,
+                "rear_left": 2.0,
+                "rear_right": 1.9,
+                "recommended": 2.1,
+                "unit": "bar",
+                "warning_threshold": 1.7,
+                "last_checked": "2024-02-05T15:30:00Z"
+            },
+            "odometer": {
+                "total_km": 5420,
+                "trip_a_km": 128.9,
+                "trip_b_km": 34.7,
+                "last_updated": "2024-02-05T15:30:00Z"
+            },
+            "location": {
+                "lat": 37.54,
+                "lng": 127.0696
+            }
+        }
+    }
+}
