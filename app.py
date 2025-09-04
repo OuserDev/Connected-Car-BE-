@@ -105,7 +105,7 @@ def hello():
     return render_template('index.html')
 
 @app.route('/test')
-def hello():
+def testPage():
     return render_template('vehicles.html')
 
 @app.route('/api/health', methods=['GET'])
