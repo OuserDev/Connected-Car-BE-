@@ -27,7 +27,24 @@ class Car:
     def get_by_id(car_id: int) -> Optional[Dict]:
         """ID로 차량 조회 (vehicle_specs와 FK 조인)"""
         query = """
-        SELECT c.*, vs.model, vs.category, vs.engine_type, vs.voltage
+        SELECT c.id, c.owner_id, c.model_id, c.license_plate, c.vin, c.created_at,
+               vs.model as model_name,
+               vs.manufacturer as manufacturer,
+               vs.year as year,
+               vs.category, 
+               vs.engine_type, 
+               vs.fuel_type,
+               vs.transmission,
+               vs.drivetrain,
+               vs.body_type,
+               vs.seating_capacity,
+               vs.curb_weight,
+               vs.max_power,
+               vs.max_torque,
+               vs.fuel_efficiency,
+               vs.top_speed,
+               vs.acceleration,
+               vs.voltage
         FROM cars c
         LEFT JOIN vehicle_specs vs ON c.model_id = vs.model_id
         WHERE c.id = %s
@@ -42,10 +59,13 @@ class Car:
             # 개선된 쿼리 (FK 관계 활용)
             query = """
             SELECT c.id, c.owner_id, c.model_id, c.license_plate, c.vin, c.created_at,
-                   COALESCE(vs.model, 'Unknown') as model,
-                   COALESCE(vs.category, 'Unknown') as category,
-                   COALESCE(vs.engine_type, 'Unknown') as engine_type,
-                   COALESCE(vs.voltage, '12V') as voltage
+                   vs.model as model_name,
+                   vs.manufacturer as manufacturer,
+                   vs.year as year,
+                   vs.category, 
+                   vs.engine_type, 
+                   vs.fuel_type,
+                   vs.voltage
             FROM cars c
             LEFT JOIN vehicle_specs vs ON c.model_id = vs.model_id
             WHERE c.owner_id = %s
@@ -62,7 +82,13 @@ class Car:
     def get_unregistered() -> List[Dict]:
         """미등록 차량 목록 조회 (관리자용, FK 관계 활용)"""
         query = """
-        SELECT c.*, vs.model, vs.category, vs.engine_type, vs.voltage
+        SELECT c.id, c.owner_id, c.model_id, c.license_plate, c.vin, c.created_at,
+               vs.model as model_name,
+               vs.manufacturer as manufacturer,
+               vs.year as year,
+               vs.category, 
+               vs.engine_type, 
+               vs.voltage
         FROM cars c
         LEFT JOIN vehicle_specs vs ON c.model_id = vs.model_id
         WHERE c.owner_id IS NULL
