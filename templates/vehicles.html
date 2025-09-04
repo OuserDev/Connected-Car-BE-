@@ -236,9 +236,9 @@
                         <label>차량ID</label>
                         <input id="carId" placeholder="1" value="1" />
                     </div>
-                    <button class="btn btn-info" onclick="getCarInfo()">차량상세정보</button>
+                    <button class="btn btn-info" onclick="getCarRegistrationInfo()">차량등록정보</button>
+                    <button class="btn btn-info" onclick="getCarCurrentStatus()">차량현재상태</button>
                     <button class="btn btn-info" onclick="getCarHistory()">제어이력</button>
-                    <button class="btn btn-info" onclick="getCarSpecs()">차량스펙</button>
                 </div>
 
                 <!-- 차량 등록 폼 -->
@@ -273,30 +273,9 @@
                 <div id="carsList" class="card-grid"></div>
             </div>
 
-            <!-- 4. 차량 스펙 섹션 -->
+            <!-- 4. 주행 기록 섹션 -->
             <div class="section api-section">
-                <h3>📊 4. Vehicle Specs APIs</h3>
-                <div class="control-row">
-                    <button class="btn btn-info" onclick="getAllSpecs()">전체스펙</button>
-                    <div class="form-group">
-                        <label>모델ID</label>
-                        <input id="specModelId" placeholder="1" value="1" />
-                    </div>
-                    <button class="btn btn-info" onclick="getSpecsByModel()">모델별스펙</button>
-                    <div class="form-group">
-                        <label>카테고리</label>
-                        <select id="specCategory">
-                            <option value="승용차">승용차</option>
-                            <option value="SUV">SUV</option>
-                        </select>
-                    </div>
-                    <button class="btn btn-info" onclick="getSpecsByCategory()">카테고리별스펙</button>
-                </div>
-            </div>
-
-            <!-- 5. 주행 기록 섹션 -->
-            <div class="section api-section">
-                <h3>📈 5. Driving Records APIs</h3>
+                <h3>📈 4. Driving Records APIs</h3>
                 <div class="control-row">
                     <button class="btn btn-info" onclick="getDrivingRecords()">주행기록조회</button>
                     <button class="btn btn-success" onclick="showAddDrivingForm()">주행기록추가</button>
@@ -327,9 +306,9 @@
                 </div>
             </div>
 
-            <!-- 6. 시스템 섹션 -->
+            <!-- 5. 시스템 섹션 -->
             <div class="section api-section">
-                <h3>🔧 6. System APIs</h3>
+                <h3>🔧 5. System APIs</h3>
                 <div class="control-row">
                     <button class="btn btn-info" onclick="checkHealth()">시스템상태확인</button>
                     <button class="btn btn-warning" onclick="clearResult()">결과창지우기</button>
@@ -598,10 +577,11 @@
                 }
             }
 
-            async function getCarSpecs() {
+            // 차량 등록정보 조회 (기존 getCarInfo를 변경)
+            async function getCarRegistrationInfo() {
                 try {
                     const carId = document.getElementById('carId').value;
-                    const response = await fetch(`${API}/api/car/${carId}/specs`, {
+                    const response = await fetch(`${API}/api/car/${carId}/info`, {
                         credentials: 'include',
                     });
                     const data = await response.json();
@@ -611,10 +591,11 @@
                 }
             }
 
-            // === 4. 차량 스펙 APIs ===
-            async function getAllSpecs() {
+            // 차량 현재상태 조회 (car-api 서버에서)
+            async function getCarCurrentStatus() {
                 try {
-                    const response = await fetch(`${API}/api/specs`, {
+                    const carId = document.getElementById('carId').value;
+                    const response = await fetch(`${API}/api/vehicle/${carId}/status`, {
                         credentials: 'include',
                     });
                     const data = await response.json();
@@ -624,33 +605,7 @@
                 }
             }
 
-            async function getSpecsByModel() {
-                try {
-                    const modelId = document.getElementById('specModelId').value;
-                    const response = await fetch(`${API}/api/specs/${modelId}`, {
-                        credentials: 'include',
-                    });
-                    const data = await response.json();
-                    log(data);
-                } catch (error) {
-                    log({ error: error.message });
-                }
-            }
-
-            async function getSpecsByCategory() {
-                try {
-                    const category = document.getElementById('specCategory').value;
-                    const response = await fetch(`${API}/api/specs/category/${category}`, {
-                        credentials: 'include',
-                    });
-                    const data = await response.json();
-                    log(data);
-                } catch (error) {
-                    log({ error: error.message });
-                }
-            }
-
-            // === 5. 주행 기록 APIs ===
+            // === 4. 주행 기록 APIs ===
             async function getDrivingRecords() {
                 try {
                     const response = await fetch(`${API}/api/driving/records`, {
@@ -695,7 +650,7 @@
                 }
             }
 
-            // === 6. 시스템 APIs ===
+            // === 5. 시스템 APIs ===
             async function checkHealth() {
                 try {
                     const response = await fetch(`${API}/api/health`);
