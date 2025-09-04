@@ -50,43 +50,23 @@ def call_car_api(endpoint, method='GET', data=None, timeout=CAR_API_TIMEOUT):
 @vehicle_api_bp.route('/api/vehicle/<int:vehicle_id>/status', methods=['GET'])
 @login_required
 def get_vehicle_status(vehicle_id):
-    """car-api에서 실시간 차량 상태 조회"""
+    """car-api 서버에서 실시간 차량 상태 조회"""
     try:
         user_id = session.get('user_id')
         
-        # 소유권 확인 (BE 데이터베이스에서)
+        # 차량 소유권 확인
         if not Car.verify_ownership(user_id, vehicle_id):
             return jsonify({'error': '해당 차량에 대한 권한이 없습니다'}), 403
         
-        # car-api에서 실시간 상태 조회
-        api_response = call_car_api(f'/api/vehicle/{vehicle_id}/status')
+        # car-api 서버에서 상태 조회 (새로운 명세에 맞게)
+        api_response = call_car_api(f'/api/vehicle/status?id={vehicle_id}')
         
-        if not api_response.get('success', True):
-            return jsonify({
-                'success': False,
-                'error': api_response.get('error', 'car-api 통신 실패'),
-                'fallback_data': {
-                    'message': 'car-api 서버가 응답하지 않습니다. 기본값을 표시합니다.',
-                    'vehicle_id': vehicle_id,
-                    'status': 'unknown'
-                }
-            }), 503
-        
-        # BE 데이터베이스에서 차량 기본 정보 조회
-        car_info = Car.get_by_id(vehicle_id)
-        
-        # 실시간 상태와 기본 정보 결합
-        combined_data = {
-            'vehicle_id': vehicle_id,
-            'license_plate': car_info['license_plate'] if car_info else 'Unknown',
-            'model': car_info.get('model', 'Unknown'),
-            'real_time_status': api_response.get('data', {}),
-            'last_updated': datetime.now().isoformat()
-        }
+        if not api_response.get('success', True):  # car-api는 success 필드가 없으므로 기본 True
+            return jsonify(api_response), 503
         
         return jsonify({
             'success': True,
-            'data': combined_data
+            'data': api_response
         })
         
     except Exception as e:
@@ -96,15 +76,68 @@ def get_vehicle_status(vehicle_id):
 @vehicle_api_bp.route('/api/vehicle/<int:vehicle_id>/control', methods=['POST'])
 @login_required
 def control_vehicle(vehicle_id):
-    """car-api로 차량 원격 제어 명령 전송"""
+    """car-api로 차량 원격 제어 명령 전송 (새 명세에 맞게)"""
     try:
         user_id = session.get('user_id')
         data = request.get_json()
         
-        if not data or not data.get('command'):
-            return jsonify({'error': '제어 명령이 필요합니다'}), 400
+        # 필수 필드 검증
+        if not data or not data.get('property') or 'value' not in data:
+            return jsonify({'error': 'property와 value가 필요합니다'}), 400
         
-        # 소유권 확인 (BE 데이터베이스에서)
+        # 소유권 확인
+        if not Car.verify_ownership(user_id, vehicle_id):
+            return jsonify({'error': '해당 차량에 대한 권한이 없습니다'}), 403
+        
+        # car-api 명세에 맞는 요청 데이터 구성
+        control_data = {
+            'id': vehicle_id,
+            'property': data['property'],
+            'value': data['value']
+        }
+        
+        # car-api로 제어 명령 전송
+        api_response = call_car_api('/api/vehicle/control', 'POST', control_data)
+        
+        if api_response.get('error'):
+            return jsonify({
+                'success': False,
+                'error': api_response['error']
+            }), 503
+        
+        # 제어 이력 저장 (BE 데이터베이스에)
+        CarHistory.create(
+            vehicle_id=vehicle_id,
+            user_id=user_id,
+            command=data['property'],
+            value=str(data['value']),
+            status='success',
+            result=api_response.get('message', '제어 완료')
+        )
+        
+        return jsonify({
+            'success': True,
+            'message': api_response.get('message', '차량 제어가 완료되었습니다'),
+            'vehicle_id': vehicle_id,
+            'property': data['property'],
+            'value': data['value']
+        })
+        
+    except Exception as e:
+        # 실패 이력도 저장
+        try:
+            CarHistory.create(
+                vehicle_id=vehicle_id,
+                user_id=session.get('user_id'),
+                command=data.get('property', 'unknown'),
+                value=str(data.get('value', 'unknown')),
+                status='error',
+                result=str(e)
+            )
+        except:
+            pass
+        
+        return jsonify({'error': f'차량 제어 실패: {str(e)}'}), 500
         if not Car.verify_ownership(user_id, vehicle_id):
             return jsonify({'error': '해당 차량에 대한 권한이 없습니다'}), 403
         

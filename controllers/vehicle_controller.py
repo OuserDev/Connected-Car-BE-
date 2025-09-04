@@ -128,12 +128,42 @@ def get_car_details(car_id):
     except Exception as e:
         return jsonify({'error': f'차량 정보 조회 실패: {str(e)}'}), 500
 
-# 차량 기본 정보 조회 API (별칭)
+# 차량 기본 정보 조회 API (스펙 제외)
 @vehicle_bp.route('/api/car/<int:car_id>/info', methods=['GET'])
 @login_required
 def get_car_info(car_id):
-    """차량 기본 정보 조회 (get_car_details의 별칭)"""
-    return get_car_details(car_id)
+    """차량 기본 정보 조회 (등록 정보만, 스펙 제외)"""
+    try:
+        user_id = session.get('user_id')
+        
+        # 소유권 확인
+        if not Car.verify_ownership(user_id, car_id):
+            return jsonify({'error': '해당 차량에 대한 권한이 없습니다'}), 403
+        
+        # 차량 정보 조회
+        car = Car.get_by_id(car_id)
+        if not car:
+            return jsonify({'error': '차량을 찾을 수 없습니다'}), 404
+        
+        # 스펙 정보는 제외하고 기본 등록 정보만 반환
+        basic_info = {
+            'id': car.get('id'),
+            'license_plate': car.get('license_plate'),
+            'vin': car.get('vin'),
+            'model_id': car.get('model_id'),
+            'model_name': car.get('model_name'),
+            'manufacturer': car.get('manufacturer'),
+            'year': car.get('year'),
+            'created_at': car.get('created_at').isoformat() if car.get('created_at') else None
+        }
+        
+        return jsonify({
+            'success': True,
+            'data': basic_info
+        })
+        
+    except Exception as e:
+        return jsonify({'error': f'차량 정보 조회 실패: {str(e)}'}), 500
 
 # 차량 스펙 정보 조회 API
 @vehicle_bp.route('/api/car/<int:car_id>/specs', methods=['GET'])
