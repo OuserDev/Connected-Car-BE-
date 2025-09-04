@@ -1,0 +1,101 @@
+/* ===== CONTROL: visual stage ===== */
+.control-stage {
+  position: relative;
+  /* background: radial-gradient(120% 120% at 50% 0%, #0a1522 0%, #0b1220 35%, #060a12 100%); */
+  background: radial-gradient(120% 120% at 50% 0%, #0a1522 0%, #0b1220 35%, #060a12 100%);
+  border-radius: 18px;
+  padding: 20px 12px 14px;
+  overflow: hidden;
+}
+
+.vehicle-wrap { 
+  position: relative;
+  min-height: 280px;
+  display: grid; 
+  place-items: center; 
+  padding: 6px 0 10px;
+}
+/* .vehicle-wrap .car svg { 
+  width: 230px; height: auto; 
+  filter: drop-shadow(0 0 18px rgba(86,205,255,.35));
+}
+.glow { animation: vehiclePulse 2.1s ease-in-out infinite; }
+@keyframes vehiclePulse {
+  0%,100% { filter: drop-shadow(0 0 10px rgba(86,205,255,.35)); }
+  50%     { filter: drop-shadow(0 0 24px rgba(86,205,255,.7));  }
+} */
+.vehicle-wrap .car svg { 
+  display:none; /* 이미지가 있으면 svg는 숨김(혹시 남아있을 경우 대비) */
+}
+/* 차량 이미지 공통 스타일 */
+.vehicle-wrap .car img {
+  width: 230px;
+  height: auto;
+  display: block;
+  filter: drop-shadow(0 0 18px rgba(86,205,255,.35));
+}
+/* 시동 ON일 때만 glow: 컨테이너에 glow가 붙으면 이미지에 애니메이션 */
+.vehicle-wrap .car.glow img { animation: vehiclePulse 2.1s ease-in-out infinite; }
+
+/* keyframes는 그대로 사용 */
+@keyframes vehiclePulse {
+  0%,100% { filter: drop-shadow(0 0 10px rgba(86,205,255,.35)); }
+  50%     { filter: drop-shadow(0 0 24px rgba(86,205,255,.7));  }
+}
+
+
+
+
+.hex-grid { position: absolute; inset: 0; pointer-events: none; }
+.hex-btn {
+  pointer-events: auto;
+  position: absolute;
+  width: 68px; height: 68px;
+  display: grid; place-items: center;
+  color: #d6f0ff; font-size: 22px; line-height: 1;
+  background: linear-gradient(180deg, #173147, #0d1b2d);
+  border: 1px solid #2b5d80;
+  clip-path: polygon(25% 6%, 75% 6%, 100% 50%, 75% 94%, 25% 94%, 0 50%);
+  transition: .15s transform, .15s filter, .15s border-color, .15s box-shadow, .15s opacity;
+  box-shadow: inset 0 0 0 1px rgba(23,49,71,0.25);
+}
+.hex-btn:hover { transform: translateY(-2px); filter: brightness(1.06); }
+.hex-btn.active { border-color: #52e8c6; box-shadow: 0 0 0 1px #52e8c6 inset; }
+.hex-btn[disabled] { opacity: .35; border-color: #25394f; cursor: not-allowed; }
+
+.hex-pos-engine { left: 14%; top: 20%; }
+.hex-pos-lock   { left: 14%; top: 62%; }
+.hex-pos-horn   { right: 14%; top: 20%; }
+.hex-pos-flash  { right: 14%; top: 41%; }
+.hex-pos-window { right: 14%; top: 62%; }
+
+.control-hint {
+  color: #8fb1c9; font-size: 12px; text-align: center; margin: 4px 8px 0;
+}
+
+/* 아래 카드(AC/스마트공조 느낌) */
+.ctrl-cards { 
+  margin-top: 10px; 
+  display: grid; gap: 10px; 
+  grid-template-columns: repeat(2, minmax(0,1fr)); 
+}
+.ctrl-card {
+  background: linear-gradient(180deg, #0f1f33, #0c1624);
+  border: 1px solid #233a52; border-radius: 14px; padding: 12px;
+  display: grid; gap: 4px;
+}
+.ctrl-card .title { font-size: 13px; color: #9cc9ea; }
+.ctrl-card .value { font-weight: 700; font-size: 18px; color: #eaffff; }
+
+/* 하단 온도 줄 */
+.ac-line {
+  display: flex; align-items: center; gap: 10px;
+  margin-top: 8px; padding: 10px 12px;
+  background: #0a1522; border: 1px solid #1f3347; border-radius: 12px;
+}
+.ac-line .spacer { flex: 3; }
+
+/* 클릭 가능한 카드 접근성/피드백 */
+.ctrl-card.clickable { cursor: pointer; }
+.ctrl-card.clickable:active { transform: translateY(10px); }
+.ctrl-card[role="button"]:focus { outline: 3px solid #52e8c6; outline-offset: 3px; }

@@ -1,0 +1,24 @@
+/* ===== MAP ===== */
+.map{ position:relative }
+#map-main{ height:320px; border-radius:12px; border:1px solid var(--border); overflow:hidden }
+#map-page{ height:640px; border-radius:12px; border:1px solid var(--border); overflow:hidden }
+.map .label{
+  position:absolute;left:12px;top:10px;font-size:12px;color:var(--muted);
+  background:rgba(0,0,0,.25);padding:6px 8px;border-radius:8px;border:1px solid var(--border); z-index:1; pointer-events:none;
+}
+
+/* 맵 검색바 오버레이 */
+.map .searchbar{
+  position:absolute; left:12px; right:12px; top:10px; z-index:5;
+  display:flex; gap:8px; align-items:center;
+  background:rgba(0,0,0,.35);
+  border:1px solid var(--border);
+  border-radius:12px; padding:8px 10px;
+  backdrop-filter:saturate(140%) blur(8px);
+}
+.map .searchbar input{
+  flex:1; min-width:0;
+  background:transparent; border:0; outline:none; color:var(--text);
+  font-size:14px;
+}
+.map .searchbar .btn{ padding:8px 12px; }

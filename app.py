@@ -102,7 +102,7 @@ app.register_blueprint(driving_records_bp)
 
 @app.route('/')
 def hello():
-    return render_template('vehicles.html')
+    return render_template('index.html')
 
 @app.route('/api/health', methods=['GET'])
 def health_check():

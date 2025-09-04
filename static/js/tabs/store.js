@@ -1,0 +1,428 @@
+// tabs/store.js
+import { Api } from "../api.js";
+import { UI } from "../ui/components.js";
+import { getRoot } from "../core/shared.js";
+
+export function renderStore(){
+  const root = getRoot();
+  root.innerHTML = `
+    <div class="stack">
+
+      <div class="card"><div class="body">
+        <div class="store-section" id="secNew">
+          <div class="hdr"><div class="ttl">새 상품</div></div>
+          <div class="product-grid" id="newGrid"></div>
+        </div>
+      </div></div>
+
+      <div class="card"><div class="body">
+        <div class="store-section" id="secUsed">
+          <div class="used-head">
+            <div class="ttl">중고 장터</div>
+            <button class="btn" id="btnWrite">판매글 작성</button>
+          </div>
+          <div class="used-list" id="usedList"></div>
+        </div>
+      </div></div>
+
+      <div class="card"><div class="body">
+        <div class="store-section" id="secPay">
+          <div class="hdr">
+            <div class="ttl">결제 수단</div>
+            <div style="display:flex; gap:8px">
+              <!-- 변경: 테스트 카드 → 카드 추가 -->
+              <button class="btn ghost" id="btnAddCard">+ 카드 추가</button>
+            </div>
+          </div>
+          <div class="pay-cards" id="cardsWrap"></div>
+          <div class="muted" style="margin-top:6px">
+            실제 카드번호는 보안상 마스킹됩니다. (모의/테스트 카드만 전체 표시 허용)
+          </div>
+        </div>
+      </div></div>
+
+    </div>
+
+    <dialog class="modal" id="dlgUsed">
+      <div class="hd">판매글 작성</div>
+      <form method="dialog" id="usedForm">
+        <div class="bd">
+          <div class="form-row">
+            <label>제목</label>
+            <input type="text" id="fTitle" placeholder="예: 순정 가죽 핸들커버" required />
+          </div>
+          <div class="form-row"><label>내용</label>
+            <textarea id="fBody" placeholder="상품 설명을 입력하세요."></textarea>
+          </div>
+          <div class="form-row"><label>금액(원)</label>
+            <input type="number" id="fPrice" inputmode="numeric" min="0" step="1000" placeholder="예: 15000" required />
+          </div>
+          <div class="form-row"><label>파일 첨부</label>
+            <input type="file" id="fFile" accept="image/*" />
+          </div>
+        </div>
+        <div class="ft">
+          <button class="btn ghost" type="button" id="btnCancel">취소</button>
+          <button class="btn brand" id="btnSubmit">작성하기</button>
+        </div>
+      </form>
+    </dialog>
+
+    <!-- 신규: 카드 추가 모달 -->
+    <dialog class="modal" id="dlgCard">
+      <div class="hd">카드 추가</div>
+      <form method="dialog" id="cardForm">
+        <div class="bd">
+          <div class="form-row">
+            <label>카드 번호</label>
+            <input type="text" id="cNumber" inputmode="numeric" placeholder="1234 5678 1234 5678" maxlength="23" required />
+          </div>
+          <div class="form-row">
+            <label>이름(영문)</label>
+            <input type="text" id="cHolder" placeholder="HONG GILDONG" required />
+          </div>
+          <div class="form-row">
+            <label>유효기간 (MM/YY)</label>
+            <input type="text" id="cExp" inputmode="numeric" placeholder="08/27" maxlength="5" required />
+          </div>
+          <div class="form-row">
+            <label>CVC</label>
+            <input type="password" id="cCvc" inputmode="numeric" placeholder="3자리" maxlength="4" />
+            <div class="muted">보안상 저장하지 않습니다.</div>
+          </div>
+          <div class="form-row">
+            <label class="chk" style="display:flex; gap:8px; align-items:center;">
+              <input type="checkbox" id="cDefault" />
+              <span>추가 후 기본 결제수단으로 설정</span>
+            </label>
+          </div>
+        </div>
+        <div class="ft">
+          <button class="btn ghost" type="button" id="btnCardCancel">취소</button>
+          <button class="btn brand" id="btnCardSubmit" type="submit">추가</button>
+        </div>
+      </form>
+    </dialog>
+  `;
+
+  const $newGrid   = document.getElementById("newGrid");
+  const $usedList  = document.getElementById("usedList");
+  const $cardsWrap = document.getElementById("cardsWrap");
+  const $btnWrite  = document.getElementById("btnWrite");
+  const $dlg       = document.getElementById("dlgUsed");
+  const $form      = document.getElementById("usedForm");
+  const $btnSubmit = document.getElementById("btnSubmit");
+  const $btnCancel = document.getElementById("btnCancel");
+
+  // 신규: 카드 추가 요소들
+  const $dlgCard     = document.getElementById("dlgCard");
+  const $cardForm    = document.getElementById("cardForm");
+  const $btnAddCard  = document.getElementById("btnAddCard");
+  const $btnCardCancel = document.getElementById("btnCardCancel");
+  const $btnCardSubmit = document.getElementById("btnCardSubmit");
+  const $cNumber = document.getElementById("cNumber");
+  const $cHolder = document.getElementById("cHolder");
+  const $cExp    = document.getElementById("cExp");
+  const $cCvc    = document.getElementById("cCvc");
+  const $cDefault= document.getElementById("cDefault");
+
+  const $fTitle = document.getElementById("fTitle");
+  const $fBody  = document.getElementById("fBody");
+  const $fPrice = document.getElementById("fPrice");
+  const $fFile  = document.getElementById("fFile");
+
+  const fmtWon = (n)=> (n||0).toLocaleString() + "원";
+
+  function renderNew(items){
+    $newGrid.innerHTML = "";
+    items.forEach(it=>{
+      const el = document.createElement("div");
+      el.className = "product-card";
+      el.innerHTML = `
+        <div class="thumb">${it.img || "🛠️"}</div>
+        <div class="name">${it.title}</div>
+        <div class="desc">${it.desc || ""}</div>
+        <div class="foot">
+          <div class="price">${fmtWon(it.price)}</div>
+          <button class="btn" data-id="${it.id}">구매</button>
+        </div>`;
+      el.querySelector("button").addEventListener("click", async (e)=>{
+        const pid = e.currentTarget.getAttribute("data-id");
+        const res = await Api.purchase(pid);
+        UI.toast(res.ok ? res.message : (res.message || "구매 실패"));
+      });
+      $newGrid.appendChild(el);
+    });
+  }
+
+  function renderUsed(items){
+    $usedList.innerHTML = "";
+    if(!items.length){
+      $usedList.innerHTML = `<div class="muted">등록된 판매글이 없습니다. 첫 글을 작성해보세요.</div>`;
+      return;
+    }
+    items.forEach(it=>{
+      const el = document.createElement("div");
+      el.className = "used-item";
+      el.innerHTML = `
+        <div class="ph">${it.photoData ? `<img src="${it.photoData}" alt="사진"/>` : "🖼️"}</div>
+        <div class="meta">
+          <div class="t">${it.title}</div>
+          <div class="p">${fmtWon(it.price)} · <span class="muted">${new Date(it.createdAt).toLocaleString()}</span></div>
+          <div class="d">${(it.body||"").slice(0,120)}</div>
+        </div>`;
+      $usedList.appendChild(el);
+    });
+  }
+
+  const mask = (_, last4)=> `**** **** **** ${last4}`;
+  function renderCards(cards, activeId){
+    $cardsWrap.innerHTML = "";
+    cards.forEach(c=>{
+      const row = document.createElement("label");
+      row.className = "card-item";
+      row.innerHTML = `
+        <input type="radio" name="paycard" value="${c.id}" ${c.id===activeId?"checked":""} />
+        <div>
+          <div class="brand">${c.brand}</div>
+          <div class="num" ${c.isTest && c.fullNumber ? `data-full="${c.fullNumber}"` : ""}>${mask("", c.last4)}</div>
+          <div class="sub">만료 ${c.exp} · ${c.holder}${c.isTest ? ' · 테스트 카드' : ''}</div>
+          <div class="row" style="margin-top:6px; gap:8px;">
+            ${c.isTest && c.fullNumber ? '<button class="link-btn btnShowFull" type="button">테스트 번호 보기</button>' : ''}
+            ${c.id!==activeId ? '<button class="link-btn btnSetDefault" type="button">기본으로 설정</button>' : '<span class="tag">기본</span>'}
+          </div>
+        </div>`;
+      // 라디오 변경시 기본 설정
+      row.querySelector('input').addEventListener("change", async ()=>{
+        await Api.cardSelect(c.id);
+        UI.toast(`결제카드 선택: ****${c.last4}`);
+      });
+      // 전체 보기(테스트 카드 전용)
+      const btnShow = row.querySelector(".btnShowFull");
+      if(btnShow){
+        btnShow.addEventListener("click", ()=>{
+          const numEl = row.querySelector(".num");
+          const full = numEl.getAttribute("data-full");
+          if(full){ numEl.textContent = full; btnShow.remove(); }
+        });
+      }
+      // 기본으로 설정 버튼
+      const btnDef = row.querySelector(".btnSetDefault");
+      if(btnDef){
+        btnDef.addEventListener("click", async ()=>{
+          const r = await Api.cardSelect(c.id);
+          if(r?.ok){ UI.toast(`기본 결제수단 설정: ****${c.last4}`); loadCards(); }
+          else { UI.toast(r?.message || "기본 설정 실패"); }
+        });
+      }
+      $cardsWrap.appendChild(row);
+    });
+  }
+
+  async function loadAll(){
+    const [n,u] = await Promise.all([Api.storeNew(), Api.storeUsedList()]);
+    if(n.ok) renderNew(n.items);
+    if(u.ok) renderUsed(u.items);
+    await loadCards();
+  }
+
+  async function loadCards(){
+    const c = await Api.cardsList();
+    if(c.ok) renderCards(c.cards, c.activeId);
+  }
+
+  function fileToDataURL(file){
+    return new Promise((res, rej)=>{
+      const fr = new FileReader();
+      fr.onload = () => res(fr.result);
+      fr.onerror = rej;
+      fr.readAsDataURL(file);
+    });
+  }
+
+  // ---------- 카드 입력 유틸 & 검증 ----------
+  const onlyDigits = (s)=> (s||"").replace(/\D+/g, "");
+  const formatCard = (digits)=>{
+    // 4자리씩 띄어쓰기 (Amex 4-6-5도 고려 가능하지만 단순 4단위로 표기)
+    return digits.replace(/\D/g,"").replace(/(.{4})/g,"$1 ").trim();
+  };
+  const detectBrand = (digits)=>{
+    if(/^4\d{12,18}$/.test(digits)) return "VISA";
+    if(/^5[1-5]\d{14}$/.test(digits)) return "Mastercard";
+    if(/^(34|37)\d{13}$/.test(digits)) return "AMEX";
+    if(/^6(011|5)\d{14,16}$/.test(digits)) return "Discover";
+    return "CARD";
+  };
+  // Luhn 체크
+  const luhnCheck = (digits)=>{
+    let sum = 0, alt = false;
+    for(let i = digits.length - 1; i >= 0; i--){
+      let n = parseInt(digits[i], 10);
+      if(alt){ n *= 2; if(n > 9) n -= 9; }
+      sum += n; alt = !alt;
+    }
+    return sum % 10 === 0;
+  };
+  const parseExp = (val)=>{
+    const m = (val||"").replace(/\s/g,"").match(/^(\d{1,2})\/?(\d{2})$/);
+    if(!m) return null;
+    let mm = parseInt(m[1],10);
+    let yy = parseInt(m[2],10);
+    return { mm, yy };
+  };
+  const isValidMonth = (mm)=> mm>=1 && mm<=12;
+  const isFutureExp = ({mm,yy})=>{
+    // YY → 2000~2099로 해석
+    const fullY = 2000 + yy;
+    const now = new Date();
+    const y = now.getFullYear(), m = now.getMonth()+1;
+    return (fullY > y) || (fullY === y && mm >= m);
+  };
+
+  // 포맷팅 UX
+  $cNumber.addEventListener("input", ()=>{
+    const digits = onlyDigits($cNumber.value).slice(0,19); // 19자리까지 허용
+    $cNumber.value = formatCard(digits);
+  });
+  $cExp.addEventListener("input", ()=>{
+    let v = $cExp.value.replace(/[^\d]/g,"").slice(0,4);
+    if(v.length >= 3) v = v.slice(0,2) + "/" + v.slice(2);
+    $cExp.value = v;
+  });
+
+  // ---------- 모달/폼: 중고 판매글 ----------
+  document.getElementById("btnWrite").addEventListener("click", ()=> $dlg.showModal());
+  $btnCancel.addEventListener("click", ()=>{
+    $dlg.close();
+    $form.reset(); $fFile.value = "";
+  });
+  $dlg.addEventListener("close", ()=>{
+    $form.reset(); $fFile.value = "";
+  });
+  $form.addEventListener("submit", async (e)=>{
+    e.preventDefault();
+    $btnSubmit.disabled = true;
+    try{
+      let photoData = null;
+      if($fFile.files && $fFile.files[0]){
+        photoData = await fileToDataURL($fFile.files[0]);
+      }
+      const payload = {
+        title: $fTitle.value.trim(),
+        body:  $fBody.value.trim(),
+        price: Number($fPrice.value||0),
+        photoData
+      };
+      const r = await Api.storeUsedCreate(payload);
+      if(!r.ok) { UI.toast(r.message || "작성 실패"); return; }
+      UI.toast("판매글이 등록되었습니다.");
+      $dlg.close();
+      const u = await Api.storeUsedList();
+      if(u.ok) renderUsed(u.items);
+    } finally {
+      $btnSubmit.disabled = false;
+    }
+  });
+
+  // ---------- 모달/폼: 카드 추가 ----------
+  $btnAddCard.addEventListener("click", ()=>{
+    $cardForm.reset();
+    $dlgCard.showModal();
+  });
+  $btnCardCancel.addEventListener("click", ()=>{
+    $dlgCard.close();
+    $cardForm.reset();
+  });
+  $dlgCard.addEventListener("close", ()=>{
+    $cardForm.reset();
+  });
+
+  $cardForm.addEventListener("submit", async (e)=>{
+    e.preventDefault();
+    $btnCardSubmit.disabled = true;
+    try{
+      // 1) 입력 정규화
+      const numberDigits = onlyDigits($cNumber.value);
+      const holder = ($cHolder.value||"").trim().replace(/\s+/g," ");
+      const expParsed = parseExp($cExp.value);
+      const cvc = onlyDigits($cCvc.value);
+      const setDefault = !!$cDefault.checked;
+
+      // 2) 엄격 검증 (최소 7가지)
+      // (a) 길이 13~19
+      if(numberDigits.length < 13 || numberDigits.length > 19) {
+        UI.toast("카드번호가 올바르지 않습니다. (13~19자리)"); return;
+      }
+      // (b) Luhn
+      if(!luhnCheck(numberDigits)) { UI.toast("유효하지 않은 카드번호(Luhn)입니다."); return; }
+      // (c) 이름
+      if(holder.length < 2) { UI.toast("이름을 정확히 입력해주세요."); return; }
+      // (d) 유효기간 파싱/형식
+      if(!expParsed) { UI.toast("유효기간 형식이 올바르지 않습니다. (MM/YY)"); return; }
+      // (e) 월 범위
+      if(!isValidMonth(expParsed.mm)) { UI.toast("유효기간의 월(MM)이 올바르지 않습니다."); return; }
+      // (f) 미래/현재 유효
+      if(!isFutureExp(expParsed)) { UI.toast("이미 만료된 카드입니다."); return; }
+      // (g) CVC 길이(선제 검증만, 저장 금지)
+      if(cvc && (cvc.length < 3 || cvc.length > 4)) { UI.toast("CVC는 3~4자리입니다."); return; }
+
+      const brand = detectBrand(numberDigits);
+      const last4 = numberDigits.slice(-4);
+      const expStr = `${String(expParsed.mm).padStart(2,"0")}/${String(expParsed.yy).padStart(2,"0")}`;
+
+      // 중복 체크: 동일 last4 + exp + holder 존재 시 경고
+      const current = await Api.cardsList();
+      if(current?.ok && current.cards?.some(x => x.last4===last4 && x.exp===expStr && x.holder===holder)){
+        UI.toast("동일한 카드가 이미 등록되어 있습니다."); return;
+      }
+
+      // 전송 페이로드 (주의: prod에선 토큰화/PG 전송 후 토큰만 저장)
+      const payload = {
+        brand,
+        holder,
+        exp: expStr,
+        last4,
+        // 보안: fullNumber/CVC는 백엔드로 전송 후 절대 저장하지 말 것 (모의환경만)
+        fullNumber: numberDigits,
+        cvc,
+        isTest: false,
+        setDefault
+      };
+
+      const r = await Api.cardsAdd(payload);
+      if(!r?.ok){
+        UI.toast(r?.message || "카드 추가 실패");
+        return;
+      }
+
+      UI.toast("카드가 추가되었습니다.");
+
+      // 리스트 갱신
+      await loadCards();
+
+      // 사용자가 기본설정 체크했는데 백엔드가 처리 안 해줬을 경우 대비:
+      if(setDefault){
+        const after = await Api.cardsList();
+        if(after?.ok){
+          const found = after.cards.find(x => x.last4===last4 && x.exp===expStr && x.holder===holder);
+          if(found && after.activeId !== found.id){
+            const sel = await Api.cardSelect(found.id);
+            if(sel?.ok){
+              UI.toast(`기본 결제수단 설정: ****${last4}`);
+              await loadCards();
+            }
+          }
+        }
+      }
+
+      // 민감정보 즉시 파기 (프론트 메모리/DOM)
+      $cNumber.value = ""; $cCvc.value = "";
+      $dlgCard.close();
+
+    } finally {
+      $btnCardSubmit.disabled = false;
+    }
+  });
+
+  loadAll();
+}
