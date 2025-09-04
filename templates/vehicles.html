@@ -310,7 +310,8 @@
             <div class="section api-section">
                 <h3>🔧 5. System APIs</h3>
                 <div class="control-row">
-                    <button class="btn btn-info" onclick="checkHealth()">시스템상태확인</button>
+                    <button class="btn btn-info" onclick="checkHealth()">BE서버상태확인</button>
+                    <button class="btn btn-info" onclick="checkCarApiHealth()">car-api서버상태확인</button>
                     <button class="btn btn-warning" onclick="clearResult()">결과창지우기</button>
                 </div>
             </div>
@@ -654,6 +655,18 @@
             async function checkHealth() {
                 try {
                     const response = await fetch(`${API}/api/health`);
+                    const data = await response.json();
+                    log(data);
+                } catch (error) {
+                    log({ error: error.message });
+                }
+            }
+
+            async function checkCarApiHealth() {
+                try {
+                    const response = await fetch(`${API}/api/car-api/health`, {
+                        credentials: 'include'
+                    });
                     const data = await response.json();
                     log(data);
                 } catch (error) {

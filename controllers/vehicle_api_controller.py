@@ -16,14 +16,19 @@ load_dotenv()
 vehicle_api_bp = Blueprint('vehicle_api', __name__)
 
 # car-api 서버 설정 (환경변수 사용)
-CAR_API_BASE_URL = os.getenv('CAR_API_BASE_URL')
+CAR_API_BASE_URL = os.getenv('CAR_API_BASE_URL', 'http://172.29.5.130:8000')  # 기본값으로 올바른 IP 설정
 CAR_API_TIMEOUT = int(os.getenv('CAR_API_TIMEOUT', '10'))
+
+# 디버그: 환경변수 확인
+print(f"[DEBUG] CAR_API_BASE_URL: {CAR_API_BASE_URL}")
+print(f"[DEBUG] CAR_API_TIMEOUT: {CAR_API_TIMEOUT}")
 
 # car-api 서버 통신 헬퍼 함수
 def call_car_api(endpoint, method='GET', data=None, timeout=CAR_API_TIMEOUT):
     """car-api 서버 HTTP 통신 헬퍼"""
     try:
         url = f'{CAR_API_BASE_URL}{endpoint}'
+        print(f"[DEBUG] car-api 요청: {method} {url}")  # 디버그 로그
         
         if method == 'GET':
             response = requests.get(url, timeout=timeout)
@@ -34,17 +39,28 @@ def call_car_api(endpoint, method='GET', data=None, timeout=CAR_API_TIMEOUT):
         else:
             raise ValueError(f'지원하지 않는 HTTP 메서드: {method}')
         
+        print(f"[DEBUG] car-api 응답: {response.status_code}")  # 디버그 로그
         response.raise_for_status()
-        return response.json()
+        result = response.json()
+        print(f"[DEBUG] car-api 데이터: {result}")  # 디버그 로그
+        return result
         
-    except requests.ConnectionError:
-        return {'success': False, 'error': 'car-api 서버에 연결할 수 없습니다'}
-    except requests.Timeout:
-        return {'success': False, 'error': 'car-api 서버 응답 시간 초과'}
+    except requests.ConnectionError as e:
+        error_msg = f'car-api 서버에 연결할 수 없습니다: {str(e)}'
+        print(f"[ERROR] {error_msg}")
+        return {'success': False, 'error': error_msg}
+    except requests.Timeout as e:
+        error_msg = f'car-api 서버 응답 시간 초과: {str(e)}'
+        print(f"[ERROR] {error_msg}")
+        return {'success': False, 'error': error_msg}
     except requests.HTTPError as e:
-        return {'success': False, 'error': f'car-api 서버 오류: {e.response.status_code}'}
+        error_msg = f'car-api 서버 HTTP 오류: {e.response.status_code}'
+        print(f"[ERROR] {error_msg}")
+        return {'success': False, 'error': error_msg}
     except Exception as e:
-        return {'success': False, 'error': f'통신 오류: {str(e)}'}
+        error_msg = f'통신 오류: {str(e)}'
+        print(f"[ERROR] {error_msg}")
+        return {'success': False, 'error': error_msg}
 
 # 실시간 차량 상태 조회 API
 @vehicle_api_bp.route('/api/vehicle/<int:vehicle_id>/status', methods=['GET'])
@@ -61,8 +77,17 @@ def get_vehicle_status(vehicle_id):
         # car-api 서버에서 상태 조회 (새로운 명세에 맞게)
         api_response = call_car_api(f'/api/vehicle/status?id={vehicle_id}')
         
-        if not api_response.get('success', True):  # car-api는 success 필드가 없으므로 기본 True
-            return jsonify(api_response), 503
+        # car-api 서버 오류 처리
+        if api_response.get('error'):
+            return jsonify({
+                'success': False,
+                'error': f'car-api 서버 오류: {api_response["error"]}',
+                'details': {
+                    'car_api_url': CAR_API_BASE_URL,
+                    'endpoint': f'/api/vehicle/status?id={vehicle_id}',
+                    'vehicle_id': vehicle_id
+                }
+            }), 503
         
         return jsonify({
             'success': True,
@@ -212,23 +237,33 @@ def control_vehicle(vehicle_id):
 def check_car_api_health():
     """car-api 서버 상태 확인"""
     try:
-        # car-api 서버 헬스체크
-        api_response = call_car_api('/', timeout=5)
+        # car-api 서버 헬스체크 (README에 따르면 /health 엔드포인트)
+        api_response = call_car_api('/health', timeout=5)
         
-        if api_response.get('success', True):
-            return jsonify({
-                'success': True,
-                'message': 'car-api 서버가 정상 작동 중입니다',
-                'car_api_status': 'healthy',
-                'response_data': api_response
-            })
-        else:
+        if api_response.get('error'):
             return jsonify({
                 'success': False,
                 'message': 'car-api 서버가 응답하지 않습니다',
                 'car_api_status': 'unhealthy',
+                'car_api_url': CAR_API_BASE_URL,
                 'error': api_response.get('error')
             }), 503
+        else:
+            return jsonify({
+                'success': True,
+                'message': 'car-api 서버가 정상 작동 중입니다',
+                'car_api_status': 'healthy',
+                'car_api_url': CAR_API_BASE_URL,
+                'response_data': api_response
+            })
+            
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'message': 'car-api 서버 상태 확인 실패',
+            'car_api_status': 'error',
+            'error': str(e)
+        }), 500
             
     except Exception as e:
         return jsonify({
