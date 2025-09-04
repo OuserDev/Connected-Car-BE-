@@ -679,16 +679,23 @@
 
             async function controlVehicle() {
                 try {
-                    const carId = document.getElementById('controlCarId').value;
+                    const carId = parseInt(document.getElementById('controlCarId').value);
                     const property = document.getElementById('controlProperty').value;
                     const value = document.getElementById('controlValue').value;
 
-                    // boolean 값 변환
+                    // 값 변환 (car-api 명세에 맞게)
                     let controlValue = value;
-                    if (value === 'true') controlValue = true;
-                    if (value === 'false') controlValue = false;
+                    if (property === 'target_temp') {
+                        controlValue = parseInt(value);
+                    } else if (value === 'true') {
+                        controlValue = true;
+                    } else if (value === 'false') {
+                        controlValue = false;
+                    }
 
+                    // car-api 명세에 맞는 요청 데이터 (id 포함)
                     const requestData = {
+                        id: carId,
                         property: property,
                         value: controlValue,
                     };
@@ -719,7 +726,7 @@
 
             async function setTemperature() {
                 try {
-                    const carId = document.getElementById('controlCarId').value;
+                    const carId = parseInt(document.getElementById('controlCarId').value);
                     const temp = parseInt(document.getElementById('tempValue').value);
 
                     if (temp < 18 || temp > 30) {
@@ -727,7 +734,9 @@
                         return;
                     }
 
+                    // car-api 명세에 맞는 요청 데이터 (id 포함)
                     const requestData = {
+                        id: carId,
                         property: 'target_temp',
                         value: temp,
                     };
