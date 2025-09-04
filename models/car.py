@@ -29,22 +29,24 @@ class Car:
         query = """
         SELECT c.id, c.owner_id, c.model_id, c.license_plate, c.vin, c.created_at,
                vs.model as model_name,
-               vs.manufacturer as manufacturer,
-               vs.year as year,
-               vs.category, 
-               vs.engine_type, 
-               vs.fuel_type,
-               vs.transmission,
-               vs.drivetrain,
-               vs.body_type,
-               vs.seating_capacity,
-               vs.curb_weight,
-               vs.max_power,
-               vs.max_torque,
+               vs.category,
+               vs.segment,
+               vs.engine_type,
+               vs.displacement,
+               vs.power as max_power,
+               vs.torque as max_torque,
                vs.fuel_efficiency,
-               vs.top_speed,
-               vs.acceleration,
-               vs.voltage
+               vs.transmission,
+               vs.drive_type as drivetrain,
+               vs.voltage,
+               vs.fuel_capacity,
+               vs.length,
+               vs.width,
+               vs.height,
+               vs.wheelbase,
+               vs.weight as curb_weight,
+               vs.max_speed,
+               vs.acceleration
         FROM cars c
         LEFT JOIN vehicle_specs vs ON c.model_id = vs.model_id
         WHERE c.id = %s
@@ -56,15 +58,12 @@ class Car:
     def get_by_owner(owner_id: int) -> List[Dict]:
         """소유자별 차량 목록 조회 (vehicle_specs와 FK 조인)"""
         try:
-            # 개선된 쿼리 (FK 관계 활용)
+            # 실제 테이블 구조에 맞는 쿼리
             query = """
             SELECT c.id, c.owner_id, c.model_id, c.license_plate, c.vin, c.created_at,
                    vs.model as model_name,
-                   vs.manufacturer as manufacturer,
-                   vs.year as year,
-                   vs.category, 
-                   vs.engine_type, 
-                   vs.fuel_type,
+                   vs.category,
+                   vs.engine_type,
                    vs.voltage
             FROM cars c
             LEFT JOIN vehicle_specs vs ON c.model_id = vs.model_id
@@ -84,10 +83,8 @@ class Car:
         query = """
         SELECT c.id, c.owner_id, c.model_id, c.license_plate, c.vin, c.created_at,
                vs.model as model_name,
-               vs.manufacturer as manufacturer,
-               vs.year as year,
-               vs.category, 
-               vs.engine_type, 
+               vs.category,
+               vs.engine_type,
                vs.voltage
         FROM cars c
         LEFT JOIN vehicle_specs vs ON c.model_id = vs.model_id

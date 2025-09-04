@@ -145,15 +145,14 @@ def get_car_info(car_id):
         if not car:
             return jsonify({'error': '차량을 찾을 수 없습니다'}), 404
         
-        # 스펙 정보는 제외하고 기본 등록 정보만 반환
+        # 기본 등록 정보만 반환 (실제 테이블 구조에 맞게)
         basic_info = {
             'id': car.get('id'),
             'license_plate': car.get('license_plate'),
             'vin': car.get('vin'),
             'model_id': car.get('model_id'),
             'model_name': car.get('model_name'),
-            'manufacturer': car.get('manufacturer'),
-            'year': car.get('year'),
+            'category': car.get('category'),
             'created_at': car.get('created_at').isoformat() if car.get('created_at') else None
         }
         
