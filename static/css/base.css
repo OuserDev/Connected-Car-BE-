@@ -20,7 +20,13 @@ header.appbar{
   display:flex;align-items:center;justify-content:space-between; padding:12px 16px;
 }
 .appbar h1{margin:0;font-size:16px;letter-spacing:.5px}
-.appbar .badge{font-size:12px;color:var(--muted)}
+.appbar .header-right{display:flex;align-items:center;gap:12px}
+.appbar .badge{font-size:12px;color:var(--muted);cursor:pointer}
+.appbar .btn-logout{
+  font-size:11px;padding:4px 8px;background:var(--danger);border:1px solid #ff5555;
+  border-radius:6px;color:white;cursor:pointer;transition:background 0.2s;
+}
+.appbar .btn-logout:hover{background:#ff5555}
 .container{width:min(980px,100%);margin:0 auto;padding:16px}
 
 .stack{display:grid;gap:14px}

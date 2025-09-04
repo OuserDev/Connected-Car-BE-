@@ -7,6 +7,21 @@ const DEFAULT_CAR_IMAGE = "./assets/cars/USER1_GRANDEUR.jpg";
 
 // mockApi.js 상단 근처
 const userKey = (id) => `cc_user_${id}`;
+// ✅ 제어 로그 (유저별 보관)
+const KEY_CTRL_LOGS = "ctrl_logs";
+const _logsKey = () => {
+  const uid = localStorage.getItem("cc_user_id") || "guest";
+  return `${KEY_CTRL_LOGS}_${uid}`;
+};
+function _readLogs(){ try{ return JSON.parse(localStorage.getItem(_logsKey()) || "[]"); }catch{ return []; } }
+function _writeLogs(list){ localStorage.setItem(_logsKey(), JSON.stringify(list)); }
+function _pushLog(entry){
+  const list = _readLogs();
+  list.push({ id: "log_"+Date.now()+"_"+Math.random().toString(36).slice(2,6), ...entry });
+  // (선택) 500개 초과 시 오래된 것 제거
+  if(list.length > 500) list.splice(0, list.length - 500);
+  _writeLogs(list);
+}
 
 
 // ✅ 제어 상태 로컬스토리지 유틸
@@ -167,29 +182,50 @@ export const MockApi = {
     await delay(180);
     const ctl = _readControl();
 
+    let ok = true;
+    let message = "";
+
     switch(action){
-      case "lock": ctl.locked = true; break;
-      case "unlock": ctl.locked = false; break;
-      case "engineOn": ctl.engineOn = true; break;
+      case "lock":     ctl.locked = true; break;
+      case "unlock":   ctl.locked = false; break;
+      case "engineOn":  ctl.engineOn = true; break;
       case "engineOff": ctl.engineOn = false; break;
-      case "horn": /* side-effect 없음(알림만) */ break;
-      case "flash": /* side-effect 없음(알림만) */ break;
-      case "acOn": ctl.acOn = true; break;
-      case "acOff": ctl.acOn = false; break;
+      case "horn":   /* no state change */ break;
+      case "flash":  /* no state change */ break;
+      case "acOn":   ctl.acOn = true; break;
+      case "acOff":  ctl.acOn = false; break;
       case "setTemp":
         if (typeof data.target === "number"){
           ctl.targetTemp = Math.max(16, Math.min(30, Math.round(data.target)));
         }
         break;
+
+      // ✅ 단일 퀵액션: 한 번 호출 = 로그 1건
+      case "acLow":
+        ctl.acOn = true;
+        ctl.targetTemp = 18;
+        break;
+
       default:
-        return { ok:false, message:"알 수 없는 제어 요청입니다." };
+        ok = false;
+        message = "알 수 없는 제어 요청입니다.";
+    }
+
+    if (!ok){
+      _pushLog({ ts: Date.now(), action, ok:false, message, data: data||null });
+      return { ok:false, message };
     }
 
     _writeControl(ctl);
-    const vs = await this.vehicleStatus(); // 최신 Telemetry와 병합
+    const vs = await this.vehicleStatus(); // 최신 상태
+    message = _actionMsg(action, ctl);
+
+    // ✅ 성공 로그 적재 (액션당 1줄)
+    _pushLog({ ts: Date.now(), action, ok:true, message, data: data||null });
+
     return {
       ok:true,
-      message:_actionMsg(action, ctl),
+      message,
       status: vs.status
     };
   },
@@ -335,6 +371,29 @@ export const MockApi = {
     return { ok:true, message:`구매 완료: ${item.title} · 카드 **** **** **** ${card.last4}` };
   },
   
+  async controlLogs(limit = 200){
+    await delay(60);
+    let list = _readLogs();
+
+    // 첫 조회가 비어있으면 더미 2줄 자동 시드(한번만)
+    if (!list.length) {
+      const now = Date.now();
+      list = [
+        { id:`seed_${now}_1`, ts: now - 1000*60*2, action:"unlock",  ok:true, message:"🔓 문을 열었습니다.", data:null },
+        { id:`seed_${now}_2`, ts: now - 1000*60*1, action:"setTemp", ok:true, message:"🌡️ 목표온도 18℃",   data:{target:18} },
+      ];
+      _writeLogs(list);
+    }
+
+    const items = list.slice().sort((a,b)=> b.ts - a.ts).slice(0, limit);
+    return { ok:true, items };
+  },
+
+  async controlLogsClear(){
+    await delay(60);
+    _writeLogs([]);
+    return { ok:true };
+  },
 
 
 };

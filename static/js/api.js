@@ -91,6 +91,8 @@ export const Api = {
   recommendedPlaces: MockApi.recommendedPlaces,
   vehicleStatus: MockApi.vehicleStatus,
   vehicleControl: MockApi.vehicleControl,
+  controlLogs: MockApi.controlLogs,           // 제어 로그 조회
+  controlLogsClear: MockApi.controlLogsClear, // 제어 로그 초기화
   storeNew: MockApi.storeNew,
   storeUsedList: MockApi.storeUsedList,
   storeUsedCreate: MockApi.storeUsedCreate,

@@ -35,9 +35,17 @@ export function setActiveTabByHash(){
 export function updateAuthBadge(){
   const { token, user } = State.get();
   const badge = document.getElementById("badgeAuth");
+  const logoutBtn = document.getElementById("btnLogout");
+  
   if (badge) {
-    badge.textContent = token ? `환영합니다. ${user?.name || "사용자"}님` : "로그인";
-    badge.style.cursor = "pointer";
-    badge.title = token ? "클릭하여 로그아웃" : "클릭하여 로그인";
+    if (token) {
+      badge.textContent = `환영합니다. ${user?.name || "사용자"}님`;
+      badge.title = "클릭하여 프로필 수정";
+      logoutBtn.style.display = "block";
+    } else {
+      badge.textContent = "로그인";
+      badge.title = "클릭하여 로그인";
+      logoutBtn.style.display = "none";
+    }
   }
 }

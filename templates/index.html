@@ -20,7 +20,10 @@
   <div class="app">
     <header class="appbar">
       <h1>Connected Car</h1>
-      <div class="badge" id="badgeAuth">게스트</div>
+      <div class="header-right">
+        <div class="badge" id="badgeAuth">게스트</div>
+        <button class="btn-logout" id="btnLogout" style="display: none;">로그아웃</button>
+      </div>
     </header>
 
     <main class="container">
@@ -81,6 +84,20 @@
         <button class="btn brand" id="btnSignupDo">가입</button>
         <button class="btn ghost" id="btnSignupCancel">취소</button>
         <button class="btn ghost" id="btnBackToLogin">로그인으로</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 프로필 수정 다이얼로그 -->
+  <div class="scrim" id="dlgProfileScrim" aria-hidden="true">
+    <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="dlgProfileTitle">
+      <div class="kicker" id="dlgProfileTitle">프로필 수정</div>
+      <div class="field"><label for="profileName">이름</label><input id="profileName" placeholder="홍길동" autocomplete="name"></div>
+      <div class="field"><label for="profileEmail">이메일</label><input id="profileEmail" type="email" placeholder="user@example.com" autocomplete="email"></div>
+      <div class="field"><label for="profilePhone">전화번호</label><input id="profilePhone" placeholder="010-1234-5678" autocomplete="tel"></div>
+      <div class="row">
+        <button class="btn brand" id="btnProfileSave">저장</button>
+        <button class="btn ghost" id="btnProfileCancel">취소</button>
       </div>
     </div>
   </div>
