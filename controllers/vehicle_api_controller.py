@@ -106,12 +106,19 @@ def control_vehicle(vehicle_id):
         user_id = session.get('user_id')
         data = request.get_json()
         
+        print(f"[DEBUG] Control Vehicle - user_id: {user_id}, vehicle_id: {vehicle_id}")
+        print(f"[DEBUG] Session data: {dict(session)}")
+        print(f"[DEBUG] Request data: {data}")
+        
         # 필수 필드 검증
         if not data or not data.get('property') or 'value' not in data:
             return jsonify({'error': 'property와 value가 필요합니다'}), 400
         
         # 소유권 확인
-        if not Car.verify_ownership(user_id, vehicle_id):
+        ownership_check = Car.verify_ownership(user_id, vehicle_id)
+        print(f"[DEBUG] Ownership check result: {ownership_check}")
+        
+        if not ownership_check:
             return jsonify({'error': '해당 차량에 대한 권한이 없습니다'}), 403
         
         # car-api 명세에 맞는 요청 데이터 구성
