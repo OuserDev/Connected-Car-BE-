@@ -181,23 +181,29 @@ def get_car_specs(car_id):
         if not car:
             return jsonify({'error': '차량을 찾을 수 없습니다'}), 404
         
-        # 스펙 정보만 추출
+        # 실제 테이블 구조에 맞는 스펙 정보만 추출
         specs_info = {
             'model_id': car.get('model_id'),
             'model_name': car.get('model_name'),
-            'manufacturer': car.get('manufacturer'),
-            'year': car.get('year'),
+            'category': car.get('category'),
+            'segment': car.get('segment'),
             'engine_type': car.get('engine_type'),
-            'fuel_type': car.get('fuel_type'),
-            'transmission': car.get('transmission'),
-            'drivetrain': car.get('drivetrain'),
-            'body_type': car.get('body_type'),
-            'seating_capacity': car.get('seating_capacity'),
-            'curb_weight': car.get('curb_weight'),
-            'max_power': car.get('max_power'),
-            'max_torque': car.get('max_torque'),
+            'displacement': car.get('displacement'),
+            'power': car.get('max_power'),  # power as max_power
+            'torque': car.get('max_torque'),  # torque as max_torque
             'fuel_efficiency': car.get('fuel_efficiency'),
-            'top_speed': car.get('top_speed'),
+            'transmission': car.get('transmission'),
+            'drive_type': car.get('drivetrain'),  # drive_type as drivetrain
+            'voltage': car.get('voltage'),
+            'fuel_capacity': car.get('fuel_capacity'),
+            # 차량 크기 정보
+            'length': car.get('length'),
+            'width': car.get('width'),
+            'height': car.get('height'),
+            'wheelbase': car.get('wheelbase'),
+            'weight': car.get('curb_weight'),  # weight as curb_weight
+            # 성능 정보
+            'max_speed': car.get('max_speed'),
             'acceleration': car.get('acceleration')
         }
         
