@@ -23,6 +23,13 @@ class VehicleSpec:
         return result[0] if result else None
     
     @staticmethod
+    def get_by_model_id(model_id: int) -> Optional[Dict]:
+        """model_id로 차량 스펙 조회 (FK 관계 활용)"""
+        query = "SELECT * FROM vehicle_specs WHERE id = %s"
+        result = DatabaseHelper.execute_query(query, (model_id,))
+        return result[0] if result else None
+    
+    @staticmethod
     def get_by_model(model: str) -> Optional[Dict]:
         """모델명으로 차량 스펙 조회"""
         query = "SELECT * FROM vehicle_specs WHERE model = %s"

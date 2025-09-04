@@ -25,11 +25,11 @@ class Car:
     
     @staticmethod
     def get_by_id(car_id: int) -> Optional[Dict]:
-        """ID로 차량 조회"""
+        """ID로 차량 조회 (vehicle_specs와 FK 조인)"""
         query = """
-        SELECT c.*, vs.model, vs.category, vs.engine_type, vs.voltage_system
+        SELECT c.*, vs.model, vs.category, vs.engine_type, vs.voltage
         FROM cars c
-        LEFT JOIN vehicle_specs vs ON c.model_id = vs.id
+        LEFT JOIN vehicle_specs vs ON c.model_id = vs.model_id
         WHERE c.id = %s
         """
         result = DatabaseHelper.execute_query(query, (car_id,))
@@ -37,27 +37,22 @@ class Car:
     
     @staticmethod
     def get_by_owner(owner_id: int) -> List[Dict]:
-        """소유자별 차량 목록 조회"""
+        """소유자별 차량 목록 조회 (vehicle_specs와 FK 조인)"""
         try:
-            # 가장 단순한 쿼리로 먼저 테스트
-            simple_query = "SELECT * FROM cars WHERE owner_id = %s"
-            simple_result = DatabaseHelper.execute_query(simple_query, (owner_id,))
-            print(f"DEBUG: Simple query result for owner_id {owner_id}: {simple_result}")
-            
-            # 복잡한 쿼리 (voltage_system 제거)
+            # 개선된 쿼리 (FK 관계 활용)
             query = """
             SELECT c.id, c.owner_id, c.model_id, c.license_plate, c.vin, c.created_at,
                    COALESCE(vs.model, 'Unknown') as model,
                    COALESCE(vs.category, 'Unknown') as category,
                    COALESCE(vs.engine_type, 'Unknown') as engine_type,
-                   '12V' as voltage_system
+                   COALESCE(vs.voltage, '12V') as voltage
             FROM cars c
-            LEFT JOIN vehicle_specs vs ON c.model_id = vs.id
+            LEFT JOIN vehicle_specs vs ON c.model_id = vs.model_id
             WHERE c.owner_id = %s
             ORDER BY c.created_at DESC
             """
             result = DatabaseHelper.execute_query(query, (owner_id,))
-            print(f"DEBUG: Complex query result for owner_id {owner_id}: {result}")
+            print(f"DEBUG: Query result for owner_id {owner_id}: {result}")
             return result
         except Exception as e:
             print(f"ERROR in get_by_owner: {e}")
@@ -65,11 +60,11 @@ class Car:
     
     @staticmethod
     def get_unregistered() -> List[Dict]:
-        """미등록 차량 목록 조회 (관리자용)"""
+        """미등록 차량 목록 조회 (관리자용, FK 관계 활용)"""
         query = """
-        SELECT c.*, vs.model, vs.category, vs.engine_type, vs.voltage_system
+        SELECT c.*, vs.model, vs.category, vs.engine_type, vs.voltage
         FROM cars c
-        LEFT JOIN vehicle_specs vs ON c.model_id = vs.id
+        LEFT JOIN vehicle_specs vs ON c.model_id = vs.model_id
         WHERE c.owner_id IS NULL
         ORDER BY c.created_at DESC
         """

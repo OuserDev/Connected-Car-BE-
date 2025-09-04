@@ -58,7 +58,7 @@ class CarHistory:
         SELECT ch.*, c.license_plate, vs.model
         FROM car_history ch
         LEFT JOIN cars c ON ch.car_id = c.id
-        LEFT JOIN vehicle_specs vs ON c.model_id = vs.id
+        LEFT JOIN vehicle_specs vs ON c.model_id = vs.model_id
         WHERE ch.user_id = %s
         ORDER BY ch.timestamp DESC
         LIMIT %s
@@ -85,7 +85,7 @@ class CarHistory:
         FROM car_history ch
         LEFT JOIN users u ON ch.user_id = u.id
         LEFT JOIN cars c ON ch.car_id = c.id
-        LEFT JOIN vehicle_specs vs ON c.model_id = vs.id
+        LEFT JOIN vehicle_specs vs ON c.model_id = vs.model_id
         ORDER BY ch.timestamp DESC
         LIMIT %s
         """
