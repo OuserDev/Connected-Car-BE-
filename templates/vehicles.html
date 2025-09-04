@@ -271,6 +271,41 @@
 
                 <!-- 내 차량 목록 표시 -->
                 <div id="carsList" class="card-grid"></div>
+
+                <!-- 차량 원격 제어 섹션 -->
+                <div class="control-row" style="margin-top: 15px; padding-top: 15px; border-top: 2px solid #e0e0e0">
+                    <h4 style="color: #dc3545; margin: 0 15px 10px 0">🎮 차량 원격 제어</h4>
+                </div>
+                <div class="control-row">
+                    <div class="form-group">
+                        <label>제어차량ID</label>
+                        <input id="controlCarId" placeholder="1" value="1" />
+                    </div>
+                    <div class="form-group">
+                        <label>제어항목</label>
+                        <select id="controlProperty" onchange="updateControlValues()">
+                            <option value="engine_state">엔진 ON/OFF</option>
+                            <option value="door_state">도어 잠금/해제</option>
+                            <option value="ac_state">에어컨 ON/OFF</option>
+                            <option value="target_temp">목표온도 설정</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>값</label>
+                        <select id="controlValue">
+                            <option value="true">ON</option>
+                            <option value="false">OFF</option>
+                        </select>
+                    </div>
+                    <button class="btn btn-danger" onclick="controlVehicle()">차량제어실행</button>
+                </div>
+                <div class="control-row">
+                    <div class="form-group">
+                        <label>온도설정</label>
+                        <input id="tempValue" type="number" placeholder="22" min="18" max="30" value="22" />
+                        <button class="btn btn-warning" onclick="setTemperature()">온도설정</button>
+                    </div>
+                </div>
             </div>
 
             <!-- 4. 주행 기록 섹션 -->
@@ -606,6 +641,121 @@
                 }
             }
 
+            // 차량 원격 제어 함수들
+            function updateControlValues() {
+                const property = document.getElementById('controlProperty').value;
+                const valueSelect = document.getElementById('controlValue');
+
+                // 기존 옵션 제거
+                valueSelect.innerHTML = '';
+
+                if (property === 'engine_state') {
+                    valueSelect.innerHTML = `
+                        <option value="true">엔진 ON</option>
+                        <option value="false">엔진 OFF</option>
+                    `;
+                } else if (property === 'door_state') {
+                    valueSelect.innerHTML = `
+                        <option value="true">도어 잠금</option>
+                        <option value="false">도어 해제</option>
+                    `;
+                } else if (property === 'ac_state') {
+                    valueSelect.innerHTML = `
+                        <option value="true">에어컨 ON</option>
+                        <option value="false">에어컨 OFF</option>
+                    `;
+                } else if (property === 'target_temp') {
+                    valueSelect.innerHTML = `
+                        <option value="18">18°C</option>
+                        <option value="20">20°C</option>
+                        <option value="22" selected>22°C</option>
+                        <option value="24">24°C</option>
+                        <option value="26">26°C</option>
+                        <option value="28">28°C</option>
+                        <option value="30">30°C</option>
+                    `;
+                }
+            }
+
+            async function controlVehicle() {
+                try {
+                    const carId = document.getElementById('controlCarId').value;
+                    const property = document.getElementById('controlProperty').value;
+                    const value = document.getElementById('controlValue').value;
+
+                    // boolean 값 변환
+                    let controlValue = value;
+                    if (value === 'true') controlValue = true;
+                    if (value === 'false') controlValue = false;
+
+                    const requestData = {
+                        property: property,
+                        value: controlValue,
+                    };
+
+                    const response = await fetch(`${API}/api/vehicle/${carId}/control`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        credentials: 'include',
+                        body: JSON.stringify(requestData),
+                    });
+
+                    const data = await response.json();
+                    log(data);
+
+                    // 성공 시 현재 상태도 다시 조회
+                    if (data.success) {
+                        setTimeout(() => {
+                            document.getElementById('carId').value = carId;
+                            getCarCurrentStatus();
+                        }, 1000);
+                    }
+                } catch (error) {
+                    log({ error: error.message });
+                }
+            }
+
+            async function setTemperature() {
+                try {
+                    const carId = document.getElementById('controlCarId').value;
+                    const temp = parseInt(document.getElementById('tempValue').value);
+
+                    if (temp < 18 || temp > 30) {
+                        log({ error: '온도는 18~30도 사이로 설정해주세요' });
+                        return;
+                    }
+
+                    const requestData = {
+                        property: 'target_temp',
+                        value: temp,
+                    };
+
+                    const response = await fetch(`${API}/api/vehicle/${carId}/control`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        credentials: 'include',
+                        body: JSON.stringify(requestData),
+                    });
+
+                    const data = await response.json();
+                    log(data);
+
+                    // 성공 시 현재 상태도 다시 조회
+                    if (data.success) {
+                        setTimeout(() => {
+                            document.getElementById('carId').value = carId;
+                            getCarCurrentStatus();
+                        }, 1000);
+                    }
+                } catch (error) {
+                    log({ error: error.message });
+                }
+            }
+
             // === 4. 주행 기록 APIs ===
             async function getDrivingRecords() {
                 try {
@@ -665,7 +815,7 @@
             async function checkCarApiHealth() {
                 try {
                     const response = await fetch(`${API}/api/car-api/health`, {
-                        credentials: 'include'
+                        credentials: 'include',
                     });
                     const data = await response.json();
                     log(data);
