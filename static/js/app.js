@@ -11,6 +11,21 @@ import { renderStore } from "./tabs/store.js";
 import { renderSettings } from "./tabs/settings.js";
 const PUBLIC_ROUTES = new Set(["#/main", "#/settings"]);
 
+function clearAllAuthState() {
+  State.setToken(null);
+  State.setUser(null);
+  localStorage.removeItem("cc_token");
+  localStorage.removeItem("cc_user");
+  localStorage.removeItem("cc_user_id");
+  // 모든 사용자별 데이터도 제거
+  Object.keys(localStorage).forEach(key => {
+    if (key.startsWith("cc_user_")) {
+      localStorage.removeItem(key);
+    }
+  });
+  console.log("모든 인증 상태 초기화 완료");
+}
+
 function renderLoginRequired(){
   const root = document.getElementById("view");
   root.innerHTML = `
@@ -51,11 +66,36 @@ export async function navigate(){
 }
 
 (async function boot(){
-  // 세션 복원
-  const { token } = State.get();
-  if(token){
-    const res = await Api.me(token);
-    if(res.ok) State.setUser(res.user); else State.setToken(null);
+  console.log("앱 시작 - localStorage 확인:", {
+    token: localStorage.getItem("cc_token"),
+    user: localStorage.getItem("cc_user"),
+    user_id: localStorage.getItem("cc_user_id")
+  });
+  
+  // 완전 초기화 - 개발/디버깅 시에만 사용
+  localStorage.clear(); // 임시로 모든 localStorage 초기화
+  
+  // 세션 복원 - 토큰과 사용자 정보가 모두 있고 유효한 경우에만
+  const { token, user } = State.get();
+  console.log("State에서 가져온 값:", { token: !!token, user: !!user, userHasCar: user?.hasCar });
+  
+  if(token && user){
+    try {
+      const res = await Api.me(token);
+      if(res.ok && res.user) {
+        State.setUser(res.user);
+        console.log("세션 복원 성공:", res.user);
+      } else {
+        console.log("API.me 실패 - 상태 초기화");
+        clearAllAuthState();
+      }
+    } catch(e) {
+      console.log("API.me 에러 - 상태 초기화", e);
+      clearAllAuthState();
+    }
+  } else {
+    console.log("토큰 또는 사용자 정보 없음 - 상태 초기화");
+    clearAllAuthState();
   }
   updateAuthBadge();
   attachAuthDelegates();

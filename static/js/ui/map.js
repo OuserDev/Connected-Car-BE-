@@ -227,6 +227,132 @@ export function addPlaceMarkers(places = []){
   });
 }
 
+// === 차량 위치 마커 추가 ===
+let _vehicleMarker = null;
+let _vehicleInfoWindow = null;
+
+export function addVehicleMarker(lat, lng, vehicleInfo = {}) {
+  if (!_map || typeof lat !== 'number' || typeof lng !== 'number') return;
+  
+  // 기존 차량 마커 제거
+  if (_vehicleMarker) {
+    _vehicleMarker.setMap(null);
+  }
+  if (_vehicleInfoWindow) {
+    _vehicleInfoWindow.close();
+  }
+  
+  const vehiclePos = new naver.maps.LatLng(lat, lng);
+  
+  // 주소 정보를 저장할 변수
+  let addressInfo = {
+    loading: true,
+    address: '주소 조회 중...',
+    roadAddress: ''
+  };
+  
+  // 차량 아이콘 생성 (남색+파란색 컨셉, 크기 증가)
+  _vehicleMarker = new naver.maps.Marker({
+    position: vehiclePos,
+    map: _map,
+    icon: {
+      content: `<div style="
+        width:40px;
+        height:40px;
+        background:linear-gradient(135deg, #1a2350 0%, #3b82f6 100%);
+        border-radius:50%;
+        border:3px solid #ffffff;
+        box-shadow:0 4px 12px rgba(26,35,80,0.4);
+        display:flex;
+        align-items:center;
+        justify-content:center;
+      "><span style="color:white;font-size:18px;">🚗</span></div>`,
+      size: new naver.maps.Size(46, 46),
+      anchor: new naver.maps.Point(23, 23),
+    }
+  });
+  
+  // 정보창 내용을 업데이트하는 함수
+  const updateInfoWindowContent = (addressData) => {
+    const model = vehicleInfo.model || 'Vehicle';
+    const plate = vehicleInfo.plate || '번호판';
+    
+    return `
+      <div style="
+        padding:14px 18px; 
+        min-width:220px; 
+        text-align:center;
+        background:linear-gradient(135deg, #1a2350 0%, #3b82f6 100%);
+        border-radius:8px;
+        color:white;
+        border:2px solid #ffffff;
+        box-shadow:0 4px 12px rgba(26,35,80,0.3);
+      ">
+        <div style="font-weight:600; margin-bottom:8px; font-size:15px;">
+          현재 ${model}:${plate} 차량 위치
+        </div>
+        <div style="color:#e1e7ff; font-size:13px; margin-bottom:2px;">
+          ${addressData.address}
+        </div>
+        ${addressData.roadAddress ? `<div style="color:#c7d2fe; font-size:12px;">${addressData.roadAddress}</div>` : ''}
+        <div style="color:#a5b4fc; font-size:11px; margin-top:4px; opacity:0.8;">
+          ${lat.toFixed(6)}, ${lng.toFixed(6)}
+        </div>
+      </div>`;
+  };
+
+  // 차량 정보 창 (초기 내용)
+  _vehicleInfoWindow = new naver.maps.InfoWindow({
+    content: updateInfoWindowContent(addressInfo),
+    borderWidth: 0,
+    backgroundColor: 'transparent'
+  });
+  
+  // 간단한 좌표 표시
+  addressInfo.address = `위도: ${lat.toFixed(6)}`;
+  addressInfo.roadAddress = `경도: ${lng.toFixed(6)}`;
+  
+  // 정보창 내용 업데이트
+  _vehicleInfoWindow.setContent(updateInfoWindowContent(addressInfo));
+  
+  // 마커 클릭 시 정보 창 표시
+  const h = naver.maps.Event.addListener(_vehicleMarker, "click", () => {
+    _vehicleInfoWindow.open(_map, _vehicleMarker);
+  });
+  _listenerHandles.push(h);
+  
+  // 지도 중심을 차량 위치로 이동하고 적절한 줌 레벨 설정
+  setTimeout(() => {
+    _map.setCenter(vehiclePos);
+    _map.setZoom(16);
+    // 한 번 더 중앙 정렬 (지도 완전 로드 후)
+    setTimeout(() => {
+      _map.setCenter(vehiclePos);
+      // 정보창을 자동으로 열어서 차량 위치 표시
+      _vehicleInfoWindow.open(_map, _vehicleMarker);
+    }, 300);
+  }, 100);
+  
+  return _vehicleMarker;
+}
+
+// === 지도를 특정 위치로 이동 (장소 상세보기용) ===
+export function moveToLocation(lat, lng, placeName = '') {
+  if (!_map || typeof lat !== 'number' || typeof lng !== 'number') return;
+  
+  const targetPos = new naver.maps.LatLng(lat, lng);
+  
+  // 부드러운 이동 효과
+  _map.panTo(targetPos);
+  
+  // 줌 레벨 조정
+  setTimeout(() => {
+    if (_map.getZoom() < 15) {
+      _map.setZoom(15);
+    }
+  }, 500);
+}
+
 let _infoWin = null;
 
 function _makeAddress(item) {

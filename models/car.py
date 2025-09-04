@@ -48,7 +48,7 @@ class Car:
                vs.max_speed,
                vs.acceleration
         FROM cars c
-        LEFT JOIN vehicle_specs vs ON c.model_id = vs.model_id
+        LEFT JOIN vehicle_specs vs ON c.model_id = vs.id
         WHERE c.id = %s
         """
         result = DatabaseHelper.execute_query(query, (car_id,))
@@ -66,7 +66,7 @@ class Car:
                    vs.engine_type,
                    vs.voltage
             FROM cars c
-            LEFT JOIN vehicle_specs vs ON c.model_id = vs.model_id
+            LEFT JOIN vehicle_specs vs ON c.model_id = vs.id
             WHERE c.owner_id = %s
             ORDER BY c.created_at DESC
             """
@@ -87,7 +87,7 @@ class Car:
                vs.engine_type,
                vs.voltage
         FROM cars c
-        LEFT JOIN vehicle_specs vs ON c.model_id = vs.model_id
+        LEFT JOIN vehicle_specs vs ON c.model_id = vs.id
         WHERE c.owner_id IS NULL
         ORDER BY c.created_at DESC
         """
