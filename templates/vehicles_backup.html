@@ -20,7 +20,6 @@
             .btn-warning { background: #ffc107; color: #212529; }
             .btn-danger { background: #dc3545; color: white; }
             .btn-info { background: #17a2b8; color: white; }
-            .btn-secondary { background: #6c757d; color: white; }
             .btn:hover { opacity: 0.8; }
             .card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 10px; margin-top: 10px; }
             .card { background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 6px; padding: 10px; }
@@ -602,6 +601,344 @@
             window.onload = function() {
                 checkAuthStatus();
             };
+        </script>
+    </body>
+</html>
+                    <div class="form-group" style="flex: 1">
+                        <label>Password</label>
+                        <input id="loginPass" type="password" placeholder="password" value="user123" />
+                    </div>
+                    <div class="form-group">
+                        <button class="btn btn-primary" onclick="login()">Login</button>
+                        <button class="btn btn-warning" onclick="checkAuthStatus()">Status</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 차량 등록 API 테스트 -->
+            <div class="section">
+                <h3>🔧 Vehicle Registration API</h3>
+                <div style="display: flex; gap: 10px; align-items: end; flex-wrap: wrap">
+                    <div class="form-group" style="min-width: 200px">
+                        <label>VIN Number</label>
+                        <input id="searchVin" placeholder="KMHL14JA1PA123456" style="text-transform: uppercase" />
+                    </div>
+                    <div class="form-group" style="min-width: 150px">
+                        <label>License Plate</label>
+                        <input id="searchLicense" placeholder="12가3456" />
+                    </div>
+                    <div class="form-group">
+                        <button class="btn btn-primary" onclick="registerCarBySearch()">Register</button>
+                        <button class="btn btn-success" onclick="loadAvailableCars()">Available Cars</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 등록 가능한 차량 목록 -->
+            <div class="section" id="availableCarsSection" style="display: none">
+                <h3>📋 Available Vehicles</h3>
+                <div id="availableCarsList" class="car-grid"></div>
+            </div>
+
+            <!-- 내 차량 목록 API 테스트 -->
+            <div class="section">
+                <h3>🚗 My Vehicles API</h3>
+                <div style="margin-bottom: 10px">
+                    <button class="btn btn-primary" onclick="loadMyCars()">Load Vehicles</button>
+                    <button class="btn btn-success" onclick="loadUserProfile()">User Profile</button>
+                    <button class="btn btn-warning" onclick="testVehicleAPI()">Test Vehicle API</button>
+                    <button class="btn btn-danger" onclick="testCarAPIHealth()">Check Car-API</button>
+                    <button class="btn" style="background: #6f42c1; color: white" onclick="assignTestVehicle()">🚗 Assign Test Vehicle</button>
+                </div>
+                <div id="carsList" class="car-grid"></div>
+            </div>
+
+            <!-- 결과 표시 영역 -->
+            <div id="result"></div>
+        </div>
+
+        <script>
+            const API = `http://${window.location.hostname}:4080`;
+            let currentUser = null;
+
+            function log(data) {
+                document.getElementById('result').textContent = JSON.stringify(data, null, 2);
+            }
+
+            // 로그인 API 테스트
+            async function login() {
+                log({ message: 'Testing Login API...' });
+
+                const res = await fetch(`${API}/api/auth/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({
+                        username: document.getElementById('loginUser').value,
+                        password: document.getElementById('loginPass').value,
+                    }),
+                });
+                const data = await res.json();
+                log(data);
+
+                if (res.ok && data.status === 'success') {
+                    currentUser = data.user;
+                    loadMyCars();
+                }
+            }
+
+            // 인증 상태 API 테스트
+            async function checkAuthStatus() {
+                log({ message: 'Testing Auth Status API...' });
+
+                const res = await fetch(`${API}/api/auth/status`, { credentials: 'include' });
+                const data = await res.json();
+                log(data);
+
+                if (res.ok && data.authenticated) {
+                    currentUser = data.user;
+                }
+            }
+
+            // 차량 등록 API 테스트
+            async function registerCarBySearch() {
+                const vin = document.getElementById('searchVin').value.trim();
+                const license = document.getElementById('searchLicense').value.trim();
+
+                if (!vin && !license) {
+                    log({ error: 'VIN number or license plate required' });
+                    return;
+                }
+
+                const payload = {};
+                if (vin) payload.vin = vin;
+                if (license) payload.license_plate = license;
+
+                log({ message: 'Testing Vehicle Registration API...', payload });
+
+                const res = await fetch(`${API}/api/cars/register`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify(payload),
+                });
+                const data = await res.json();
+                log(data);
+
+                if (res.ok) {
+                    loadMyCars();
+                    loadAvailableCars();
+                    document.getElementById('searchVin').value = '';
+                    document.getElementById('searchLicense').value = '';
+                }
+            }
+
+            // 차량 ID로 직접 등록
+            async function registerCarById(carId) {
+                log({ message: 'Testing Vehicle Registration by ID...', car_id: carId });
+
+                const res = await fetch(`${API}/api/cars/register`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({ model_id: carId }),
+                });
+                const data = await res.json();
+                log(data);
+
+                if (res.ok) {
+                    loadMyCars();
+                    loadAvailableCars();
+                }
+            }
+
+            // 등록 가능한 차량 목록 API 테스트 (스펙 조회로 대체)
+            async function loadAvailableCars() {
+                log({ message: 'Testing Vehicle Specs API (Available Cars)...' });
+
+                const res = await fetch(`${API}/api/vehicle-specs`, { credentials: 'include' });
+                const data = await res.json();
+
+                if (res.ok) {
+                    displayAvailableCars(data.data);
+                    document.getElementById('availableCarsSection').style.display = 'block';
+                    log({ message: `Found ${data.data.length} vehicle specifications`, specs: data.data });
+                } else {
+                    log(data);
+                }
+            }
+
+            // 내 차량 목록 API 테스트
+            async function loadMyCars() {
+                log({ message: 'Testing My Vehicles API...' });
+
+                try {
+                    const res = await fetch(`${API}/api/cars`, { credentials: 'include' });
+                    const data = await res.json();
+
+                    log({
+                        message: 'API Response received',
+                        status: res.status,
+                        ok: res.ok,
+                        data: data,
+                    });
+
+                    if (res.ok) {
+                        displayCars(data.data || [], 'carsList');
+                        log({ message: `Found ${(data.data || []).length} owned vehicles`, response: data });
+                    } else {
+                        log({ error: 'API call failed', status: res.status, data });
+                    }
+                } catch (error) {
+                    log({ error: 'Network error', message: error.message });
+                }
+            }
+
+            // 차량 제어 API 테스트
+            async function controlCar(carId, action) {
+                log({ message: 'Testing Vehicle Control API...', car_id: carId, action });
+
+                const res = await fetch(`${API}/api/vehicle/${carId}/control`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({ command: action }),
+                });
+                const data = await res.json();
+                log(data);
+
+                if (res.ok) {
+                    loadMyCars();
+                }
+            }
+
+            // 차량 상태 API 테스트
+            async function getCarStatus(carId) {
+                log({ message: 'Testing Vehicle Status API...', car_id: carId });
+
+                const res = await fetch(`${API}/api/vehicle/${carId}/status`, { credentials: 'include' });
+                const data = await res.json();
+                log(data);
+            }
+
+            // API 테스트 함수들
+            async function testVehicleAPI() {
+                log({ message: 'Testing all Vehicle APIs...' });
+                await loadMyCars();
+                await loadAvailableCars();
+            }
+
+            async function testCarAPIHealth() {
+                log({ message: 'Testing Car-API Health...' });
+
+                try {
+                    const res = await fetch(`${API}/api/car-api/health`, { credentials: 'include' });
+                    const data = await res.json();
+                    log(data);
+                } catch (error) {
+                    log({ error: 'Car-API Health check failed', message: error.message });
+                }
+            }
+
+            async function loadUserProfile() {
+                log({ message: 'Testing User Profile API...' });
+                const res = await fetch(`${API}/api/user/profile`, { credentials: 'include' });
+                const data = await res.json();
+                log(data);
+            }
+
+            // 테스트용 차량 할당
+            async function assignTestVehicle() {
+                log({ message: 'Assigning test vehicle to current user...' });
+
+                try {
+                    const res = await fetch(`${API}/api/cars/assign-test-vehicle`, {
+                        method: 'POST',
+                        credentials: 'include',
+                    });
+                    const data = await res.json();
+
+                    log(data);
+
+                    if (res.ok) {
+                        // 할당 성공 후 차량 목록 새로고침
+                        loadMyCars();
+                    }
+                } catch (error) {
+                    log({ error: 'Test vehicle assignment failed', message: error.message });
+                }
+            }
+
+            // 차량 스펙 목록 표시
+            function displayAvailableCars(specs) {
+                const container = document.getElementById('availableCarsList');
+                if (!specs || specs.length === 0) {
+                    container.innerHTML = '<p>No vehicle specifications</p>';
+                    return;
+                }
+
+                container.innerHTML = specs
+                    .map(
+                        (spec) => `
+                    <div class="car-card" style="border: 2px dashed #28a745;">
+                        <h4>${spec.model} <span style="color: #28a745;">✨ Available</span></h4>
+                        <div class="car-info">Spec ID: ${spec.id}</div>
+                        <div class="car-info">Category: ${spec.category || 'N/A'}</div>
+                        <div class="car-info">Engine: ${spec.engine_type || 'N/A'}</div>
+                        <div class="car-info">Power: ${spec.power || 'N/A'}</div>
+                        <div class="controls" style="margin-top: 10px;">
+                            <button class="btn btn-success" onclick="registerCarById(${spec.id})">Register Vehicle</button>
+                        </div>
+                    </div>
+                `
+                    )
+                    .join('');
+            }
+
+            // 차량 목록 표시 (간플 버전)
+            function displayCars(cars, containerId, showOwner = false) {
+                const container = document.getElementById(containerId);
+                if (!cars || cars.length === 0) {
+                    container.innerHTML = '<p>No registered vehicles</p>';
+                    return;
+                }
+
+                container.innerHTML = cars
+                    .map((car) => {
+                        const engineClass = car.engine_state === 'on' ? 'status-on' : 'status-off';
+                        const doorClass = car.door_state === 'locked' ? 'status-locked' : 'status-unlocked';
+
+                        return `
+                    <div class="car-card">
+                        <h4>${car.model} (${car.year || 'Unknown'})</h4>
+                        <div class="car-info">ID: ${car.id}</div>
+                        ${showOwner ? `<div class="car-info">Owner ID: ${car.owner_id}</div>` : ''}
+                        <div class="car-info">VIN: ${car.vin || 'N/A'}</div>
+                        <div class="car-info">License: ${car.license_plate || 'Unregistered'}</div>
+                        <div class="car-info">Fuel: ${car.fuel || 0}% | Battery: ${car.battery || 12}V</div>
+                        
+                        <div class="car-status">
+                            <span class="status-badge ${engineClass}">Engine ${car.engine_state === 'on' ? 'ON' : 'OFF'}</span>
+                            <span class="status-badge ${doorClass}">Door ${car.door_state === 'locked' ? 'Locked' : 'Open'}</span>
+                        </div>
+                        
+                        <div class="controls">
+                            <button class="btn btn-success" onclick="controlCar(${car.id}, 'engine_start')">Start</button>
+                            <button class="btn btn-danger" onclick="controlCar(${car.id}, 'engine_stop')">Stop</button>
+                            <button class="btn btn-warning" onclick="controlCar(${car.id}, 'door_lock')">Lock</button>
+                            <button class="btn btn-primary" onclick="controlCar(${car.id}, 'door_unlock')">Unlock</button>
+                            <button class="btn" style="background:#6c757d;color:white;" onclick="getCarStatus(${car.id})">Status</button>
+                        </div>
+                    </div>
+                `;
+                    })
+                    .join('');
+            }
+
+            // 페이지 로드 시 인증 상태 확인
+            window.addEventListener('load', function () {
+                checkAuthStatus();
+            });
         </script>
     </body>
 </html>
