@@ -77,7 +77,13 @@ def log_response_info(response):
     return response
 
 # CORS 설정 - 개발 환경용 (credentials 포함, origins 허용)
-CORS(app, supports_credentials=True, origins=['http://192.168.201.221:8000', 'http://localhost:8000'])
+CORS(app, supports_credentials=True, origins=[
+    'http://192.168.201.221:8000', 
+    'http://localhost:8000',
+    'http://192.168.201.221:4080',
+    'http://localhost:4080',
+    'http://192.168.203.243:4080'  # 프로덕션 서버
+])
 
 # Session configuration - Flask 2.0.3 방식 (환경변수 사용)
 app.secret_key = os.getenv('FLASK_SECRET_KEY', 'connected-car-secret-key-for-testing')
@@ -148,6 +154,6 @@ if __name__ == '__main__':
         app.logger.warning(warning_message)
     
     # 서버 시작 시간 기록
-    app.logger.info("Flask 개발 서버 시작: http://0.0.0.0:8000")
+    app.logger.info("Flask 개발 서버 시작: http://0.0.0.0:4080")
     
-    app.run(debug=True, host='0.0.0.0', port=8000)
+    app.run(debug=True, host='0.0.0.0', port=4080)
