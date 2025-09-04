@@ -2,17 +2,10 @@ from flask import Flask, jsonify, render_template
 from flask_cors import CORS
 from datetime import timedelta
 
-# JSON 기반 컨트롤러 (기존 - 주석 처리)
-# from controllers.user_controller import user_bp
-# from controllers.vehicle_controller import vehicle_bp
-# from controllers.auth_controller import auth_bp
-# from controllers.vehicle_api_controller import vehicle_api_bp
-
-# MySQL 기반 컨트롤러 (신규)
-from controllers.auth_controller import auth_bp  # 인증은 그대로 유지
-from controllers.vehicle_controller import vehicle_bp  # MySQL 기반 차량 컨트롤러
-from controllers.vehicle_api_controller import vehicle_api_bp  # MySQL 기반 차량 API 컨트롤러
-from controllers.user_controller import user_bp  # 수정된 사용자 컨트롤러
+from controllers.auth_controller import auth_bp
+from controllers.vehicle_controller import vehicle_bp
+from controllers.vehicle_api_controller import vehicle_api_bp
+from controllers.user_controller import user_bp
 
 # 데이터베이스 연결 테스트
 from utils.database import test_database_connection
@@ -29,16 +22,11 @@ app.config['SESSION_COOKIE_SECURE'] = False  # 개발 환경용
 app.config['SESSION_COOKIE_HTTPONLY'] = True
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 
-# Blueprint 등록 (MySQL 기반)
-app.register_blueprint(auth_bp)  # 인증 컨트롤러
-app.register_blueprint(user_bp)  # 사용자 컨트롤러 (MySQL 기반)
-app.register_blueprint(vehicle_bp)  # 차량 컨트롤러 (MySQL 기반)
-app.register_blueprint(vehicle_api_bp)  # 차량 API 컨트롤러 (MySQL 기반)
-
-# 기존 JSON 기반 컨트롤러 (주석 처리)
-# app.register_blueprint(user_bp)
-# app.register_blueprint(vehicle_bp)
-# app.register_blueprint(vehicle_api_bp)
+# Blueprint 등록
+app.register_blueprint(auth_bp)
+app.register_blueprint(user_bp)
+app.register_blueprint(vehicle_bp)
+app.register_blueprint(vehicle_api_bp)
 
 @app.route('/')
 def hello():

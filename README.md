@@ -18,7 +18,7 @@
 
 -   **Backend**: Python Flask 2.0.3
 -   **Frontend**: HTML/CSS/Vanilla JavaScript
--   **Database**: JSON 파일 기반 (MySQL 전환 가능)
+-   **Database**: MySQL 기반
 -   **Python**: 3.6.15
 -   **환경 관리**: micromamba (connected_car 환경)
 
@@ -31,21 +31,14 @@ BE/
 │   ├── user_controller.py      # 사용자 관리 API
 │   ├── vehicle_controller.py   # 차량 관리 API
 │   └── vehicle_api_controller.py # 실시간 차량 상태 API
-├── models/               # 데이터 모델
-│   ├── user.py               # 사용자 모델
-│   └── vehicle.py            # 차량 모델
-├── data/                 # 데이터 저장소
-│   ├── users.json            # 사용자 정보
-│   ├── cars.json             # 차량 등록 정보 (정적)
-│   ├── vehicle_status.json   # 실시간 차량 상태 (동적)
-│   ├── vehicle_specs.json    # 차량 스펙 정보
-│   ├── car_history.json      # 차량 제어 이력
-│   └── driving_records.json  # 주행 기록
+├── data/                 # 데이터 저장소 (백업용 JSON 파일들)
+│   └── backup_json/           # 기존 JSON 파일 백업
 ├── templates/            # HTML 템플릿
 │   ├── 1.html                # 메인 페이지
 │   └── vehicles.html         # 차량 관리 페이지
 ├── utils/                # 유틸리티 함수
-│   └── auth.py               # 인증 헬퍼
+│   ├── auth.py               # 인증 헬퍼
+│   └── database.py           # MySQL 데이터베이스 클래스들
 ├── app.py                # Flask 애플리케이션 진입점
 ├── requirements.txt      # Python 의존성
 └── wsgi.py              # WSGI 설정

@@ -20,7 +20,7 @@ class DatabaseConfig:
     PORT = 3306
     DATABASE = 'connected_car_service'
     USERNAME = 'root'
-    PASSWORD = 'ensiz225712'  # 일반적인 비밀번호 시도
+    PASSWORD = 'student'  # 일반적인 비밀번호 시도
     
     CHARSET = 'utf8mb4'
     AUTOCOMMIT = True

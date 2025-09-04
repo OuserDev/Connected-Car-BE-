@@ -1,10 +1,8 @@
 from flask import Blueprint, jsonify, session
-# from models.user import UserModel  # JSON 기반 모델 (주석 처리)
 from utils.database import UserDatabase, CarDatabase
 from utils.auth import login_required
 
 user_bp = Blueprint('user', __name__)
-# user_model = UserModel()  # JSON 기반 모델 (주석 처리)
 
 # 사용자 정보 조회 API (MySQL 기반)
 @user_bp.route('/api/user/profile', methods=['GET'])
