@@ -240,6 +240,28 @@ def get_car_history(car_id):
     except Exception as e:
         return jsonify({'error': f'차량 이력 조회 실패: {str(e)}'}), 500
 
+# 내 차량들의 제어 이력 전체 조회 API (사용자별)
+@vehicle_bp.route('/api/my/history', methods=['GET'])
+@login_required
+def get_my_history():
+    """현재 로그인한 사용자의 모든 차량 제어 이력 조회"""
+    try:
+        user_id = session.get('user_id')
+        
+        # 이력 조회 (최근 100개)
+        limit = request.args.get('limit', 100, type=int)
+        history = CarHistory.get_by_user(user_id, limit)
+        
+        return jsonify({
+            'success': True,
+            'data': history,
+            'count': len(history),
+            'user_id': user_id
+        })
+        
+    except Exception as e:
+        return jsonify({'error': f'내 이력 조회 실패: {str(e)}'}), 500
+
 # 차량 위치 정보 관리 API (MySQL 기반)
 @vehicle_bp.route('/api/car/<int:car_id>/location', methods=['GET', 'POST'])
 @login_required
@@ -306,7 +328,7 @@ def get_car_diagnostics(car_id):
             return jsonify({'error': '차량을 찾을 수 없습니다'}), 404
         
         # 최근 제어 이력 조회 (진단용)
-        recent_history = CarHistoryDatabase.get_car_history(car_id, 10)
+        recent_history = CarHistory.get_by_car(car_id, 10)
         
         # 진단 정보 구성
         diagnostics = {
