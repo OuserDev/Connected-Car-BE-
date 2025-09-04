@@ -16,7 +16,7 @@ load_dotenv()
 vehicle_api_bp = Blueprint('vehicle_api', __name__)
 
 # car-api 서버 설정 (환경변수 사용)
-CAR_API_BASE_URL = os.getenv('CAR_API_BASE_URL', 'http://localhost:9000')
+CAR_API_BASE_URL = os.getenv('CAR_API_BASE_URL')
 CAR_API_TIMEOUT = int(os.getenv('CAR_API_TIMEOUT', '10'))
 
 # car-api 서버 통신 헬퍼 함수
