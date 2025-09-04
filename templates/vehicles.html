@@ -1,292 +1,101 @@
 <!DOCTYPE html>
 <html>
     <head>
-        <title>차량 관리 - Connected Car Service</title>
+        <title>차량 API 테스트 - Connected Car Service</title>
         <meta charset="utf-8" />
         <style>
-            body {
-                font-family: Arial, sans-serif;
-                margin: 20px;
-                background: #f5f5f5;
-            }
-            .container {
-                max-width: 1200px;
-                margin: 0 auto;
-                background: white;
-                padding: 20px;
-                border-radius: 8px;
-                box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-            }
-            .header {
-                text-align: center;
-                color: #333;
-                margin-bottom: 30px;
-            }
-            .section {
-                margin-bottom: 30px;
-                padding: 20px;
-                border: 1px solid #ddd;
-                border-radius: 5px;
-                background: #fafafa;
-            }
-            .section h3 {
-                color: #2c5aa0;
-                margin-top: 0;
-            }
-            .form-group {
-                margin-bottom: 15px;
-            }
-            .form-group label {
-                display: block;
-                margin-bottom: 5px;
-                font-weight: bold;
-            }
-            .form-group input,
-            .form-group select {
-                width: 100%;
-                padding: 8px;
-                border: 1px solid #ddd;
-                border-radius: 4px;
-                font-size: 14px;
-            }
-            .btn {
-                padding: 10px 20px;
-                border: none;
-                border-radius: 4px;
-                cursor: pointer;
-                margin-right: 10px;
-                font-size: 14px;
-            }
-            .btn-primary {
-                background: #2c5aa0;
-                color: white;
-            }
-            .btn-success {
-                background: #28a745;
-                color: white;
-            }
-            .btn-warning {
-                background: #ffc107;
-                color: #212529;
-            }
-            .btn-danger {
-                background: #dc3545;
-                color: white;
-            }
-            .btn:hover {
-                opacity: 0.8;
-            }
-            .car-grid {
-                display: grid;
-                grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-                gap: 20px;
-                margin-top: 20px;
-            }
-            .car-card {
-                background: white;
-                border: 1px solid #ddd;
-                border-radius: 8px;
-                padding: 15px;
-                box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-            }
-            .car-card h4 {
-                margin: 0 0 10px 0;
-                color: #2c5aa0;
-            }
-            .car-info {
-                font-size: 14px;
-                margin-bottom: 8px;
-            }
-            .car-status {
-                display: flex;
-                gap: 10px;
-                margin: 15px 0;
-            }
-            .status-badge {
-                padding: 4px 8px;
-                border-radius: 3px;
-                font-size: 12px;
-                font-weight: bold;
-            }
-            .status-on {
-                background: #d4edda;
-                color: #155724;
-            }
-            .status-off {
-                background: #f8d7da;
-                color: #721c24;
-            }
-            .status-locked {
-                background: #fff3cd;
-                color: #856404;
-            }
-            .status-unlocked {
-                background: #cce7ff;
-                color: #004085;
-            }
-            .controls {
-                display: flex;
-                flex-wrap: wrap;
-                gap: 5px;
-                margin-top: 10px;
-            }
-            .controls .btn {
-                padding: 6px 12px;
-                font-size: 12px;
-            }
-            #result {
-                background: #f8f9fa;
-                border: 1px solid #dee2e6;
-                border-radius: 4px;
-                padding: 15px;
-                margin-top: 20px;
-                white-space: pre-wrap;
-                font-family: monospace;
-                max-height: 300px;
-                overflow-y: auto;
-            }
-            .location-info {
-                font-size: 12px;
-                color: #666;
-                margin-top: 5px;
-            }
+            body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }
+            .container { max-width: 1200px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; }
+            .header { text-align: center; color: #333; margin-bottom: 20px; }
+            .section { margin-bottom: 20px; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+            .section h3 { color: #2c5aa0; margin-top: 0; }
+            .form-group { margin-bottom: 10px; }
+            .form-group label { display: block; margin-bottom: 5px; font-weight: bold; }
+            .form-group input, .form-group select { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; }
+            .btn { padding: 8px 16px; border: none; border-radius: 4px; cursor: pointer; margin: 2px; font-size: 12px; }
+            .btn-primary { background: #2c5aa0; color: white; }
+            .btn-success { background: #28a745; color: white; }
+            .btn-warning { background: #ffc107; color: #212529; }
+            .btn-danger { background: #dc3545; color: white; }
+            .btn:hover { opacity: 0.8; }
+            .car-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 15px; margin-top: 15px; }
+            .car-card { background: white; border: 1px solid #ddd; border-radius: 8px; padding: 15px; }
+            .car-card h4 { margin: 0 0 10px 0; color: #2c5aa0; }
+            .car-info { font-size: 13px; margin-bottom: 5px; }
+            .car-status { display: flex; gap: 8px; margin: 10px 0; }
+            .status-badge { padding: 3px 6px; border-radius: 3px; font-size: 11px; font-weight: bold; }
+            .status-on { background: #d4edda; color: #155724; }
+            .status-off { background: #f8d7da; color: #721c24; }
+            .status-locked { background: #fff3cd; color: #856404; }
+            .status-unlocked { background: #cce7ff; color: #004085; }
+            .controls { display: flex; flex-wrap: wrap; gap: 3px; margin-top: 8px; }
+            .controls .btn { padding: 4px 8px; font-size: 11px; }
+            #result { background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 4px; padding: 15px; margin-top: 20px; white-space: pre-wrap; font-family: monospace; max-height: 400px; overflow-y: auto; }
         </style>
     </head>
     <body>
         <div class="container">
             <div class="header">
-                <h1>🚗 차량 관리 시스템</h1>
-                <p>Connected Car Service - 차량 등록 및 원격 제어</p>
+                <h1>🚗 Vehicle API Test</h1>
+                <p>Connected Car Service API Testing Interface</p>
             </div>
 
-            <!-- 로그인 섹션 -->
+            <!-- 인증 섹션 -->
             <div class="section">
-                <h3>로그인</h3>
-                <div style="display: flex; gap: 20px; align-items: end">
+                <h3>🔐 Authentication</h3>
+                <div style="display: flex; gap: 15px; align-items: end">
                     <div class="form-group" style="flex: 1">
-                        <label>사용자명</label>
+                        <label>Username</label>
                         <input id="loginUser" placeholder="username" value="user1" />
                     </div>
                     <div class="form-group" style="flex: 1">
-                        <label>비밀번호</label>
+                        <label>Password</label>
                         <input id="loginPass" type="password" placeholder="password" value="user123" />
                     </div>
                     <div class="form-group">
-                        <button class="btn btn-primary" onclick="login()">로그인</button>
-                        <button class="btn btn-warning" onclick="checkAuthStatus()">상태확인</button>
+                        <button class="btn btn-primary" onclick="login()">Login</button>
+                        <button class="btn btn-warning" onclick="checkAuthStatus()">Status</button>
                     </div>
                 </div>
             </div>
 
-            <!-- 차량 등록 섹션 -->
+            <!-- 차량 등록 API 테스트 -->
             <div class="section">
-                <h3>🔍 차량 등록 (VIN 또는 차량번호로 검색)</h3>
-                <div style="display: grid; grid-template-columns: 2fr 2fr 1fr; gap: 15px; align-items: end">
-                    <div class="form-group">
-                        <label>VIN 번호</label>
-                        <input id="searchVin" placeholder="예: KMHL14JA1PA123456" style="text-transform: uppercase" />
+                <h3>🔧 Vehicle Registration API</h3>
+                <div style="display: flex; gap: 10px; align-items: end; flex-wrap: wrap">
+                    <div class="form-group" style="min-width: 200px">
+                        <label>VIN Number</label>
+                        <input id="searchVin" placeholder="KMHL14JA1PA123456" style="text-transform: uppercase" />
+                    </div>
+                    <div class="form-group" style="min-width: 150px">
+                        <label>License Plate</label>
+                        <input id="searchLicense" placeholder="12가3456" />
                     </div>
                     <div class="form-group">
-                        <label>차량번호</label>
-                        <input id="searchLicense" placeholder="예: 12가3456" />
+                        <button class="btn btn-primary" onclick="registerCarBySearch()">Register</button>
+                        <button class="btn btn-success" onclick="loadAvailableCars()">Available Cars</button>
                     </div>
-                    <div class="form-group">
-                        <button class="btn btn-primary" onclick="registerCarBySearch()">차량 등록</button>
-                    </div>
-                </div>
-                <div style="margin-top: 15px">
-                    <button class="btn btn-success" onclick="loadAvailableCars()">등록 가능한 차량 목록 보기</button>
                 </div>
             </div>
 
-            <!-- 등록 가능한 차량 목록 섹션 -->
+            <!-- 등록 가능한 차량 목록 -->
             <div class="section" id="availableCarsSection" style="display: none">
-                <h3>🚗 등록 가능한 차량 목록</h3>
+                <h3>📋 Available Vehicles</h3>
                 <div id="availableCarsList" class="car-grid"></div>
             </div>
 
-            <!-- 사용자 프로필 섹션 -->
+            <!-- 내 차량 목록 API 테스트 -->
             <div class="section">
-                <h3>👤 내 프로필</h3>
-                <div style="display: flex; gap: 20px; margin-bottom: 15px;">
-                    <button class="btn btn-primary" onclick="loadUserProfile()">프로필 조회</button>
-                    <button class="btn btn-success" onclick="showProfileEditForm()">프로필 수정</button>
-                    <button class="btn" style="background: #6f42c1; color: white;" onclick="showCardManagement()">💳 카드 관리</button>
+                <h3>🚗 My Vehicles API</h3>
+                <div style="margin-bottom: 10px;">
+                    <button class="btn btn-primary" onclick="loadMyCars()">Load Vehicles</button>
+                    <button class="btn btn-success" onclick="loadUserProfile()">User Profile</button>
+                    <button class="btn btn-warning" onclick="testVehicleAPI()">Test Vehicle API</button>
+                    <button class="btn btn-danger" onclick="testCarAPIHealth()">Check Car-API</button>
+                    <button class="btn" style="background: #6f42c1; color: white;" onclick="assignTestVehicle()">🚗 Assign Test Vehicle</button>
                 </div>
-                
-                <div id="profileInfo" style="display: none; background: #f8f9fa; padding: 15px; border-radius: 5px; margin-bottom: 15px;">
-                    <div id="profileContent"></div>
-                </div>
-
-                <!-- 프로필 수정 폼 -->
-                <div id="profileEditForm" style="display: none; background: #e3f2fd; padding: 15px; border-radius: 5px; margin-bottom: 15px;">
-                    <h4>프로필 수정</h4>
-                    <div class="form-group">
-                        <label>이름</label>
-                        <input id="editName" placeholder="이름" />
-                    </div>
-                    <div class="form-group">
-                        <label>전화번호</label>
-                        <input id="editPhone" placeholder="010-0000-0000" />
-                    </div>
-                    <div class="form-group">
-                        <label>이메일</label>
-                        <input id="editEmail" type="email" placeholder="email@example.com" />
-                    </div>
-                    <div style="margin-top: 15px;">
-                        <button class="btn btn-success" onclick="updateProfile()">저장</button>
-                        <button class="btn btn-danger" onclick="cancelProfileEdit()">취소</button>
-                    </div>
-                </div>
-
-                <!-- 카드 관리 섹션 -->
-                <div id="cardManagement" style="display: none; background: #fff3cd; padding: 15px; border-radius: 5px; margin-bottom: 15px;">
-                    <h4>💳 등록된 결제 카드</h4>
-                    <div style="margin-bottom: 15px;">
-                        <button class="btn btn-primary" onclick="loadPaymentCards()">카드 목록 새로고침</button>
-                        <button class="btn btn-success" onclick="showAddCardForm()">새 카드 추가</button>
-                    </div>
-                    <div id="cardsList"></div>
-                    
-                    <!-- 카드 추가 폼 -->
-                    <div id="addCardForm" style="display: none; background: #e8f5e8; padding: 15px; border-radius: 5px; margin-top: 15px;">
-                        <h5>새 카드 추가</h5>
-                        <div class="form-group">
-                            <label>카드 번호</label>
-                            <input id="newCardNumber" placeholder="1234567890123456" maxlength="16" />
-                        </div>
-                        <div class="form-group">
-                            <label>카드명</label>
-                            <select id="newCardName">
-                                <option value="현대카드">현대카드</option>
-                                <option value="신한카드">신한카드</option>
-                                <option value="삼성카드">삼성카드</option>
-                                <option value="KB국민카드">KB국민카드</option>
-                                <option value="하나카드">하나카드</option>
-                                <option value="우리카드">우리카드</option>
-                                <option value="NH농협카드">NH농협카드</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label>유효기간 (MM/YY)</label>
-                            <input id="newCardExpiry" placeholder="12/25" maxlength="5" />
-                        </div>
-                        <div style="margin-top: 15px;">
-                            <button class="btn btn-success" onclick="addPaymentCard()">카드 추가</button>
-                            <button class="btn btn-danger" onclick="cancelAddCard()">취소</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- 내 차량 목록 섹션 -->
-            <div class="section">
-                <h3>내 차량 목록</h3>
-                <button class="btn btn-primary" onclick="loadMyCars()">새로고침</button>
                 <div id="carsList" class="car-grid"></div>
             </div>
-
-            <!-- 관리자 전용 기능들은 별도 관리자 VM에서 개발 예정 -->
 
             <!-- 결과 표시 영역 -->
             <div id="result"></div>
@@ -300,8 +109,10 @@
                 document.getElementById('result').textContent = JSON.stringify(data, null, 2);
             }
 
-            // 로그인
+            // 로그인 API 테스트
             async function login() {
+                log({ message: 'Testing Login API...' });
+                
                 const res = await fetch(`${API}/api/auth/login`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -320,8 +131,10 @@
                 }
             }
 
-            // 인증 상태 확인
+            // 인증 상태 API 테스트
             async function checkAuthStatus() {
+                log({ message: 'Testing Auth Status API...' });
+                
                 const res = await fetch(`${API}/api/auth/status`, { credentials: 'include' });
                 const data = await res.json();
                 log(data);
@@ -331,19 +144,21 @@
                 }
             }
 
-            // VIN 또는 차량번호로 차량 등록
+            // 차량 등록 API 테스트
             async function registerCarBySearch() {
                 const vin = document.getElementById('searchVin').value.trim();
                 const license = document.getElementById('searchLicense').value.trim();
 
                 if (!vin && !license) {
-                    log({ error: 'VIN 번호 또는 차량번호를 입력해주세요.' });
+                    log({ error: 'VIN number or license plate required' });
                     return;
                 }
 
                 const payload = {};
                 if (vin) payload.vin = vin;
                 if (license) payload.license_plate = license;
+
+                log({ message: 'Testing Vehicle Registration API...', payload });
 
                 const res = await fetch(`${API}/api/cars/register`, {
                     method: 'POST',
@@ -356,126 +171,177 @@
 
                 if (res.ok) {
                     loadMyCars();
-                    loadAvailableCars(); // 등록 가능한 차량 목록도 새로고침
-                    // 입력 필드 초기화
+                    loadAvailableCars();
                     document.getElementById('searchVin').value = '';
                     document.getElementById('searchLicense').value = '';
                 }
             }
 
-            // 차량 ID로 직접 등록 (등록 가능한 차량 목록에서 선택 시)
+            // 차량 ID로 직접 등록
             async function registerCarById(carId) {
+                log({ message: 'Testing Vehicle Registration by ID...', car_id: carId });
+                
                 const res = await fetch(`${API}/api/cars/register`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     credentials: 'include',
-                    body: JSON.stringify({ car_id: carId }),
+                    body: JSON.stringify({ model_id: carId }),
                 });
                 const data = await res.json();
                 log(data);
 
                 if (res.ok) {
                     loadMyCars();
-                    loadAvailableCars(); // 등록 가능한 차량 목록도 새로고침
+                    loadAvailableCars();
                 }
             }
 
-            // 등록 가능한 차량 목록 조회
+            // 등록 가능한 차량 목록 API 테스트 (스펙 조회로 대체)
             async function loadAvailableCars() {
-                const res = await fetch(`${API}/api/cars/available`, { credentials: 'include' });
+                log({ message: 'Testing Vehicle Specs API (Available Cars)...' });
+                
+                const res = await fetch(`${API}/api/vehicle-specs`, { credentials: 'include' });
                 const data = await res.json();
 
                 if (res.ok) {
-                    displayAvailableCars(data.cars);
+                    displayAvailableCars(data.data);
                     document.getElementById('availableCarsSection').style.display = 'block';
-                    log({ message: `${data.cars.length}대의 등록 가능한 차량을 조회했습니다.`, cars: data.cars });
+                    log({ message: `Found ${data.data.length} vehicle specifications`, specs: data.data });
                 } else {
                     log(data);
                 }
             }
 
-            // 내 차량 목록 조회
+            // 내 차량 목록 API 테스트
             async function loadMyCars() {
-                const res = await fetch(`${API}/api/cars`, { credentials: 'include' });
-                const data = await res.json();
+                log({ message: 'Testing My Vehicles API...' });
+                
+                try {
+                    const res = await fetch(`${API}/api/cars`, { credentials: 'include' });
+                    const data = await res.json();
 
-                if (res.ok) {
-                    displayCars(data.cars, 'carsList');
-                    log({ message: `${data.cars.length}대의 차량을 조회했습니다.`, cars: data.cars });
-                } else {
-                    log(data);
+                    log({ 
+                        message: 'API Response received',
+                        status: res.status,
+                        ok: res.ok,
+                        data: data 
+                    });
+
+                    if (res.ok) {
+                        displayCars(data.data || [], 'carsList');
+                        log({ message: `Found ${(data.data || []).length} owned vehicles`, response: data });
+                    } else {
+                        log({ error: 'API call failed', status: res.status, data });
+                    }
+                } catch (error) {
+                    log({ error: 'Network error', message: error.message });
                 }
             }
 
-            // 관리자 전용 함수들 제거됨 - 별도 관리자 VM에서 구현 예정
-
-            // 차량 제어
+            // 차량 제어 API 테스트
             async function controlCar(carId, action) {
-                const res = await fetch(`${API}/api/car/${carId}/command?action=${action}`, {
+                log({ message: 'Testing Vehicle Control API...', car_id: carId, action });
+                
+                const res = await fetch(`${API}/api/vehicle/${carId}/control`, {
                     method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
                     credentials: 'include',
+                    body: JSON.stringify({ command: action })
                 });
                 const data = await res.json();
                 log(data);
 
                 if (res.ok) {
-                    loadMyCars(); // 제어 후 상태 새로고침
+                    loadMyCars();
                 }
             }
 
-            // 차량 상태 조회
+            // 차량 상태 API 테스트
             async function getCarStatus(carId) {
-                const res = await fetch(`${API}/api/car/${carId}/status`, { credentials: 'include' });
+                log({ message: 'Testing Vehicle Status API...', car_id: carId });
+                
+                const res = await fetch(`${API}/api/vehicle/${carId}/status`, { credentials: 'include' });
                 const data = await res.json();
                 log(data);
             }
 
-            // 등록 가능한 차량 목록 표시
-            function displayAvailableCars(cars) {
+            // API 테스트 함수들
+            async function testVehicleAPI() {
+                log({ message: 'Testing all Vehicle APIs...' });
+                await loadMyCars();
+                await loadAvailableCars();
+            }
+            
+            async function testCarAPIHealth() {
+                log({ message: 'Testing Car-API Health...' });
+                
+                try {
+                    const res = await fetch(`${API}/api/car-api/health`, { credentials: 'include' });
+                    const data = await res.json();
+                    log(data);
+                } catch (error) {
+                    log({ error: 'Car-API Health check failed', message: error.message });
+                }
+            }
+            
+            async function loadUserProfile() {
+                log({ message: 'Testing User Profile API...' });
+                const res = await fetch(`${API}/api/user/profile`, { credentials: 'include' });
+                const data = await res.json();
+                log(data);
+            }
+
+            // 테스트용 차량 할당
+            async function assignTestVehicle() {
+                log({ message: 'Assigning test vehicle to current user...' });
+                
+                try {
+                    const res = await fetch(`${API}/api/cars/assign-test-vehicle`, { 
+                        method: 'POST',
+                        credentials: 'include' 
+                    });
+                    const data = await res.json();
+
+                    log(data);
+
+                    if (res.ok) {
+                        // 할당 성공 후 차량 목록 새로고침
+                        loadMyCars();
+                    }
+                } catch (error) {
+                    log({ error: 'Test vehicle assignment failed', message: error.message });
+                }
+            }
+
+            // 차량 스펙 목록 표시
+            function displayAvailableCars(specs) {
                 const container = document.getElementById('availableCarsList');
-                if (!cars || cars.length === 0) {
-                    container.innerHTML = '<p>등록 가능한 차량이 없습니다.</p>';
+                if (!specs || specs.length === 0) {
+                    container.innerHTML = '<p>No vehicle specifications</p>';
                     return;
                 }
 
-                container.innerHTML = cars
-                    .map((car) => {
-                        const location = car.location || {};
-
-                        return `
+                container.innerHTML = specs
+                    .map((spec) => `
                     <div class="car-card" style="border: 2px dashed #28a745;">
-                        <h4>현대 ${car.model} (${car.year}) <span style="color: #28a745;">✨ 등록 가능</span></h4>
-                        <div class="car-info">차량 ID: ${car.id}</div>
-                        <div class="car-info">VIN: ${car.vin || 'N/A'}</div>
-                        <div class="car-info">차량번호: ${car.license_plate || '미등록'}</div>
-                        <div class="car-info">연료: ${car.fuel}% | 배터리: ${car.battery}V (${car.voltage || '12V'})</div>
-                        <div class="location-info">📍 ${location.lat ? `위도: ${location.lat}, 경도: ${location.lng}` : '위치 정보 없음'}</div>
-                        ${car.specs ? `
-                        <div class="specs-info" style="margin-top: 10px; padding: 8px; background: #f8f9fa; border-radius: 4px; font-size: 12px;">
-                            <strong>📋 차량 스펙</strong><br>
-                            • 분류: ${car.specs.category} (${car.specs.segment})<br>
-                            • 엔진: ${car.specs.engine_type} ${car.specs.displacement || ''}<br>
-                            • 출력: ${car.specs.power}<br>
-                            ${car.specs.fuel_efficiency ? `• 연비: ${car.specs.fuel_efficiency}` : ''}
-                            ${car.specs.range ? `• 주행거리: ${car.specs.range}` : ''}
-                        </div>` : ''}
-                        
-                        <div class="controls" style="margin-top: 15px;">
-                            <button class="btn btn-success" onclick="registerCarById(${car.id})" style="width: 100%; padding: 10px;">
-                                🚗 내 차량으로 등록하기
-                            </button>
+                        <h4>${spec.model} <span style="color: #28a745;">✨ Available</span></h4>
+                        <div class="car-info">Spec ID: ${spec.id}</div>
+                        <div class="car-info">Category: ${spec.category || 'N/A'}</div>
+                        <div class="car-info">Engine: ${spec.engine_type || 'N/A'}</div>
+                        <div class="car-info">Power: ${spec.power || 'N/A'}</div>
+                        <div class="controls" style="margin-top: 10px;">
+                            <button class="btn btn-success" onclick="registerCarById(${spec.id})">Register Vehicle</button>
                         </div>
                     </div>
-                `;
-                    })
+                `)
                     .join('');
             }
 
-            // 차량 목록 표시
+            // 차량 목록 표시 (간플 버전)
             function displayCars(cars, containerId, showOwner = false) {
                 const container = document.getElementById(containerId);
                 if (!cars || cars.length === 0) {
-                    container.innerHTML = '<p>등록된 차량이 없습니다.</p>';
+                    container.innerHTML = '<p>No registered vehicles</p>';
                     return;
                 }
 
@@ -483,511 +349,32 @@
                     .map((car) => {
                         const engineClass = car.engine_state === 'on' ? 'status-on' : 'status-off';
                         const doorClass = car.door_state === 'locked' ? 'status-locked' : 'status-unlocked';
-                        const location = car.location || {};
 
                         return `
                     <div class="car-card">
-                        <h4>현대 ${car.model} (${car.year})</h4>
-                        <div class="car-info">차량 ID: ${car.id}</div>
-                        ${showOwner ? `<div class="car-info">소유자 ID: ${car.owner_id}</div>` : ''}
+                        <h4>${car.model} (${car.year || 'Unknown'})</h4>
+                        <div class="car-info">ID: ${car.id}</div>
+                        ${showOwner ? `<div class="car-info">Owner ID: ${car.owner_id}</div>` : ''}
                         <div class="car-info">VIN: ${car.vin || 'N/A'}</div>
-                        <div class="car-info">차량번호: ${car.license_plate || '미등록'}</div>
-                        <div class="car-info">연료: ${car.fuel}% | 배터리: ${car.battery}V (${car.voltage || '12V'})</div>
-                        <div class="location-info">📍 ${location.lat ? `위도: ${location.lat}, 경도: ${location.lng}` : '위치 정보 없음'}</div>
-                        ${car.specs ? `
-                        <div class="specs-info" style="margin-top: 10px; padding: 8px; background: #f8f9fa; border-radius: 4px; font-size: 12px;">
-                            <strong>📋 차량 스펙</strong><br>
-                            • 분류: ${car.specs.category} (${car.specs.segment})<br>
-                            • 엔진: ${car.specs.engine_type} ${car.specs.displacement || ''}<br>
-                            • 출력: ${car.specs.power}<br>
-                            ${car.specs.fuel_efficiency ? `• 연비: ${car.specs.fuel_efficiency}` : ''}
-                            ${car.specs.range ? `• 주행거리: ${car.specs.range}` : ''}
-                        </div>` : ''}
+                        <div class="car-info">License: ${car.license_plate || 'Unregistered'}</div>
+                        <div class="car-info">Fuel: ${car.fuel || 0}% | Battery: ${car.battery || 12}V</div>
                         
                         <div class="car-status">
-                            <span class="status-badge ${engineClass}">시동 ${car.engine_state === 'on' ? 'ON' : 'OFF'}</span>
-                            <span class="status-badge ${doorClass}">도어 ${car.door_state === 'locked' ? '잠금' : '열림'}</span>
+                            <span class="status-badge ${engineClass}">Engine ${car.engine_state === 'on' ? 'ON' : 'OFF'}</span>
+                            <span class="status-badge ${doorClass}">Door ${car.door_state === 'locked' ? 'Locked' : 'Open'}</span>
                         </div>
-                        
-                        ${car.climate ? `
-                        <div class="climate-info" style="margin: 10px 0; padding: 8px; background: #e3f2fd; border-radius: 4px; font-size: 12px;">
-                            <strong>❄️ 공조기 상태</strong><br>
-                            • AC: ${car.climate.ac_state === 'on' ? '🟢 ON' : '⚪ OFF'} | 히터: ${car.climate.heater_state === 'on' ? '🟢 ON' : '⚪ OFF'}<br>
-                            • 설정온도: ${car.climate.target_temp}°C | 현재온도: ${car.climate.current_temp}°C<br>
-                            • 팬속도: ${car.climate.fan_speed}/7 | 자동모드: ${car.climate.auto_mode ? '🟢 ON' : '⚪ OFF'}
-                        </div>
-                        ` : ''}
-                        
-                        ${car.tire_pressure ? `
-                        <div class="tire-info" style="margin: 10px 0; padding: 8px; background: #fff3cd; border-radius: 4px; font-size: 12px;">
-                            <strong>🛞 타이어 압력 (${car.tire_pressure.unit || 'bar'})</strong><br>
-                            • 앞좌: ${car.tire_pressure.front_left} | 앞우: ${car.tire_pressure.front_right}<br>
-                            • 뒤좌: ${car.tire_pressure.rear_left} | 뒤우: ${car.tire_pressure.rear_right}<br>
-                            • 권장: ${car.tire_pressure.recommended} | 경고: ${car.tire_pressure.warning_threshold} 이하<br>
-                            ${car.tire_pressure.front_left < car.tire_pressure.warning_threshold || 
-                              car.tire_pressure.front_right < car.tire_pressure.warning_threshold ||
-                              car.tire_pressure.rear_left < car.tire_pressure.warning_threshold ||
-                              car.tire_pressure.rear_right < car.tire_pressure.warning_threshold ? 
-                              '<span style="color: red; font-weight: bold;">⚠️ 타이어 압력 부족!</span>' : 
-                              '<span style="color: green;">✅ 압력 정상</span>'}
-                        </div>
-                        ` : ''}
-                        
-                        ${car.odometer ? `
-                        <div class="odometer-info" style="margin: 10px 0; padding: 8px; background: #f8f9fa; border-radius: 4px; font-size: 12px;">
-                            <strong>📊 주행 정보</strong><br>
-                            • 총 주행거리: ${car.odometer.total_km.toLocaleString()}km<br>
-                            • Trip A: ${car.odometer.trip_a_km}km | Trip B: ${car.odometer.trip_b_km}km<br>
-                            • 최종 업데이트: ${new Date(car.odometer.last_updated).toLocaleDateString()}
-                        </div>
-                        ` : ''}
                         
                         <div class="controls">
-                            <button class="btn btn-success" onclick="controlCar(${car.id}, 'engine_on')">시동 ON</button>
-                            <button class="btn btn-danger" onclick="controlCar(${car.id}, 'engine_off')">시동 OFF</button>
-                            <button class="btn btn-warning" onclick="controlCar(${car.id}, 'door_lock')">도어 잠금</button>
-                            <button class="btn btn-primary" onclick="controlCar(${car.id}, 'door_unlock')">도어 열기</button>
-                            <button class="btn" style="background:#6c757d;color:white;" onclick="getCarStatus(${car.id})">상태 조회</button>
-                        </div>
-                        
-                        <div class="location-controls" style="margin-top: 10px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                            <button class="btn" style="background: #ffc107; color: black; font-weight: bold;" onclick="hornAndLocate(${car.id})">🔊 경적 & 위치</button>
-                            <button class="btn" style="background: #20c997; color: white;" onclick="getLocation(${car.id})">📍 위치 조회</button>
-                        </div>
-                        
-                        <div class="climate-controls" style="margin-top: 10px; padding: 8px; background: #f0f8ff; border-radius: 4px;">
-                            <strong>❄️ 공조기 제어</strong>
-                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 5px; margin-top: 5px;">
-                                <button class="btn" style="font-size: 11px; padding: 4px 8px; background: #17a2b8; color: white;" onclick="controlCar(${car.id}, 'ac_on')">AC ON</button>
-                                <button class="btn" style="font-size: 11px; padding: 4px 8px; background: #6c757d; color: white;" onclick="controlCar(${car.id}, 'ac_off')">AC OFF</button>
-                                <button class="btn" style="font-size: 11px; padding: 4px 8px; background: #fd7e14; color: white;" onclick="controlCar(${car.id}, 'heater_on')">히터 ON</button>
-                                <button class="btn" style="font-size: 11px; padding: 4px 8px; background: #6c757d; color: white;" onclick="controlCar(${car.id}, 'heater_off')">히터 OFF</button>
-                            </div>
-                            <div style="margin-top: 8px;">
-                                <label style="font-size: 11px;">온도 설정:</label>
-                                <select id="temp_${car.id}" style="font-size: 11px; margin: 0 5px;" onchange="setTemperature(${car.id}, this.value)">
-                                    ${Array.from({length: 15}, (_, i) => 16 + i).map(temp => 
-                                        `<option value="${temp}" ${car.climate && car.climate.target_temp === temp ? 'selected' : ''}>${temp}°C</option>`
-                                    ).join('')}
-                                </select>
-                                <select id="fan_${car.id}" style="font-size: 11px;" onchange="setFanSpeed(${car.id}, this.value)">
-                                    ${Array.from({length: 8}, (_, i) => i).map(speed => 
-                                        `<option value="${speed}" ${car.climate && car.climate.fan_speed === speed ? 'selected' : ''}>팬 ${speed}</option>`
-                                    ).join('')}
-                                </select>
-                            </div>
-                        </div>
-                        
-                        <div class="tire-controls" style="margin-top: 10px;">
-                            <button class="btn" style="background: #dc3545; color: white; font-size: 11px; padding: 6px 8px; width: 100%;" onclick="checkTirePressure(${car.id})">🛞 타이어 압력 점검</button>
-                        </div>
-                        
-                        <div class="driving-controls" style="margin-top: 10px; display: grid; grid-template-columns: 1fr 1fr; gap: 5px;">
-                            <button class="btn" style="background: #28a745; color: white; font-size: 11px; padding: 6px 8px;" onclick="getDrivingStatistics(${car.id})">📊 주행통계</button>
-                            <button class="btn" style="background: #007bff; color: white; font-size: 11px; padding: 6px 8px;" onclick="getTripHistory(${car.id})">📋 주행이력</button>
+                            <button class="btn btn-success" onclick="controlCar(${car.id}, 'engine_start')">Start</button>
+                            <button class="btn btn-danger" onclick="controlCar(${car.id}, 'engine_stop')">Stop</button>
+                            <button class="btn btn-warning" onclick="controlCar(${car.id}, 'door_lock')">Lock</button>
+                            <button class="btn btn-primary" onclick="controlCar(${car.id}, 'door_unlock')">Unlock</button>
+                            <button class="btn" style="background:#6c757d;color:white;" onclick="getCarStatus(${car.id})">Status</button>
                         </div>
                     </div>
                 `;
                     })
                     .join('');
-            }
-
-            // 온도 설정 함수
-            function setTemperature(carId, temperature) {
-                controlCarWithValue(carId, 'temp_set', temperature);
-            }
-
-            // 팬 속도 설정 함수  
-            function setFanSpeed(carId, speed) {
-                controlCarWithValue(carId, 'fan_speed', speed);
-            }
-
-            // 값이 있는 차량 제어 함수
-            async function controlCarWithValue(carId, action, value) {
-                try {
-                    const response = await fetch(`${API}/api/car/${carId}/command?action=${action}&value=${value}`, {
-                        method: 'POST',
-                        credentials: 'include'
-                    });
-
-                    const data = await response.json();
-                    if (response.ok) {
-                        log(data);
-                        // 성공 후 차량 목록 새로고침
-                        loadMyCars();
-                    } else {
-                        log(data);
-                    }
-                } catch (error) {
-                    log({ error: error.message });
-                }
-            }
-
-            // 경적 + 위치 조회 함수
-            async function hornAndLocate(carId) {
-                try {
-                    const response = await fetch(`${API}/api/car/${carId}/horn`, {
-                        method: 'POST',
-                        credentials: 'include'
-                    });
-
-                    const data = await response.json();
-                    if (response.ok) {
-                        log(data);
-                        // 경적 후 차량 목록 새로고침 (위치 정보 업데이트 반영)
-                        loadMyCars();
-                    } else {
-                        log(data);
-                    }
-                } catch (error) {
-                    log({ error: error.message });
-                }
-            }
-
-            // 위치 조회 함수
-            async function getLocation(carId) {
-                try {
-                    const response = await fetch(`${API}/api/car/${carId}/location`, {
-                        method: 'GET',
-                        credentials: 'include'
-                    });
-
-                    const data = await response.json();
-                    if (response.ok) {
-                        log(data);
-                        // 위치 조회 후 차량 목록 새로고침 (위치 정보 업데이트 반영)
-                        loadMyCars();
-                    } else {
-                        log(data);
-                    }
-                } catch (error) {
-                    log({ error: error.message });
-                }
-            }
-
-            // 타이어 압력 체크 함수
-            async function checkTirePressure(carId) {
-                try {
-                    const response = await fetch(`${API}/api/car/${carId}/tire-pressure`, {
-                        method: 'GET',
-                        credentials: 'include'
-                    });
-
-                    const data = await response.json();
-                    if (response.ok) {
-                        log(data);
-                        // 타이어 압력 체크 후 차량 목록 새로고침
-                        loadMyCars();
-                    } else {
-                        log(data);
-                    }
-                } catch (error) {
-                    log({ error: error.message });
-                }
-            }
-
-            // 타이어 압력 시뮬레이션 함수
-            async function simulateTirePressure(carId) {
-                try {
-                    const response = await fetch(`${API}/api/car/${carId}/tire-pressure/simulate`, {
-                        method: 'POST',
-                        credentials: 'include'
-                    });
-
-                    const data = await response.json();
-                    if (response.ok) {
-                        log(data);
-                        // 시뮬레이션 후 차량 목록 새로고침
-                        loadMyCars();
-                    } else {
-                        log(data);
-                    }
-                } catch (error) {
-                    log({ error: error.message });
-                }
-            }
-
-            // 주행 통계 조회 함수
-            async function getDrivingStatistics(carId) {
-                try {
-                    const response = await fetch(`${API}/api/car/${carId}/driving-statistics`, {
-                        method: 'GET',
-                        credentials: 'include'
-                    });
-
-                    const data = await response.json();
-                    if (response.ok) {
-                        log(data);
-                    } else {
-                        log(data);
-                    }
-                } catch (error) {
-                    log({ error: error.message });
-                }
-            }
-
-            // 주행 이력 조회 함수
-            async function getTripHistory(carId) {
-                try {
-                    const response = await fetch(`${API}/api/car/${carId}/trip-history?limit=5`, {
-                        method: 'GET',
-                        credentials: 'include'
-                    });
-
-                    const data = await response.json();
-                    if (response.ok) {
-                        log(data);
-                    } else {
-                        log(data);
-                    }
-                } catch (error) {
-                    log({ error: error.message });
-                }
-            }
-
-            // 주행 시뮬레이션 함수
-            async function simulateTrip(carId) {
-                try {
-                    const response = await fetch(`${API}/api/car/${carId}/simulate-trip`, {
-                        method: 'POST',
-                        credentials: 'include'
-                    });
-
-                    const data = await response.json();
-                    if (response.ok) {
-                        log(data);
-                        // 시뮬레이션 후 차량 목록 새로고침 (오도미터, 연료 등 업데이트)
-                        loadMyCars();
-                    } else {
-                        log(data);
-                    }
-                } catch (error) {
-                    log({ error: error.message });
-                }
-            }
-
-            // 사용자 프로필 조회
-            async function loadUserProfile() {
-                try {
-                    const response = await fetch(`${API}/api/auth/profile`, {
-                        method: 'GET',
-                        credentials: 'include'
-                    });
-
-                    const data = await response.json();
-                    if (response.ok) {
-                        displayUserProfile(data);
-                        document.getElementById('profileInfo').style.display = 'block';
-                        log(data);
-                    } else {
-                        log(data);
-                    }
-                } catch (error) {
-                    log({ error: error.message });
-                }
-            }
-
-            // 프로필 표시 함수
-            function displayUserProfile(profile) {
-                const content = document.getElementById('profileContent');
-                content.innerHTML = `
-                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
-                        <div><strong>사용자명:</strong> ${profile.username}</div>
-                        <div><strong>이메일:</strong> ${profile.email || '미설정'}</div>
-                        <div><strong>이름:</strong> ${profile.name || '미설정'}</div>
-                        <div><strong>전화번호:</strong> ${profile.phone || '미설정'}</div>
-                        <div><strong>등록 차량:</strong> ${profile.owned_cars ? profile.owned_cars.length : 0}대</div>
-                        <div><strong>가입일:</strong> ${new Date(profile.created_at).toLocaleDateString()}</div>
-                    </div>
-                `;
-            }
-
-            // 프로필 수정 폼 표시
-            function showProfileEditForm() {
-                loadUserProfile();
-                document.getElementById('profileEditForm').style.display = 'block';
-                
-                // 현재 정보로 폼 채우기
-                setTimeout(async () => {
-                    try {
-                        const response = await fetch(`${API}/api/auth/profile`, { credentials: 'include' });
-                        const profile = await response.json();
-                        if (response.ok) {
-                            document.getElementById('editName').value = profile.name || '';
-                            document.getElementById('editPhone').value = profile.phone || '';
-                            document.getElementById('editEmail').value = profile.email || '';
-                        }
-                    } catch (error) {
-                        console.error('프로필 정보 로드 실패:', error);
-                    }
-                }, 100);
-            }
-
-            // 프로필 업데이트
-            async function updateProfile() {
-                try {
-                    const name = document.getElementById('editName').value;
-                    const phone = document.getElementById('editPhone').value;
-                    const email = document.getElementById('editEmail').value;
-
-                    const response = await fetch(`${API}/api/auth/profile`, {
-                        method: 'PUT',
-                        headers: { 'Content-Type': 'application/json' },
-                        credentials: 'include',
-                        body: JSON.stringify({ name, phone, email })
-                    });
-
-                    const data = await response.json();
-                    if (response.ok) {
-                        log(data);
-                        loadUserProfile(); // 업데이트된 프로필 다시 로드
-                        cancelProfileEdit(); // 폼 숨기기
-                    } else {
-                        log(data);
-                    }
-                } catch (error) {
-                    log({ error: error.message });
-                }
-            }
-
-            // 프로필 수정 취소
-            function cancelProfileEdit() {
-                document.getElementById('profileEditForm').style.display = 'none';
-            }
-
-            // 카드 관리 표시
-            function showCardManagement() {
-                document.getElementById('cardManagement').style.display = 'block';
-                loadPaymentCards();
-            }
-
-            // 결제 카드 목록 로드
-            async function loadPaymentCards() {
-                try {
-                    const response = await fetch(`${API}/api/auth/cards`, {
-                        method: 'GET',
-                        credentials: 'include'
-                    });
-
-                    const data = await response.json();
-                    if (response.ok) {
-                        displayPaymentCards(data.cards);
-                        log(data);
-                    } else {
-                        log(data);
-                    }
-                } catch (error) {
-                    log({ error: error.message });
-                }
-            }
-
-            // 결제 카드 표시
-            function displayPaymentCards(cards) {
-                const container = document.getElementById('cardsList');
-                if (!cards || cards.length === 0) {
-                    container.innerHTML = '<p>등록된 카드가 없습니다.</p>';
-                    return;
-                }
-
-                container.innerHTML = cards.map(card => `
-                    <div style="background: white; border: 1px solid #ddd; border-radius: 8px; padding: 15px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;">
-                        <div>
-                            <div style="font-weight: bold;">${card.card_name} ${card.is_default ? '⭐ (기본카드)' : ''}</div>
-                            <div style="color: #666; font-size: 14px;">${card.card_number}</div>
-                            <div style="color: #888; font-size: 12px;">유효기간: ${card.expiry_date}</div>
-                        </div>
-                        <div>
-                            ${!card.is_default ? `<button class="btn" style="background: #ffc107; color: black; font-size: 12px; margin-right: 5px;" onclick="setDefaultCard(${card.id})">기본설정</button>` : ''}
-                            <button class="btn btn-danger" style="font-size: 12px;" onclick="removePaymentCard(${card.id})">삭제</button>
-                        </div>
-                    </div>
-                `).join('');
-            }
-
-            // 카드 추가 폼 표시
-            function showAddCardForm() {
-                document.getElementById('addCardForm').style.display = 'block';
-            }
-
-            // 새 카드 추가
-            async function addPaymentCard() {
-                try {
-                    const card_number = document.getElementById('newCardNumber').value;
-                    const card_name = document.getElementById('newCardName').value;
-                    const expiry_date = document.getElementById('newCardExpiry').value;
-
-                    if (!card_number || !card_name || !expiry_date) {
-                        log({ error: '모든 필드를 입력해주세요.' });
-                        return;
-                    }
-
-                    const response = await fetch(`${API}/api/auth/cards`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        credentials: 'include',
-                        body: JSON.stringify({ card_number, card_name, expiry_date })
-                    });
-
-                    const data = await response.json();
-                    if (response.ok) {
-                        log(data);
-                        loadPaymentCards(); // 카드 목록 새로고침
-                        cancelAddCard(); // 폼 숨기기
-                    } else {
-                        log(data);
-                    }
-                } catch (error) {
-                    log({ error: error.message });
-                }
-            }
-
-            // 카드 추가 취소
-            function cancelAddCard() {
-                document.getElementById('addCardForm').style.display = 'none';
-                document.getElementById('newCardNumber').value = '';
-                document.getElementById('newCardExpiry').value = '';
-            }
-
-            // 카드 삭제
-            async function removePaymentCard(cardId) {
-                if (!confirm('이 카드를 삭제하시겠습니까?')) return;
-
-                try {
-                    const response = await fetch(`${API}/api/auth/cards/${cardId}`, {
-                        method: 'DELETE',
-                        credentials: 'include'
-                    });
-
-                    const data = await response.json();
-                    if (response.ok) {
-                        log(data);
-                        loadPaymentCards(); // 카드 목록 새로고침
-                    } else {
-                        log(data);
-                    }
-                } catch (error) {
-                    log({ error: error.message });
-                }
-            }
-
-            // 기본 카드 설정
-            async function setDefaultCard(cardId) {
-                try {
-                    const response = await fetch(`${API}/api/auth/cards/${cardId}/default`, {
-                        method: 'PUT',
-                        credentials: 'include'
-                    });
-
-                    const data = await response.json();
-                    if (response.ok) {
-                        log(data);
-                        loadPaymentCards(); // 카드 목록 새로고침
-                    } else {
-                        log(data);
-                    }
-                } catch (error) {
-                    log({ error: error.message });
-                }
             }
 
             // 페이지 로드 시 인증 상태 확인

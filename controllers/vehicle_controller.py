@@ -75,10 +75,29 @@ def get_my_cars():
         # 사용자 소유 차량 목록 조회
         cars = Car.get_by_owner(user_id)
         
+        # 디버깅: 전체 차량 수와 미등록 차량 수도 함께 반환
+        all_cars_query = "SELECT COUNT(*) as total FROM cars"
+        unowned_cars_query = "SELECT COUNT(*) as unowned FROM cars WHERE owner_id IS NULL"
+        user_cars_query = "SELECT COUNT(*) as user_cars FROM cars WHERE owner_id = %s"
+        specific_cars_query = "SELECT id, owner_id, license_plate FROM cars WHERE owner_id = %s LIMIT 3"
+        
+        total_cars = DatabaseHelper.execute_query(all_cars_query)[0]['total']
+        unowned_cars = DatabaseHelper.execute_query(unowned_cars_query)[0]['unowned']
+        user_car_count = DatabaseHelper.execute_query(user_cars_query, (user_id,))[0]['user_cars']
+        specific_cars = DatabaseHelper.execute_query(specific_cars_query, (user_id,))
+        
         return jsonify({
             'success': True,
             'data': cars,
-            'count': len(cars)
+            'count': len(cars),
+            'debug': {
+                'user_id': user_id,
+                'total_cars_in_db': total_cars,
+                'unowned_cars': unowned_cars,
+                'user_car_count_from_db': user_car_count,
+                'specific_user_cars': specific_cars,
+                'cars_from_model': len(cars) if cars else 0
+            }
         })
         
     except Exception as e:
@@ -269,22 +288,6 @@ def get_vehicle_spec_by_id(spec_id):
     except Exception as e:
         return jsonify({'error': f'차량 스펙 조회 실패: {str(e)}'}), 500
 
-# 미등록 차량 목록 조회 API (관리자용 - 주석 처리)
-# @vehicle_bp.route('/api/cars/unregistered', methods=['GET'])
-# @login_required
-# def get_unregistered_cars():
-#     """미등록 차량 목록 조회 (관리자 전용)"""
-#     # 관리자 기능은 별도 관리자 VM에서 구현
-#     pass
-
-# 차량 소유권 이전 API (관리자용 - 주석 처리)
-# @vehicle_bp.route('/api/car/<int:car_id>/transfer', methods=['POST'])
-# @login_required
-# def transfer_car_ownership(car_id):
-#     """차량 소유권 이전 (관리자 전용)"""
-#     # 관리자 기능은 별도 관리자 VM에서 구현
-#     pass
-
 # 차량 삭제 API (MySQL 기반)
 @vehicle_bp.route('/api/car/<int:car_id>', methods=['DELETE'])
 @login_required
@@ -320,3 +323,36 @@ def delete_car(car_id):
         
     except Exception as e:
         return jsonify({'error': f'차량 등록 해제 실패: {str(e)}'}), 500
+
+# 테스트용: 미등록 차량을 현재 사용자에게 할당
+@vehicle_bp.route('/api/cars/assign-test-vehicle', methods=['POST'])
+@login_required
+def assign_test_vehicle():
+    """테스트용: 첫 번째 미등록 차량을 현재 사용자에게 할당"""
+    try:
+        user_id = session.get('user_id')
+        
+        # 미등록 차량 중 첫 번째 조회
+        unowned_query = "SELECT id FROM cars WHERE owner_id IS NULL LIMIT 1"
+        unowned_cars = DatabaseHelper.execute_query(unowned_query)
+        
+        if not unowned_cars:
+            return jsonify({'error': '할당 가능한 미등록 차량이 없습니다'}), 404
+        
+        car_id = unowned_cars[0]['id']
+        
+        # 차량을 현재 사용자에게 할당
+        assign_query = "UPDATE cars SET owner_id = %s WHERE id = %s"
+        DatabaseHelper.execute_update(assign_query, (user_id, car_id))
+        
+        # 할당된 차량 정보 조회
+        assigned_car = Car.get_by_id(car_id)
+        
+        return jsonify({
+            'success': True,
+            'message': f'차량 ID {car_id}가 사용자 ID {user_id}에게 할당되었습니다',
+            'data': assigned_car
+        })
+        
+    except Exception as e:
+        return jsonify({'error': f'테스트 차량 할당 실패: {str(e)}'}), 500

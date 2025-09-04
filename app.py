@@ -35,10 +35,6 @@ app.register_blueprint(vehicle_api_bp)
 
 @app.route('/')
 def hello():
-    return render_template('1.html')
-
-@app.route('/vehicles')
-def vehicles_page():
     return render_template('vehicles.html')
 
 @app.route('/api/health', methods=['GET'])

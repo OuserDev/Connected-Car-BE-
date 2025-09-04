@@ -38,15 +38,30 @@ class Car:
     @staticmethod
     def get_by_owner(owner_id: int) -> List[Dict]:
         """소유자별 차량 목록 조회"""
-        query = """
-        SELECT c.*, vs.model, vs.category, vs.engine_type, vs.voltage_system,
-               vs.fuel_efficiency, vs.electric_range, vs.power_output
-        FROM cars c
-        LEFT JOIN vehicle_specs vs ON c.model_id = vs.id
-        WHERE c.owner_id = %s
-        ORDER BY c.created_at DESC
-        """
-        return DatabaseHelper.execute_query(query, (owner_id,))
+        try:
+            # 가장 단순한 쿼리로 먼저 테스트
+            simple_query = "SELECT * FROM cars WHERE owner_id = %s"
+            simple_result = DatabaseHelper.execute_query(simple_query, (owner_id,))
+            print(f"DEBUG: Simple query result for owner_id {owner_id}: {simple_result}")
+            
+            # 복잡한 쿼리 (voltage_system 제거)
+            query = """
+            SELECT c.id, c.owner_id, c.model_id, c.license_plate, c.vin, c.created_at,
+                   COALESCE(vs.model, 'Unknown') as model,
+                   COALESCE(vs.category, 'Unknown') as category,
+                   COALESCE(vs.engine_type, 'Unknown') as engine_type,
+                   '12V' as voltage_system
+            FROM cars c
+            LEFT JOIN vehicle_specs vs ON c.model_id = vs.id
+            WHERE c.owner_id = %s
+            ORDER BY c.created_at DESC
+            """
+            result = DatabaseHelper.execute_query(query, (owner_id,))
+            print(f"DEBUG: Complex query result for owner_id {owner_id}: {result}")
+            return result
+        except Exception as e:
+            print(f"ERROR in get_by_owner: {e}")
+            return []
     
     @staticmethod
     def get_unregistered() -> List[Dict]:
