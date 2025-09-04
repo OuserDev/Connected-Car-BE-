@@ -1,7 +1,7 @@
 # MySQL 기반 인증 컨트롤러
 
 from flask import Blueprint, request, jsonify, session
-from utils.database import UserDatabase
+from models.user import User
 import json
 
 # 인증 관련 Blueprint 생성
@@ -21,7 +21,7 @@ def login():
             return jsonify({'error': 'Username and password required'}), 400
         
         # MySQL에서 사용자 조회
-        user = UserDatabase.get_user_by_username(username)
+        user = User.get_by_username(username)
         if not user:
             return jsonify({'error': 'Invalid username or password'}), 401
         
@@ -84,12 +84,12 @@ def register():
             return jsonify({'error': 'Username, password, email, and name are required'}), 400
         
         # 중복 사용자 검사
-        existing_user = UserDatabase.get_user_by_username(username)
+        existing_user = User.get_by_username(username)
         if existing_user:
             return jsonify({'error': 'Username already exists'}), 409
         
         # 새 사용자 생성
-        user_id = UserDatabase.create_user(username, password, email, name, phone)
+        user_id = User.create(username, password, email, name, phone)
         
         return jsonify({
             'message': 'Registration successful',
@@ -109,7 +109,7 @@ def get_current_user():
             return jsonify({'error': 'Authentication required'}), 401
         
         # 사용자 정보 조회
-        user = UserDatabase.get_user_by_id(session['user_id'])
+        user = User.get_by_id(session['user_id'])
         if not user:
             return jsonify({'error': 'User not found'}), 404
         

@@ -1,17 +1,23 @@
 # MySQL 기반 외부 API 통신 컨트롤러 (car-api 서버 연동)
 
 from flask import Blueprint, jsonify, request, session
-from utils.database import CarDatabase, CarHistoryDatabase
+from models.car import Car
+from models.car_history import CarHistory
 from utils.auth import login_required
 import requests
 import json
+import os
 from datetime import datetime
+from dotenv import load_dotenv
+
+# .env 파일 로드
+load_dotenv()
 
 vehicle_api_bp = Blueprint('vehicle_api', __name__)
 
-# car-api 서버 설정
-CAR_API_BASE_URL = 'http://localhost:9000'
-CAR_API_TIMEOUT = 10  # 10초 타임아웃
+# car-api 서버 설정 (환경변수 사용)
+CAR_API_BASE_URL = os.getenv('CAR_API_BASE_URL', 'http://localhost:9000')
+CAR_API_TIMEOUT = int(os.getenv('CAR_API_TIMEOUT', '10'))
 
 # car-api 서버 통신 헬퍼 함수
 def call_car_api(endpoint, method='GET', data=None, timeout=CAR_API_TIMEOUT):
@@ -49,7 +55,7 @@ def get_vehicle_status(vehicle_id):
         user_id = session.get('user_id')
         
         # 소유권 확인 (BE 데이터베이스에서)
-        if not CarDatabase.verify_car_ownership(user_id, vehicle_id):
+        if not Car.verify_ownership(user_id, vehicle_id):
             return jsonify({'error': '해당 차량에 대한 권한이 없습니다'}), 403
         
         # car-api에서 실시간 상태 조회
@@ -67,7 +73,7 @@ def get_vehicle_status(vehicle_id):
             }), 503
         
         # BE 데이터베이스에서 차량 기본 정보 조회
-        car_info = CarDatabase.get_car_by_id(vehicle_id)
+        car_info = Car.get_by_id(vehicle_id)
         
         # 실시간 상태와 기본 정보 결합
         combined_data = {
@@ -99,7 +105,7 @@ def control_vehicle(vehicle_id):
             return jsonify({'error': '제어 명령이 필요합니다'}), 400
         
         # 소유권 확인 (BE 데이터베이스에서)
-        if not CarDatabase.verify_car_ownership(user_id, vehicle_id):
+        if not Car.verify_ownership(user_id, vehicle_id):
             return jsonify({'error': '해당 차량에 대한 권한이 없습니다'}), 403
         
         command = data.get('command')
@@ -131,7 +137,7 @@ def control_vehicle(vehicle_id):
         )
         
         # BE 데이터베이스에 제어 이력 추가
-        CarHistoryDatabase.add_history(
+        CarHistory.add(
             car_id=vehicle_id,
             action=command,
             user_id=user_id,
@@ -156,7 +162,7 @@ def control_vehicle(vehicle_id):
     except Exception as e:
         # 오류 발생 시에도 이력에 실패 기록
         try:
-            CarHistoryDatabase.add_history(
+            CarHistory.add(
                 car_id=vehicle_id,
                 action=f"failed_{data.get('command', 'unknown')}",
                 user_id=user_id,

@@ -1,6 +1,11 @@
 from flask import Flask, jsonify, render_template
 from flask_cors import CORS
 from datetime import timedelta
+import os
+from dotenv import load_dotenv
+
+# .env 파일 로드
+load_dotenv()
 
 from controllers.auth_controller import auth_bp
 from controllers.vehicle_controller import vehicle_bp
@@ -8,15 +13,15 @@ from controllers.vehicle_api_controller import vehicle_api_bp
 from controllers.user_controller import user_bp
 
 # 데이터베이스 연결 테스트
-from utils.database import test_database_connection
+from models.base import test_database_connection
 
 app = Flask(__name__)
 
 # CORS 설정 - 개발 환경용 (credentials 포함, origins 허용)
 CORS(app, supports_credentials=True, origins=['http://192.168.201.221:8000', 'http://localhost:8000'])
 
-# Session configuration - Flask 2.0.3 방식
-app.secret_key = 'connected-car-secret-key-for-testing'
+# Session configuration - Flask 2.0.3 방식 (환경변수 사용)
+app.secret_key = os.getenv('FLASK_SECRET_KEY', 'connected-car-secret-key-for-testing')
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(hours=1)  # 1시간
 app.config['SESSION_COOKIE_SECURE'] = False  # 개발 환경용
 app.config['SESSION_COOKIE_HTTPONLY'] = True

@@ -1,5 +1,6 @@
-from flask import Blueprint, jsonify, session
-from utils.database import UserDatabase, CarDatabase
+from flask import Blueprint, jsonify, session, request
+from models.user import User
+from models.car import Car
 from utils.auth import login_required
 
 user_bp = Blueprint('user', __name__)
@@ -13,15 +14,15 @@ def get_user_profile():
         user_id = session.get('user_id')
         
         # 사용자 기본 정보 조회
-        user = UserDatabase.get_user_by_id(user_id)
+        user = User.get_by_id(user_id)
         if not user:
             return jsonify({'error': '사용자를 찾을 수 없습니다'}), 404
         
         # 사용자 소유 차량 목록 조회
-        cars = CarDatabase.get_cars_by_owner(user_id)
+        cars = Car.get_by_owner(user_id)
         
         # 등록된 카드 정보 조회
-        cards = UserDatabase.get_user_cards(user_id)
+        cards = User.get_cards(user_id)
         
         # 비밀번호 제외하고 응답
         user_profile = {
@@ -57,7 +58,6 @@ def get_user_profile():
 def register_card():
     """사용자 카드 등록"""
     try:
-        from flask import request
         user_id = session.get('user_id')
         data = request.get_json()
         
@@ -67,26 +67,17 @@ def register_card():
             if not data.get(field):
                 return jsonify({'error': f'{field}는 필수 입력 항목입니다'}), 400
         
-        # 카드 번호 마스킹 처리
-        card_number = data['card_number']
-        if len(card_number) > 4:
-            masked_number = '**** **** **** ' + card_number[-4:]
-        else:
-            masked_number = card_number
-        
-        # 데이터베이스에 카드 정보 저장
-        query = """
-        INSERT INTO registered_cards (user_id, card_number, card_name, expiry_date, is_default) 
-        VALUES (%s, %s, %s, %s, %s)
-        """
-        from utils.database import DatabaseHelper
-        card_id = DatabaseHelper.execute_insert(query, (
+        # 카드 등록
+        card_id = User.add_card(
             user_id,
-            masked_number,
+            data['card_number'],
             data['card_name'],
             data['expiry_date'],
             data.get('is_default', False)
-        ))
+        )
+        
+        if not card_id:
+            return jsonify({'error': '카드 등록 실패'}), 500
         
         return jsonify({
             'success': True,

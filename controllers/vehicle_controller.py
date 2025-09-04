@@ -1,7 +1,10 @@
 # MySQL 기반 차량 컨트롤러 (로컬 데이터 관리)
 
 from flask import Blueprint, jsonify, request, session
-from utils.database import CarDatabase, CarHistoryDatabase, VehicleSpecDatabase, DatabaseHelper
+from models.car import Car
+from models.car_history import CarHistory
+from models.vehicle_spec import VehicleSpec
+from models.base import DatabaseHelper
 from utils.auth import login_required
 import json
 import os
@@ -35,7 +38,7 @@ def register_car():
             return jsonify({'error': '이미 등록된 차량입니다 (VIN 또는 번호판 중복)'}), 409
         
         # 차량 등록
-        car_id = CarDatabase.register_car(
+        car_id = Car.register(
             owner_id=user_id,
             model_id=data['model_id'],
             license_plate=data['license_plate'],
@@ -43,14 +46,14 @@ def register_car():
         )
         
         # 등록 이력 추가
-        CarHistoryDatabase.add_history(
+        CarHistory.add(
             car_id=car_id,
             action='car_registered',
             user_id=user_id
         )
         
         # 등록된 차량 정보 조회
-        registered_car = CarDatabase.get_car_by_id(car_id)
+        registered_car = Car.get_by_id(car_id)
         
         return jsonify({
             'success': True,
@@ -70,7 +73,7 @@ def get_my_cars():
         user_id = session.get('user_id')
         
         # 사용자 소유 차량 목록 조회
-        cars = CarDatabase.get_cars_by_owner(user_id)
+        cars = Car.get_by_owner(user_id)
         
         return jsonify({
             'success': True,
@@ -90,11 +93,11 @@ def get_car_details(car_id):
         user_id = session.get('user_id')
         
         # 소유권 확인
-        if not CarDatabase.verify_car_ownership(user_id, car_id):
+        if not Car.verify_ownership(user_id, car_id):
             return jsonify({'error': '해당 차량에 대한 권한이 없습니다'}), 403
         
         # 차량 정보 조회
-        car = CarDatabase.get_car_by_id(car_id)
+        car = Car.get_by_id(car_id)
         if not car:
             return jsonify({'error': '차량을 찾을 수 없습니다'}), 404
         
@@ -115,12 +118,12 @@ def get_car_history(car_id):
         user_id = session.get('user_id')
         
         # 소유권 확인
-        if not CarDatabase.verify_car_ownership(user_id, car_id):
+        if not Car.verify_ownership(user_id, car_id):
             return jsonify({'error': '해당 차량에 대한 권한이 없습니다'}), 403
         
         # 이력 조회 (최근 50개)
         limit = request.args.get('limit', 50, type=int)
-        history = CarHistoryDatabase.get_car_history(car_id, limit)
+        history = CarHistory.get_by_car(car_id, limit)
         
         return jsonify({
             'success': True,
@@ -140,7 +143,7 @@ def manage_car_location(car_id):
         user_id = session.get('user_id')
         
         # 소유권 확인
-        if not CarDatabase.verify_car_ownership(user_id, car_id):
+        if not Car.verify_ownership(user_id, car_id):
             return jsonify({'error': '해당 차량에 대한 권한이 없습니다'}), 403
         
         if request.method == 'GET':
@@ -164,7 +167,7 @@ def manage_car_location(car_id):
             data = request.get_json()
             
             # 이력 추가
-            CarHistoryDatabase.add_history(
+            CarHistory.add(
                 car_id=car_id,
                 action='location_update_requested',
                 user_id=user_id,
@@ -188,11 +191,11 @@ def get_car_diagnostics(car_id):
         user_id = session.get('user_id')
         
         # 소유권 확인
-        if not CarDatabase.verify_car_ownership(user_id, car_id):
+        if not Car.verify_ownership(user_id, car_id):
             return jsonify({'error': '해당 차량에 대한 권한이 없습니다'}), 403
         
         # 차량 기본 정보 조회
-        car = CarDatabase.get_car_by_id(car_id)
+        car = Car.get_by_id(car_id)
         if not car:
             return jsonify({'error': '차량을 찾을 수 없습니다'}), 404
         
@@ -234,9 +237,9 @@ def get_vehicle_specs():
         category = request.args.get('category')
         
         if category:
-            specs = VehicleSpecDatabase.get_specs_by_category(category)
+            specs = VehicleSpec.get_by_category(category)
         else:
-            specs = VehicleSpecDatabase.get_all_specs()
+            specs = VehicleSpec.get_all()
         
         return jsonify({
             'success': True,
@@ -253,7 +256,7 @@ def get_vehicle_specs():
 def get_vehicle_spec_by_id(spec_id):
     """특정 차량 스펙 정보 조회 (MySQL 기반)"""
     try:
-        spec = VehicleSpecDatabase.get_spec_by_id(spec_id)
+        spec = VehicleSpec.get_by_id(spec_id)
         
         if not spec:
             return jsonify({'error': '차량 스펙을 찾을 수 없습니다'}), 404
@@ -291,11 +294,11 @@ def delete_car(car_id):
         user_id = session.get('user_id')
         
         # 소유권 확인
-        if not CarDatabase.verify_car_ownership(user_id, car_id):
+        if not Car.verify_ownership(user_id, car_id):
             return jsonify({'error': '해당 차량에 대한 권한이 없습니다'}), 403
         
         # 차량 정보 조회
-        car = CarDatabase.get_car_by_id(car_id)
+        car = Car.get_by_id(car_id)
         if not car:
             return jsonify({'error': '차량을 찾을 수 없습니다'}), 404
         
@@ -304,7 +307,7 @@ def delete_car(car_id):
         DatabaseHelper.execute_update(query, (car_id,))
         
         # 해제 이력 추가
-        CarHistoryDatabase.add_history(
+        CarHistory.add(
             car_id=car_id,
             action='car_unregistered',
             user_id=user_id
