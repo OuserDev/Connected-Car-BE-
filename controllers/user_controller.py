@@ -44,6 +44,40 @@ def get_user_profile():
     except Exception as e:
         return jsonify({'error': f'사용자 정보 조회 실패: {str(e)}'}), 500
 
+# 사용자 정보 업데이트 API
+@user_bp.route('/api/user/profile', methods=['PUT'])
+@login_required
+def update_user_profile():
+    """로그인한 사용자의 프로필 정보 업데이트"""
+    try:
+        user_id = session.get('user_id')
+        data = request.get_json()
+        
+        # 업데이트 가능한 필드들
+        updateable_fields = ['name', 'phone', 'email']
+        update_data = {}
+        
+        for field in updateable_fields:
+            if field in data:
+                update_data[field] = data[field]
+        
+        if not update_data:
+            return jsonify({'error': '업데이트할 필드가 없습니다'}), 400
+        
+        # 사용자 정보 업데이트
+        success = User.update_profile(user_id, **update_data)
+        
+        if not success:
+            return jsonify({'error': '사용자 정보 업데이트 실패'}), 500
+        
+        return jsonify({
+            'success': True,
+            'message': '사용자 정보가 성공적으로 업데이트되었습니다'
+        })
+        
+    except Exception as e:
+        return jsonify({'error': f'사용자 정보 업데이트 실패: {str(e)}'}), 500
+
 # 사용자 목록 조회 API (관리자용 - 주석 처리)
 # @user_bp.route('/api/users', methods=['GET'])
 # @login_required

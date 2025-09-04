@@ -4,34 +4,146 @@
         <title>커넥티드카 BE API 테스트 - Connected Car Service</title>
         <meta charset="utf-8" />
         <style>
-            body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }
-            .container { max-width: 1400px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; }
-            .header { text-align: center; color: #333; margin-bottom: 20px; }
-            .section { margin-bottom: 20px; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
-            .section h3 { color: #2c5aa0; margin-top: 0; }
-            .form-group { margin-bottom: 10px; display: inline-block; margin-right: 15px; }
-            .form-group label { display: block; margin-bottom: 5px; font-weight: bold; font-size: 12px; }
-            .form-group input, .form-group select, .form-group textarea { 
-                padding: 6px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px; 
+            body {
+                font-family: Arial, sans-serif;
+                margin: 20px;
+                background: #f5f5f5;
             }
-            .btn { padding: 6px 12px; border: none; border-radius: 4px; cursor: pointer; margin: 2px; font-size: 11px; }
-            .btn-primary { background: #2c5aa0; color: white; }
-            .btn-success { background: #28a745; color: white; }
-            .btn-warning { background: #ffc107; color: #212529; }
-            .btn-danger { background: #dc3545; color: white; }
-            .btn-info { background: #17a2b8; color: white; }
-            .btn-secondary { background: #6c757d; color: white; }
-            .btn:hover { opacity: 0.8; }
-            .card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 10px; margin-top: 10px; }
-            .card { background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 6px; padding: 10px; }
-            .card h4 { margin: 0 0 8px 0; color: #2c5aa0; font-size: 14px; }
-            .card-info { font-size: 11px; margin-bottom: 3px; }
-            .auth-status { padding: 8px; border-radius: 4px; margin-bottom: 15px; text-align: center; font-weight: bold; }
-            .auth-success { background: #d4edda; color: #155724; }
-            .auth-failed { background: #f8d7da; color: #721c24; }
-            #result { background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 4px; padding: 15px; margin-top: 20px; white-space: pre-wrap; font-family: monospace; max-height: 500px; overflow-y: auto; font-size: 11px; }
-            .api-section { border-left: 4px solid #2c5aa0; padding-left: 15px; }
-            .control-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: end; margin-bottom: 10px; }
+            .container {
+                max-width: 1400px;
+                margin: 0 auto;
+                background: white;
+                padding: 20px;
+                border-radius: 8px;
+            }
+            .header {
+                text-align: center;
+                color: #333;
+                margin-bottom: 20px;
+            }
+            .section {
+                margin-bottom: 20px;
+                padding: 15px;
+                border: 1px solid #ddd;
+                border-radius: 5px;
+            }
+            .section h3 {
+                color: #2c5aa0;
+                margin-top: 0;
+            }
+            .form-group {
+                margin-bottom: 10px;
+                display: inline-block;
+                margin-right: 15px;
+            }
+            .form-group label {
+                display: block;
+                margin-bottom: 5px;
+                font-weight: bold;
+                font-size: 12px;
+            }
+            .form-group input,
+            .form-group select,
+            .form-group textarea {
+                padding: 6px;
+                border: 1px solid #ddd;
+                border-radius: 4px;
+                font-size: 12px;
+            }
+            .btn {
+                padding: 6px 12px;
+                border: none;
+                border-radius: 4px;
+                cursor: pointer;
+                margin: 2px;
+                font-size: 11px;
+            }
+            .btn-primary {
+                background: #2c5aa0;
+                color: white;
+            }
+            .btn-success {
+                background: #28a745;
+                color: white;
+            }
+            .btn-warning {
+                background: #ffc107;
+                color: #212529;
+            }
+            .btn-danger {
+                background: #dc3545;
+                color: white;
+            }
+            .btn-info {
+                background: #17a2b8;
+                color: white;
+            }
+            .btn-secondary {
+                background: #6c757d;
+                color: white;
+            }
+            .btn:hover {
+                opacity: 0.8;
+            }
+            .card-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+                gap: 10px;
+                margin-top: 10px;
+            }
+            .card {
+                background: #f8f9fa;
+                border: 1px solid #dee2e6;
+                border-radius: 6px;
+                padding: 10px;
+            }
+            .card h4 {
+                margin: 0 0 8px 0;
+                color: #2c5aa0;
+                font-size: 14px;
+            }
+            .card-info {
+                font-size: 11px;
+                margin-bottom: 3px;
+            }
+            .auth-status {
+                padding: 8px;
+                border-radius: 4px;
+                margin-bottom: 15px;
+                text-align: center;
+                font-weight: bold;
+            }
+            .auth-success {
+                background: #d4edda;
+                color: #155724;
+            }
+            .auth-failed {
+                background: #f8d7da;
+                color: #721c24;
+            }
+            #result {
+                background: #f8f9fa;
+                border: 1px solid #dee2e6;
+                border-radius: 4px;
+                padding: 15px;
+                margin-top: 20px;
+                white-space: pre-wrap;
+                font-family: monospace;
+                max-height: 500px;
+                overflow-y: auto;
+                font-size: 11px;
+            }
+            .api-section {
+                border-left: 4px solid #2c5aa0;
+                padding-left: 15px;
+            }
+            .control-row {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 8px;
+                align-items: end;
+                margin-bottom: 10px;
+            }
         </style>
     </head>
     <body>
@@ -69,9 +181,9 @@
                     <button class="btn btn-success" onclick="showUserUpdateForm()">프로필수정</button>
                     <button class="btn btn-success" onclick="showAddCardForm()">카드추가</button>
                 </div>
-                
+
                 <!-- 프로필 수정 폼 -->
-                <div id="userUpdateForm" style="display:none; margin-top:10px;">
+                <div id="userUpdateForm" style="display: none; margin-top: 10px">
                     <div class="control-row">
                         <div class="form-group">
                             <label>이름</label>
@@ -87,7 +199,7 @@
                 </div>
 
                 <!-- 카드 추가 폼 -->
-                <div id="addCardForm" style="display:none; margin-top:10px;">
+                <div id="addCardForm" style="display: none; margin-top: 10px">
                     <div class="control-row">
                         <div class="form-group">
                             <label>카드번호</label>
@@ -130,7 +242,7 @@
                 </div>
 
                 <!-- 차량 등록 폼 -->
-                <div id="registerCarForm" style="display:none; margin-top:10px;">
+                <div id="registerCarForm" style="display: none; margin-top: 10px">
                     <div class="control-row">
                         <div class="form-group">
                             <label>모델ID</label>
@@ -191,7 +303,7 @@
                 </div>
 
                 <!-- 주행 기록 추가 폼 -->
-                <div id="addDrivingForm" style="display:none; margin-top:10px;">
+                <div id="addDrivingForm" style="display: none; margin-top: 10px">
                     <div class="control-row">
                         <div class="form-group">
                             <label>차량ID</label>
@@ -254,17 +366,17 @@
                 try {
                     const username = document.getElementById('loginUser').value;
                     const password = document.getElementById('loginPass').value;
-                    
+
                     const response = await fetch(`${API}/api/auth/login`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         credentials: 'include',
-                        body: JSON.stringify({ username, password })
+                        body: JSON.stringify({ username, password }),
                     });
-                    
+
                     const data = await response.json();
                     log(data);
-                    
+
                     if (data.user) {
                         updateAuthStatus(data.user);
                     }
@@ -277,9 +389,9 @@
                 try {
                     const response = await fetch(`${API}/api/auth/logout`, {
                         method: 'POST',
-                        credentials: 'include'
+                        credentials: 'include',
                     });
-                    
+
                     const data = await response.json();
                     log(data);
                     updateAuthStatus();
@@ -291,12 +403,12 @@
             async function checkAuthStatus() {
                 try {
                     const response = await fetch(`${API}/api/auth/status`, {
-                        credentials: 'include'
+                        credentials: 'include',
                     });
-                    
+
                     const data = await response.json();
                     log(data);
-                    
+
                     if (data.user) {
                         updateAuthStatus(data.user);
                     } else {
@@ -312,7 +424,7 @@
             async function getUserProfile() {
                 try {
                     const response = await fetch(`${API}/api/user/profile`, {
-                        credentials: 'include'
+                        credentials: 'include',
                     });
                     const data = await response.json();
                     log(data);
@@ -324,7 +436,7 @@
             async function getUserCards() {
                 try {
                     const response = await fetch(`${API}/api/user/cards`, {
-                        credentials: 'include'
+                        credentials: 'include',
                     });
                     const data = await response.json();
                     log(data);
@@ -345,18 +457,18 @@
                 try {
                     const name = document.getElementById('updateName').value;
                     const phone = document.getElementById('updatePhone').value;
-                    
+
                     const updateData = {};
                     if (name) updateData.name = name;
                     if (phone) updateData.phone = phone;
-                    
+
                     const response = await fetch(`${API}/api/user/profile`, {
                         method: 'PUT',
                         headers: { 'Content-Type': 'application/json' },
                         credentials: 'include',
-                        body: JSON.stringify(updateData)
+                        body: JSON.stringify(updateData),
                     });
-                    
+
                     const data = await response.json();
                     log(data);
                     hideUserUpdateForm();
@@ -379,16 +491,16 @@
                         card_number: document.getElementById('cardNumber').value,
                         card_name: document.getElementById('cardName').value,
                         expiry_date: document.getElementById('cardExpiry').value,
-                        is_default: document.getElementById('cardDefault').value === 'true'
+                        is_default: document.getElementById('cardDefault').value === 'true',
                     };
-                    
+
                     const response = await fetch(`${API}/api/user/cards`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         credentials: 'include',
-                        body: JSON.stringify(cardData)
+                        body: JSON.stringify(cardData),
                     });
-                    
+
                     const data = await response.json();
                     log(data);
                     hideAddCardForm();
@@ -401,7 +513,7 @@
             async function getMyCars() {
                 try {
                     const response = await fetch(`${API}/api/cars`, {
-                        credentials: 'include'
+                        credentials: 'include',
                     });
                     const data = await response.json();
                     log(data);
@@ -414,8 +526,8 @@
             function displayCars(cars) {
                 const container = document.getElementById('carsList');
                 container.innerHTML = '';
-                
-                cars.forEach(car => {
+
+                cars.forEach((car) => {
                     const carDiv = document.createElement('div');
                     carDiv.className = 'card';
                     carDiv.innerHTML = `
@@ -442,16 +554,16 @@
                     const carData = {
                         model_id: parseInt(document.getElementById('regModelId').value),
                         license_plate: document.getElementById('regLicensePlate').value,
-                        vin: document.getElementById('regVin').value
+                        vin: document.getElementById('regVin').value,
                     };
-                    
+
                     const response = await fetch(`${API}/api/cars/register`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         credentials: 'include',
-                        body: JSON.stringify(carData)
+                        body: JSON.stringify(carData),
                     });
-                    
+
                     const data = await response.json();
                     log(data);
                     hideRegisterCarForm();
@@ -464,7 +576,7 @@
                 try {
                     const carId = document.getElementById('carId').value;
                     const response = await fetch(`${API}/api/car/${carId}/info`, {
-                        credentials: 'include'
+                        credentials: 'include',
                     });
                     const data = await response.json();
                     log(data);
@@ -477,7 +589,7 @@
                 try {
                     const carId = document.getElementById('carId').value;
                     const response = await fetch(`${API}/api/car/${carId}/history`, {
-                        credentials: 'include'
+                        credentials: 'include',
                     });
                     const data = await response.json();
                     log(data);
@@ -490,7 +602,7 @@
                 try {
                     const carId = document.getElementById('carId').value;
                     const response = await fetch(`${API}/api/car/${carId}/specs`, {
-                        credentials: 'include'
+                        credentials: 'include',
                     });
                     const data = await response.json();
                     log(data);
@@ -503,7 +615,7 @@
             async function getAllSpecs() {
                 try {
                     const response = await fetch(`${API}/api/specs`, {
-                        credentials: 'include'
+                        credentials: 'include',
                     });
                     const data = await response.json();
                     log(data);
@@ -516,7 +628,7 @@
                 try {
                     const modelId = document.getElementById('specModelId').value;
                     const response = await fetch(`${API}/api/specs/${modelId}`, {
-                        credentials: 'include'
+                        credentials: 'include',
                     });
                     const data = await response.json();
                     log(data);
@@ -529,7 +641,7 @@
                 try {
                     const category = document.getElementById('specCategory').value;
                     const response = await fetch(`${API}/api/specs/category/${category}`, {
-                        credentials: 'include'
+                        credentials: 'include',
                     });
                     const data = await response.json();
                     log(data);
@@ -542,7 +654,7 @@
             async function getDrivingRecords() {
                 try {
                     const response = await fetch(`${API}/api/driving/records`, {
-                        credentials: 'include'
+                        credentials: 'include',
                     });
                     const data = await response.json();
                     log(data);
@@ -565,16 +677,16 @@
                         car_id: parseInt(document.getElementById('drivingCarId').value),
                         distance: parseFloat(document.getElementById('drivingDistance').value),
                         duration: parseInt(document.getElementById('drivingDuration').value),
-                        fuel_efficiency: parseFloat(document.getElementById('drivingEfficiency').value)
+                        fuel_efficiency: parseFloat(document.getElementById('drivingEfficiency').value),
                     };
-                    
+
                     const response = await fetch(`${API}/api/driving/records`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         credentials: 'include',
-                        body: JSON.stringify(recordData)
+                        body: JSON.stringify(recordData),
                     });
-                    
+
                     const data = await response.json();
                     log(data);
                     hideAddDrivingForm();
@@ -599,7 +711,7 @@
             }
 
             // 페이지 로드 시 인증 상태 확인
-            window.onload = function() {
+            window.onload = function () {
                 checkAuthStatus();
             };
         </script>

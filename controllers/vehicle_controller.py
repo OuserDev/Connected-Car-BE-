@@ -128,6 +128,58 @@ def get_car_details(car_id):
     except Exception as e:
         return jsonify({'error': f'차량 정보 조회 실패: {str(e)}'}), 500
 
+# 차량 기본 정보 조회 API (별칭)
+@vehicle_bp.route('/api/car/<int:car_id>/info', methods=['GET'])
+@login_required
+def get_car_info(car_id):
+    """차량 기본 정보 조회 (get_car_details의 별칭)"""
+    return get_car_details(car_id)
+
+# 차량 스펙 정보 조회 API
+@vehicle_bp.route('/api/car/<int:car_id>/specs', methods=['GET'])
+@login_required
+def get_car_specs(car_id):
+    """차량의 스펙 정보 조회"""
+    try:
+        user_id = session.get('user_id')
+        
+        # 소유권 확인
+        if not Car.verify_ownership(user_id, car_id):
+            return jsonify({'error': '해당 차량에 대한 권한이 없습니다'}), 403
+        
+        # 차량 정보 조회 (스펙 포함)
+        car = Car.get_by_id(car_id)
+        if not car:
+            return jsonify({'error': '차량을 찾을 수 없습니다'}), 404
+        
+        # 스펙 정보만 추출
+        specs_info = {
+            'model_id': car.get('model_id'),
+            'model_name': car.get('model_name'),
+            'manufacturer': car.get('manufacturer'),
+            'year': car.get('year'),
+            'engine_type': car.get('engine_type'),
+            'fuel_type': car.get('fuel_type'),
+            'transmission': car.get('transmission'),
+            'drivetrain': car.get('drivetrain'),
+            'body_type': car.get('body_type'),
+            'seating_capacity': car.get('seating_capacity'),
+            'curb_weight': car.get('curb_weight'),
+            'max_power': car.get('max_power'),
+            'max_torque': car.get('max_torque'),
+            'fuel_efficiency': car.get('fuel_efficiency'),
+            'top_speed': car.get('top_speed'),
+            'acceleration': car.get('acceleration')
+        }
+        
+        return jsonify({
+            'success': True,
+            'data': specs_info
+        })
+        
+    except Exception as e:
+        return jsonify({'error': f'차량 스펙 조회 실패: {str(e)}'}), 500
+
 # 차량 제어 이력 조회 API (MySQL 기반)
 @vehicle_bp.route('/api/car/<int:car_id>/history', methods=['GET'])
 @login_required

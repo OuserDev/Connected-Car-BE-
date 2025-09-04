@@ -13,6 +13,8 @@ from controllers.auth_controller import auth_bp
 from controllers.vehicle_controller import vehicle_bp
 from controllers.vehicle_api_controller import vehicle_api_bp
 from controllers.user_controller import user_bp
+from controllers.vehicle_specs_controller import vehicle_specs_bp
+from controllers.driving_records_controller import driving_records_bp
 
 # 데이터베이스 연결 테스트
 from models.base import test_database_connection
@@ -97,6 +99,8 @@ app.register_blueprint(auth_bp)
 app.register_blueprint(user_bp)
 app.register_blueprint(vehicle_bp)
 app.register_blueprint(vehicle_api_bp)
+app.register_blueprint(vehicle_specs_bp)
+app.register_blueprint(driving_records_bp)
 
 @app.route('/')
 def hello():
