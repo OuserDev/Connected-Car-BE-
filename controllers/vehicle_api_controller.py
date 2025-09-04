@@ -131,13 +131,16 @@ def control_vehicle(vehicle_id):
             }), 503
         
         # 제어 이력 저장 (BE 데이터베이스에)
-        CarHistory.create(
-            vehicle_id=vehicle_id,
+        CarHistory.add(
+            car_id=vehicle_id,
+            action=f"{data['property']}_{data['value']}",
             user_id=user_id,
-            command=data['property'],
-            value=str(data['value']),
-            status='success',
-            result=api_response.get('message', '제어 완료')
+            parameters={
+                'property': data['property'],
+                'value': data['value'],
+                'car_api_response': api_response
+            },
+            result='success'
         )
         
         return jsonify({
