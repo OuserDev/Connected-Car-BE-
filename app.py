@@ -104,6 +104,10 @@ app.register_blueprint(driving_records_bp)
 def hello():
     return render_template('index.html')
 
+@app.route('/test')
+def hello():
+    return render_template('vehicles.html')
+
 @app.route('/api/health', methods=['GET'])
 def health_check():
     """애플리케이션 및 데이터베이스 상태 확인"""

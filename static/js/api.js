@@ -1,18 +1,101 @@
-// api.js - API facade (mock for now)
+// api.js - API facade (now using real BE for auth)
 import { MockApi } from "./mockApi.js";
 
+const BASE_URL = "";
+
+// Real BE API calls
+const RealApi = {
+  async login(username, password) {
+    try {
+      const response = await fetch(`${BASE_URL}/api/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ username, password })
+      });
+      
+      const data = await response.json();
+      if (data.status === 'success') {
+        return { 
+          ok: true, 
+          token: 'session-based', 
+          user: { 
+            id: data.user.username, 
+            name: data.user.name,
+            hasCar: true,
+            car: { model: "GRANDEUR", plate: "12가 3456", color: "#79d1ff", imageUrl: "/static/assets/cars/USER1_GRANDEUR.jpg" }
+          } 
+        };
+      } else {
+        return { ok: false, message: data.error || '로그인 실패' };
+      }
+    } catch (error) {
+      return { ok: false, message: '서버 연결 실패' };
+    }
+  },
+
+  async register(username, password, name, email, phone) {
+    try {
+      const response = await fetch(`${BASE_URL}/api/auth/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ username, password, name, email, phone })
+      });
+      
+      const data = await response.json();
+      if (data.status === 'success') {
+        return { ok: true, user_id: data.user_id };
+      } else {
+        return { ok: false, message: data.error || '회원가입 실패' };
+      }
+    } catch (error) {
+      return { ok: false, message: '서버 연결 실패' };
+    }
+  },
+
+  async me() {
+    try {
+      const response = await fetch(`${BASE_URL}/api/auth/me`, {
+        credentials: 'include'
+      });
+      
+      const data = await response.json();
+      if (data.status === 'success') {
+        return { 
+          ok: true, 
+          user: { 
+            id: data.user.username, 
+            name: data.user.name,
+            hasCar: true,
+            car: { model: "GRANDEUR", plate: "12가 3456", color: "#79d1ff", imageUrl: "/static/assets/cars/USER1_GRANDEUR.jpg" }
+          }
+        };
+      } else {
+        return { ok: false };
+      }
+    } catch (error) {
+      return { ok: false };
+    }
+  }
+};
+
 export const Api = {
-  login: MockApi.login,
-  me: MockApi.me,
+  // Use real BE for authentication
+  login: RealApi.login,
+  register: RealApi.register,
+  me: RealApi.me,
+  
+  // Keep mock for other features for now
   setHasCar: MockApi.setHasCar,
   recommendedPlaces: MockApi.recommendedPlaces,
   vehicleStatus: MockApi.vehicleStatus,
   vehicleControl: MockApi.vehicleControl,
-  storeNew: MockApi.storeNew,                 // 새 상품 목록
-  storeUsedList: MockApi.storeUsedList,       // 중고글 목록
-  storeUsedCreate: MockApi.storeUsedCreate,   // 중고글 작성
-  cardsList: MockApi.cardsList,               // 결제카드 목록(마스킹)
-  cardSelect: MockApi.cardSelect,             // 결제카드 선택
-  cardsAddTest: MockApi.cardsAddTest,         // 테스트 카드 추가
-  purchase: MockApi.purchase,                 // 구매(데모)
+  storeNew: MockApi.storeNew,
+  storeUsedList: MockApi.storeUsedList,
+  storeUsedCreate: MockApi.storeUsedCreate,
+  cardsList: MockApi.cardsList,
+  cardSelect: MockApi.cardSelect,
+  cardsAddTest: MockApi.cardsAddTest,
+  purchase: MockApi.purchase,
 };

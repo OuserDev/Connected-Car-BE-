@@ -135,9 +135,9 @@ export const UI = (() => {
     const body = el("div", "body");
     body.innerHTML = `
       <div class="kicker">접속 필요</div>
-      <div class="cta">
+      <div class="cta" style="text-align: center; padding: 24px 16px;">
         <div>차량 정보 보기를 위해 <b>로그인</b> 해주세요.</div>
-        <div class="row">
+        <div class="row" style="justify-content: center;">
           <button class="btn brand" id="btnOpenLogin">로그인</button>
           <button class="btn ghost" id="btnSkip">회원가입</button>
         </div>

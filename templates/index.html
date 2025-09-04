@@ -53,7 +53,7 @@
     </a>
   </nav>
 
-  <!-- 공통 로그인 다이얼로그 / 토스트 -->
+  <!-- 로그인 다이얼로그 -->
   <div class="scrim" id="dlgScrim" aria-hidden="true">
     <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="dlgTitle">
       <div class="kicker" id="dlgTitle">로그인</div>
@@ -62,7 +62,25 @@
       <div class="row">
         <button class="btn brand" id="btnLoginDo">로그인</button>
         <button class="btn ghost" id="btnLoginCancel">취소</button>
-        <div class="spacer"></div><div class="muted">테스트: <b>admin / passwd</b></div>
+        <button class="btn ghost" id="btnShowSignup">회원가입</button>
+        <div class="spacer"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 회원가입 다이얼로그 -->
+  <div class="scrim" id="dlgSignupScrim" aria-hidden="true">
+    <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="dlgSignupTitle">
+      <div class="kicker" id="dlgSignupTitle">회원가입</div>
+      <div class="field"><label for="signupUsername">아이디</label><input id="signupUsername" placeholder="사용자ID" autocomplete="username"></div>
+      <div class="field"><label for="signupPassword">비밀번호</label><input id="signupPassword" type="password" placeholder="비밀번호" autocomplete="new-password"></div>
+      <div class="field"><label for="signupName">이름</label><input id="signupName" placeholder="홍길동" autocomplete="name"></div>
+      <div class="field"><label for="signupEmail">이메일</label><input id="signupEmail" type="email" placeholder="user@example.com" autocomplete="email"></div>
+      <div class="field"><label for="signupPhone">전화번호</label><input id="signupPhone" placeholder="010-1234-5678" autocomplete="tel"></div>
+      <div class="row">
+        <button class="btn brand" id="btnSignupDo">가입</button>
+        <button class="btn ghost" id="btnSignupCancel">취소</button>
+        <button class="btn ghost" id="btnBackToLogin">로그인으로</button>
       </div>
     </div>
   </div>

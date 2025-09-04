@@ -25,8 +25,8 @@ def login():
         if not user:
             return jsonify({'error': 'Invalid username or password'}), 401
         
-        # 비밀번호 검증 (실제로는 해시 비교해야 함)
-        if user['password'] != password:
+        # 비밀번호 검증 (해시 비교)
+        if not User.verify_password(username, password):
             return jsonify({'error': 'Invalid username or password'}), 401
         
         # 세션에 사용자 정보 저장

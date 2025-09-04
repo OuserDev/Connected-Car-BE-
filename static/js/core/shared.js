@@ -35,5 +35,9 @@ export function setActiveTabByHash(){
 export function updateAuthBadge(){
   const { token, user } = State.get();
   const badge = document.getElementById("badgeAuth");
-  if (badge) badge.textContent = token ? (user?.name || "사용자") : "게스트";
+  if (badge) {
+    badge.textContent = token ? `환영합니다. ${user?.name || "사용자"}님` : "로그인";
+    badge.style.cursor = "pointer";
+    badge.title = token ? "클릭하여 로그아웃" : "클릭하여 로그인";
+  }
 }

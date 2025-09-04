@@ -34,7 +34,7 @@ const routes = {
   "#/settings": renderSettings,
 };
 
-async function navigate(){
+export async function navigate(){
   setActiveTabByHash();
 
   const h = location.hash || "#/main";

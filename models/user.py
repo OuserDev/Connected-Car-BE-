@@ -12,15 +12,12 @@ class User:
     def create(username: str, password: str, email: str, name: str = '', phone: str = '') -> Optional[int]:
         """새 사용자 생성"""
         try:
-            # 비밀번호 해시
-            hashed_password = hashlib.sha256(password.encode()).hexdigest()
-            
             query = """
-            INSERT INTO users (username, password_hash, email, name, phone, created_at) 
+            INSERT INTO users (username, password, email, name, phone, created_at) 
             VALUES (%s, %s, %s, %s, %s, %s)
             """
             user_id = DatabaseHelper.execute_insert(query, (
-                username, hashed_password, email, name, phone, datetime.now()
+                username, password, email, name, phone, datetime.now()
             ))
             return user_id
         except Exception as e:
@@ -48,8 +45,7 @@ class User:
         if not user:
             return False
         
-        hashed_password = hashlib.sha256(password.encode()).hexdigest()
-        return user.get('password_hash') == hashed_password
+        return user.get('password') == password
     
     @staticmethod
     def update_profile(user_id: int, **kwargs) -> bool:
