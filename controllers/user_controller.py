@@ -52,6 +52,25 @@ def get_user_profile():
 #     # 관리자 기능은 별도 관리자 VM에서 구현
 #     pass
 
+# 사용자 카드 목록 조회 API
+@user_bp.route('/api/user/cards', methods=['GET'])
+@login_required
+def get_user_cards():
+    """사용자의 등록된 카드 목록 조회"""
+    try:
+        user_id = session.get('user_id')
+        
+        # 등록된 카드 정보 조회
+        cards = User.get_cards(user_id)
+        
+        return jsonify({
+            'success': True,
+            'data': cards
+        })
+        
+    except Exception as e:
+        return jsonify({'error': f'카드 목록 조회 실패: {str(e)}'}), 500
+
 # 사용자 카드 등록 API
 @user_bp.route('/api/user/cards', methods=['POST'])
 @login_required
