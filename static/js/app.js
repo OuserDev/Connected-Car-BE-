@@ -1,7 +1,7 @@
 // app.js
 import { Api } from './api.js';
 import { State } from './state.js';
-import { setActiveTabByHash, updateAuthBadge, updateHeaderVehicleInfo } from './core/shared.js';
+import { setActiveTabByHash, updateAuthBadge, updateHeaderVehicleInfo, updateTabsDisabledState } from './core/shared.js';
 import { attachAuthDelegates } from './core/auth.js';
 import { UI } from './ui/components.js';
 
@@ -11,6 +11,7 @@ import { renderControl } from './tabs/control.js';
 import { renderStore } from './tabs/store.js';
 import { renderSettings } from './tabs/settings.js';
 const PUBLIC_ROUTES = new Set(['#/main', '#/settings']);
+const VEHICLE_REQUIRED_ROUTES = new Set(['#/map', '#/control', '#/store']);
 
 function clearAllAuthState() {
     State.setToken(null);
@@ -42,6 +43,21 @@ function renderLoginRequired() {
     </div></div>`;
 }
 
+function renderVehicleRequired() {
+    const root = document.getElementById('view');
+    root.innerHTML = `
+    <div class="card"><div class="body">
+      <div class="kicker">차량 등록 필요</div>
+      <div class="cta" style="text-align: center; padding: 24px 16px;">
+        <div style="margin-bottom: 20px;">이 기능을 이용하려면 차량을 먼저 등록해야 합니다.</div>
+        <div class="row" style="justify-content: center; gap: 12px;">
+          <button class="btn brand" type="button" onclick="location.hash='#/settings'">차량 등록하기</button>
+          <button class="btn ghost" type="button" onclick="location.hash='#/main'">메인으로</button>
+        </div>
+      </div>
+    </div></div>`;
+}
+
 const routes = {
     '#/main': renderMain,
     '#/map': renderMap,
@@ -55,6 +71,7 @@ export async function navigate() {
 
     const h = location.hash || '#/main';
     const authed = !!State.get().token;
+    const user = State.get().user;
 
     // 제어 페이지를 벗어날 때 폴링 정리
     if (h !== '#/control' && window.cleanupControlPolling) {
@@ -65,6 +82,33 @@ export async function navigate() {
     if (!authed && !PUBLIC_ROUTES.has(h)) {
         renderLoginRequired();
         return;
+    }
+
+    // ⬇ 로그인 상태이지만 차량 등록이 필요한 라우트인 경우
+    if (authed && VEHICLE_REQUIRED_ROUTES.has(h)) {
+        // 실시간으로 차량 등록 상태 체크
+        try {
+            const response = await fetch('/api/cars', { credentials: 'include' });
+            let hasActualCars = false;
+            if (response.ok) {
+                const data = await response.json();
+                hasActualCars = data.success && data.data && data.data.length > 0;
+            }
+            
+            // 실제 차량이 등록되지 않았으면 차단
+            if (!hasActualCars) {
+                // 토스트 메시지 표시하고 메인으로 리다이렉트
+                UI.toast("차량을 먼저 등록해야 합니다");
+                location.hash = '#/main';
+                return;
+            }
+        } catch (error) {
+            console.error('차량 등록 상태 체크 실패:', error);
+            // 오류 발생 시에도 토스트 메시지 표시하고 메인으로 리다이렉트
+            UI.toast("차량을 먼저 등록해야 합니다");
+            location.hash = '#/main';
+            return;
+        }
     }
 
     const fn = routes[location.hash] || renderMain;
@@ -103,17 +147,19 @@ export async function navigate() {
         console.log('토큰 또는 사용자 정보 없음 - 상태 초기화');
         clearAllAuthState();
     }
-    updateAuthBadge();
+    await updateAuthBadge();
     attachAuthDelegates();
 
     // 전역 차량 선택 이벤트 리스너
-    window.addEventListener('carSelected', (event) => {
+    window.addEventListener('carSelected', async (event) => {
         const selectedCar = event.detail;
         console.log('차량 선택됨:', selectedCar);
         State.setSelectedCarId(selectedCar.id);
         UI.toast(`${selectedCar.model_name} 차량이 선택되었습니다`);
         // 헤더 차량 정보 업데이트
-        updateHeaderVehicleInfo();
+        await updateHeaderVehicleInfo();
+        // 탭 상태 업데이트
+        await updateTabsDisabledState();
         // 현재 페이지가 메인이면 다시 렌더링
         if (location.hash === '#/main') {
             renderMain();

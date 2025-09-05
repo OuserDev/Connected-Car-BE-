@@ -2,6 +2,7 @@
 import { Api } from '../api.js';
 import { State } from '../state.js';
 import { UI } from '../ui/components.js';
+import { updateTabsDisabledState } from '../core/shared.js';
 
 // 차량 등록 모달 함수
 function showVehicleRegistrationModal() {
@@ -155,6 +156,9 @@ function showVehicleRegistrationModal() {
                 UI.toast('🎉 차량이 성공적으로 등록되었습니다!');
                 modal.remove();
 
+                // 탭 상태 업데이트 (차량 등록 완료로 인해 지도/제어/스토어 탭 활성화)
+                await updateTabsDisabledState();
+
                 // 메인 페이지로 이동
                 setTimeout(() => {
                     location.hash = '#/main';
@@ -199,10 +203,14 @@ export function renderSettings() {
     // 이벤트 바인딩
     if (token) {
         // 로그아웃 버튼
-        baseCard.querySelector('#btnLogout')?.addEventListener('click', () => {
+        baseCard.querySelector('#btnLogout')?.addEventListener('click', async () => {
             State.setToken(null);
             State.setUser(null);
             UI.toast('로그아웃 되었습니다.');
+            
+            // 탭 상태 업데이트 (로그아웃으로 인해 모든 탭 비활성화)
+            await updateTabsDisabledState();
+            
             renderSettings();
         });
 
@@ -627,4 +635,7 @@ export function renderSettings() {
     root.innerHTML = '';
     root.appendChild(baseCard);
     if (photoCard) root.appendChild(photoCard); // 로그인 상태에서만 사진 카드 추가
+
+    // 탭 상태 업데이트 (차량 등록 상태 변경 시 탭 활성화/비활성화)
+    updateTabsDisabledState();
 }

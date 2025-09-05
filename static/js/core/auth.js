@@ -70,7 +70,7 @@ export async function doLogin(){
   const res = await Api.login(id, pw);
   if(!res.ok){ UI.toast(res.message || "로그인 실패"); return; }
   State.setToken(res.token); State.setUser(res.user);
-  UI.toast("로그인 되었습니다."); updateAuthBadge(); closeLoginDialog();
+  UI.toast("로그인 되었습니다."); await updateAuthBadge(); closeLoginDialog();
   location.hash = "#/main"
   await navigate();
 }
@@ -112,7 +112,7 @@ export async function doProfileSave(){
   const { user } = State.get();
   const updatedUser = { ...user, name, email, phone };
   State.setUser(updatedUser);
-  updateAuthBadge();
+  await updateAuthBadge();
   
   UI.toast("프로필이 업데이트되었습니다.");
   closeProfileDialog();
@@ -150,7 +150,7 @@ export function attachAuthDelegates(){
       e.preventDefault();
       State.setToken(null);
       State.setUser(null);
-      updateAuthBadge();
+      await updateAuthBadge();
       UI.toast("로그아웃 되었습니다.");
       location.hash = "#/main";
       await navigate();
