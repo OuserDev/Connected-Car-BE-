@@ -133,8 +133,8 @@ def add_card():
         expiry_date = data.get('expiryDate', '').strip()
         set_as_default = data.get('setAsDefault', False)
         
-        if not card_number or len(card_number) < 13:
-            return jsonify({'error': '유효한 카드번호를 입력해주세요.'}), 400
+        #if not card_number or len(card_number) < 13:
+            #return jsonify({'error': '유효한 카드번호를 입력해주세요.'}), 400
             
         if not card_name:
             return jsonify({'error': '카드 소유자명을 입력해주세요.'}), 400
