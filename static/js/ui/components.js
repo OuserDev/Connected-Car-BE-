@@ -170,7 +170,7 @@ export const UI = (() => {
         return card;
     };
 
-    // 차량이 없는 경우 UI
+    // 차량이 없는 경우 UI  
     const noCarCallout = () => {
         const card = el('div', 'card');
         const body = el('div', 'body');
@@ -210,7 +210,7 @@ export const UI = (() => {
       </dialog>
       
       <!-- 차량 확인 모달 -->
-      <dialog class="modal" id="dlgCarConfirm" style="display: none;">
+      <dialog class="modal" id="dlgCarConfirm">
         <div class="hd">
           차량 정보 확인
           <button type="button" class="btn-close" id="btnCloseCarConfirm">×</button>

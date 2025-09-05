@@ -684,7 +684,7 @@ const RealApi = {
                 brand: payload.brand,
                 last4: payload.last4,
                 cvc: payload.cvc,
-                isTest: payload.isTest || false
+                isTest: payload.isTest || false,
             };
 
             const response = await fetch(`${BASE_URL}/api/cards`, {

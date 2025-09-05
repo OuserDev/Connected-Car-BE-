@@ -182,7 +182,7 @@ function setupMainEventListeners() {
     const dlgCarRegister = document.getElementById('dlgCarRegister');
     const dlgCarConfirm = document.getElementById('dlgCarConfirm');
     const carRegisterForm = document.getElementById('carRegisterForm');
-    
+
     if (btnRegisterCar && dlgCarRegister) {
         btnRegisterCar.addEventListener('click', () => {
             dlgCarRegister.showModal();
@@ -192,13 +192,13 @@ function setupMainEventListeners() {
     // 차량 등록 모달 닫기
     const btnCloseCarRegister = document.getElementById('btnCloseCarRegister');
     const btnCancelCarRegister = document.getElementById('btnCancelCarRegister');
-    
+
     if (btnCloseCarRegister) {
         btnCloseCarRegister.addEventListener('click', () => {
             dlgCarRegister.close();
         });
     }
-    
+
     if (btnCancelCarRegister) {
         btnCancelCarRegister.addEventListener('click', () => {
             dlgCarRegister.close();
@@ -209,10 +209,10 @@ function setupMainEventListeners() {
     if (carRegisterForm) {
         carRegisterForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-            
+
             const licensePlate = document.getElementById('licensePlate').value.trim();
             const vinCode = document.getElementById('vinCode').value.trim();
-            
+
             if (!licensePlate || !vinCode) {
                 UI.toast('라이선스 플레이트와 VIN 코드를 모두 입력해주세요');
                 return;
@@ -222,10 +222,10 @@ function setupMainEventListeners() {
                 const btnSubmit = document.getElementById('btnSubmitCarRegister');
                 btnSubmit.disabled = true;
                 btnSubmit.textContent = '확인 중...';
-                
+
                 // 차량 정보 확인 API 호출
                 const response = await Api.verifyCarInfo({ licensePlate, vinCode });
-                
+
                 if (response.ok && response.car) {
                     // 차량 정보가 일치하면 확인 모달 표시
                     showCarConfirmModal(response.car, licensePlate, vinCode);
@@ -249,13 +249,13 @@ function setupMainEventListeners() {
     // 차량 확인 모달 관련 이벤트
     const btnCloseCarConfirm = document.getElementById('btnCloseCarConfirm');
     const btnCancelCarConfirm = document.getElementById('btnCancelCarConfirm');
-    
+
     if (btnCloseCarConfirm) {
         btnCloseCarConfirm.addEventListener('click', () => {
             dlgCarConfirm.close();
         });
     }
-    
+
     if (btnCancelCarConfirm) {
         btnCancelCarConfirm.addEventListener('click', () => {
             dlgCarConfirm.close();
@@ -267,9 +267,9 @@ function setupMainEventListeners() {
 function showCarConfirmModal(carInfo, licensePlate, vinCode) {
     const dlgCarConfirm = document.getElementById('dlgCarConfirm');
     const carConfirmContent = document.getElementById('carConfirmContent');
-    
+
     if (!dlgCarConfirm || !carConfirmContent) return;
-    
+
     // 차량 정보 표시
     carConfirmContent.innerHTML = `
         <div style="text-align: center; margin-bottom: 20px;">
@@ -294,20 +294,20 @@ function showCarConfirmModal(carInfo, licensePlate, vinCode) {
             <div style="padding: 8px; background: #f3f4f6; border-radius: 4px;">${carInfo.fuel_type || '알 수 없음'}</div>
         </div>
     `;
-    
+
     // 확인 버튼에 이벤트 리스너 추가
     const btnConfirmCarRegister = document.getElementById('btnConfirmCarRegister');
     if (btnConfirmCarRegister) {
         // 기존 이벤트 리스너 제거
         const newBtn = btnConfirmCarRegister.cloneNode(true);
         btnConfirmCarRegister.parentNode.replaceChild(newBtn, btnConfirmCarRegister);
-        
+
         // 새 이벤트 리스너 추가
         newBtn.addEventListener('click', async () => {
             await registerCar(carInfo.id, licensePlate, vinCode);
         });
     }
-    
+
     dlgCarConfirm.showModal();
 }
 
@@ -319,20 +319,20 @@ async function registerCar(carId, licensePlate, vinCode) {
             btnConfirm.disabled = true;
             btnConfirm.textContent = '등록 중...';
         }
-        
+
         const response = await Api.registerCar({ carId, licensePlate, vinCode });
-        
+
         if (response.ok) {
             UI.toast('차량이 성공적으로 등록되었습니다!');
             document.getElementById('dlgCarConfirm').close();
-            
+
             // 사용자 상태 업데이트
             const { user } = State.get();
             if (user) {
                 user.hasCar = true;
                 State.setUser(user);
             }
-            
+
             // 메인 화면 다시 렌더링
             setTimeout(() => renderMain(), 1000);
         } else {

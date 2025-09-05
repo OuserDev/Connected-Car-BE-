@@ -37,7 +37,6 @@ export function renderSettings() {
             UI.toast('로그아웃 되었습니다.');
             renderSettings();
         });
-
     } else {
         baseCard.querySelector('#btnOpenLogin2')?.addEventListener('click', () => {
             // 상위에서 로그인 모달 열어주는 위임 로직이 있으므로 버튼만 노출
