@@ -58,22 +58,28 @@ export async function renderControl() {
     async function renderHome() {
         // 선택된 차량 정보 로드
         try {
-            // selectedCarId가 없으면 먼저 차량 목록을 가져와서 첫 번째 차량을 선택
-            if (!selectedCarId) {
-                const carsResponse = await fetch('/api/cars', { credentials: 'include' });
-                if (carsResponse.ok) {
-                    const carsData = await carsResponse.json();
-                    if (carsData.success && carsData.data && carsData.data.length > 0) {
-                        const firstCarId = carsData.data[0].id;
+            // 항상 최신 차량 목록을 가져와서 첫 번째 차량을 선택 (캐시 문제 방지)
+            const carsResponse = await fetch('/api/cars', { credentials: 'include' });
+            if (carsResponse.ok) {
+                const carsData = await carsResponse.json();
+                console.log('Cars API response:', carsData);
+                if (carsData.success && carsData.data && carsData.data.length > 0) {
+                    const firstCarId = carsData.data[0].id;
+                    // 기존 선택된 차량과 다르면 업데이트
+                    if (selectedCarId !== firstCarId) {
                         State.setSelectedCarId(firstCarId);
                         selectedCarId = firstCarId;
-                        console.log(`자동으로 첫 번째 차량 선택: ${firstCarId}`);
+                        console.log(`차량 선택 업데이트: ${selectedCarId} → ${firstCarId}`);
                     } else {
-                        console.warn('등록된 차량이 없습니다');
-                        // 차량이 없는 경우 데모 모드로 진행
-                        selectedCarId = null;
+                        console.log(`현재 선택된 차량 유지: ${firstCarId}`);
                     }
+                } else {
+                    console.warn('등록된 차량이 없습니다');
+                    // 차량이 없는 경우 데모 모드로 진행
+                    selectedCarId = null;
                 }
+            } else {
+                console.error('Cars API 호출 실패:', carsResponse.status);
             }
 
             const vehicleResponse = await Api.vehicleStatus();

@@ -277,21 +277,23 @@ function showCarConfirmModal(carInfo, licensePlate, vinCode) {
             <h3 style="margin-bottom: 8px;">${carInfo.model_name || '알 수 없음'}</h3>
             <p style="color: #6b7280; margin-bottom: 16px;">이 차량이 맞습니까?</p>
         </div>
-        <div class="form-row">
-            <label>차량 모델</label>
-            <div style="padding: 8px; background: #f3f4f6; border-radius: 4px;">${carInfo.model_name || '알 수 없음'}</div>
-        </div>
-        <div class="form-row">
-            <label>제조사</label>
-            <div style="padding: 8px; background: #f3f4f6; border-radius: 4px;">${carInfo.manufacturer || '알 수 없음'}</div>
-        </div>
-        <div class="form-row">
-            <label>연식</label>
-            <div style="padding: 8px; background: #f3f4f6; border-radius: 4px;">${carInfo.year || '알 수 없음'}</div>
-        </div>
-        <div class="form-row">
-            <label>연료 타입</label>
-            <div style="padding: 8px; background: #f3f4f6; border-radius: 4px;">${carInfo.fuel_type || '알 수 없음'}</div>
+        <div style="margin: 20px 0; border-left: 3px solid #3b82f6; padding-left: 16px;">
+            <div style="margin-bottom: 12px;">
+                <span style="font-weight: 500; color: #374151;">차량 모델:</span>
+                <span style="margin-left: 8px; color: #1f2937;">${carInfo.model_name || '알 수 없음'}</span>
+            </div>
+            <div style="margin-bottom: 12px;">
+                <span style="font-weight: 500; color: #374151;">제조사:</span>
+                <span style="margin-left: 8px; color: #1f2937;">${carInfo.manufacturer || '알 수 없음'}</span>
+            </div>
+            <div style="margin-bottom: 12px;">
+                <span style="font-weight: 500; color: #374151;">연식:</span>
+                <span style="margin-left: 8px; color: #1f2937;">${carInfo.year || '알 수 없음'}</span>
+            </div>
+            <div style="margin-bottom: 0;">
+                <span style="font-weight: 500; color: #374151;">연료 타입:</span>
+                <span style="margin-left: 8px; color: #1f2937;">${carInfo.fuel_type || '알 수 없음'}</span>
+            </div>
         </div>
     `;
 

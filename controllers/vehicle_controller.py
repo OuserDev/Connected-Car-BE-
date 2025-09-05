@@ -472,8 +472,10 @@ def assign_test_vehicle():
 @login_required
 def verify_car_info():
     """라이선스 플레이트와 VIN 코드로 차량 정보 확인"""
+    print("🚗 [DEBUG] /api/cars/verify 엔드포인트 호출됨")
     try:
         data = request.get_json()
+        print(f"🚗 [DEBUG] 받은 데이터: {data}")
         
         if not data:
             return jsonify({'error': 'JSON 데이터가 필요합니다'}), 400
@@ -486,7 +488,7 @@ def verify_car_info():
         
         # 차량 조회 (owner_id가 NULL인 차량만)
         query = """
-        SELECT c.*, vs.model_name, vs.manufacturer, vs.year, vs.fuel_type 
+        SELECT c.*, vs.model, vs.category, vs.engine_type, vs.segment, vs.fuel_capacity
         FROM cars c
         LEFT JOIN vehicle_specs vs ON c.model_id = vs.id
         WHERE c.license_plate = %s AND c.vin = %s AND c.owner_id IS NULL
@@ -508,10 +510,10 @@ def verify_car_info():
                 'id': car_info['id'],
                 'license_plate': car_info['license_plate'],
                 'vin': car_info['vin'],
-                'model_name': car_info['model_name'],
-                'manufacturer': car_info['manufacturer'],
-                'year': car_info['year'],
-                'fuel_type': car_info['fuel_type']
+                'model_name': car_info['model'],  # vehicle_specs.model
+                'manufacturer': 'Hyundai',  # 하드코딩 (테이블에 없음)
+                'year': '2024',  # 하드코딩 (테이블에 없음) 
+                'fuel_type': car_info['engine_type']  # vehicle_specs.engine_type
             },
             'message': '차량 정보를 찾았습니다'
         })
@@ -525,9 +527,12 @@ def verify_car_info():
 @login_required
 def complete_car_registration():
     """검증된 차량을 현재 사용자에게 등록"""
+    print("🚗 [DEBUG] /api/cars/register 엔드포인트 호출됨")
     try:
         user_id = session.get('user_id')
         data = request.get_json()
+        print(f"🚗 [DEBUG] 받은 데이터: {data}")
+        print(f"🚗 [DEBUG] 사용자 ID: {user_id}")
         
         if not data:
             return jsonify({'error': 'JSON 데이터가 필요합니다'}), 400
@@ -535,6 +540,8 @@ def complete_car_registration():
         car_id = data.get('carId')
         license_plate = data.get('licensePlate', '').strip()
         vin_code = data.get('vinCode', '').strip()
+        
+        print(f"🚗 [DEBUG] car_id: {car_id}, license_plate: {license_plate}, vin_code: {vin_code}")
         
         if not all([car_id, license_plate, vin_code]):
             return jsonify({'error': '차량 ID, 라이선스 플레이트, VIN 코드가 모두 필요합니다'}), 400
@@ -571,12 +578,14 @@ def complete_car_registration():
         CarHistory.add(
             car_id=car_id,
             action='register',
-            details=f'사용자 {user_id}에게 차량 등록됨'
+            user_id=user_id,
+            parameters={'license_plate': license_plate, 'vin_code': vin_code},
+            result='success'
         )
         
         # 등록된 차량 정보 조회
         car_info_query = """
-        SELECT c.*, vs.model_name, vs.manufacturer, vs.year, vs.fuel_type 
+        SELECT c.*, vs.model, vs.category, vs.engine_type, vs.segment 
         FROM cars c
         LEFT JOIN vehicle_specs vs ON c.model_id = vs.id
         WHERE c.id = %s
@@ -592,10 +601,10 @@ def complete_car_registration():
                     'id': car_data['id'],
                     'license_plate': car_data['license_plate'],
                     'vin': car_data['vin'],
-                    'model_name': car_data['model_name'],
-                    'manufacturer': car_data['manufacturer'],
-                    'year': car_data['year'],
-                    'fuel_type': car_data['fuel_type']
+                    'model_name': car_data['model'],  # vehicle_specs.model
+                    'manufacturer': 'Hyundai',  # 하드코딩
+                    'year': '2024',  # 하드코딩
+                    'fuel_type': car_data['engine_type']  # vehicle_specs.engine_type
                 },
                 'message': '차량이 성공적으로 등록되었습니다'
             })
@@ -606,4 +615,7 @@ def complete_car_registration():
             })
         
     except Exception as e:
+        print(f"🚗 [ERROR] 차량 등록 실패: {str(e)}")
+        import traceback
+        print(f"🚗 [ERROR] 스택 트레이스: {traceback.format_exc()}")
         return jsonify({'error': f'차량 등록 실패: {str(e)}'}), 500

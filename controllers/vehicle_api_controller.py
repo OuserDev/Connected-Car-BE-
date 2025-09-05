@@ -16,7 +16,7 @@ load_dotenv()
 vehicle_api_bp = Blueprint('vehicle_api', __name__)
 
 # car-api 서버 설정 (환경변수 사용)
-CAR_API_BASE_URL = os.getenv('CAR_API_BASE_URL', 'http://172.29.5.130:8000')  # 기본값으로 올바른 IP 설정
+CAR_API_BASE_URL = os.getenv('CAR_API_BASE_URL', 'http://localhost:8000')  # 로컬 환경으로 수정
 CAR_API_TIMEOUT = int(os.getenv('CAR_API_TIMEOUT', '10'))
 
 # 디버그: 환경변수 확인
@@ -121,8 +121,8 @@ def control_vehicle(vehicle_id):
         if not ownership_check:
             return jsonify({'error': '해당 차량에 대한 권한이 없습니다'}), 403
         
-        # horn과 hazard_lights는 이력만 남기고 car-api에 전송하지 않음
-        if data['property'] in ['horn', 'hazard_lights']:
+        # horn, flash, hazard_lights는 이력만 남기고 car-api에 전송하지 않음 (Car-API 미지원)
+        if data['property'] in ['horn', 'flash', 'hazard_lights']:
             # 제어 이력 저장 (BE 데이터베이스에만)
             CarHistory.add(
                 car_id=vehicle_id,

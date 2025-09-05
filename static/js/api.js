@@ -25,6 +25,11 @@ function getActionMessage(property, value) {
 
 // Convert new API format to MockAPI action names
 function convertToMockApiAction(property, value, originalAction) {
+    // property가 null이거나 undefined인 경우 originalAction 사용
+    if (!property) {
+        return originalAction || 'unknown';
+    }
+    
     switch (property) {
         case 'door_state':
             return value === 'locked' ? 'lock' : 'unlock';
@@ -327,8 +332,12 @@ const RealApi = {
 
             console.log('Falling back to MockAPI:', fallbackMessage);
 
+            // property, value가 정의되지 않았을 경우를 대비해 기본값 제공
+            const safeProperty = typeof property !== 'undefined' ? property : null;
+            const safeValue = typeof value !== 'undefined' ? value : null;
+            
             // MockAPI는 기존 action명을 사용하므로 변환 필요
-            const mockAction = convertToMockApiAction(property, value, action);
+            const mockAction = convertToMockApiAction(safeProperty, safeValue, action);
             const result = await MockApi.vehicleControl(mockAction, data);
             return { ...result, message: result.message || fallbackMessage };
         }

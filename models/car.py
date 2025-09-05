@@ -78,6 +78,28 @@ class Car:
             return []
     
     @staticmethod
+    def get_by_owner(owner_id: int) -> List[Dict]:
+        """소유자별 차량 목록 조회 (FK 관계 활용)"""
+        query = """
+        SELECT c.id, c.owner_id, c.model_id, c.license_plate, c.vin, c.created_at,
+               vs.model as model_name,
+               vs.category,
+               vs.engine_type,
+               vs.voltage,
+               vs.displacement,
+               vs.power as max_power,
+               vs.torque as max_torque,
+               vs.fuel_efficiency,
+               vs.transmission,
+               vs.drive_type as drivetrain
+        FROM cars c
+        LEFT JOIN vehicle_specs vs ON c.model_id = vs.id
+        WHERE c.owner_id = %s
+        ORDER BY c.created_at DESC
+        """
+        return DatabaseHelper.execute_query(query, (owner_id,))
+    
+    @staticmethod
     def get_unregistered() -> List[Dict]:
         """미등록 차량 목록 조회 (관리자용, FK 관계 활용)"""
         query = """
