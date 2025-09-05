@@ -179,12 +179,50 @@ export const UI = (() => {
       <div class="cta" style="text-align: center; padding: 24px 16px;">
         <div style="font-size: 48px; margin-bottom: 16px;">🚗</div>
         <div style="margin-bottom: 12px; font-weight: 600;">등록된 차량이 없습니다</div>
-        <div style="margin-bottom: 20px; color: #6b7280;">차량을 등록하여 원격 제어 기능을 사용해보세요</div>
+        <div style="margin-bottom: 20px; color: #6b7280;">라이선스 플레이트와 VIN 코드를 입력하여 차량을 등록하세요</div>
         <div class="row" style="justify-content: center; gap: 12px;">
-          <button class="btn brand" id="btnRegisterCar">차량 등록</button>
-          <button class="btn ghost" id="btnTestCar">테스트 차량 할당</button>
+          <button class="btn brand" id="btnRegisterCar">차량 등록하기</button>
         </div>
-      </div>`;
+      </div>
+      
+      <!-- 차량 등록 모달 -->
+      <dialog class="modal" id="dlgCarRegister">
+        <div class="hd">
+          차량 등록
+          <button type="button" class="btn-close" id="btnCloseCarRegister">×</button>
+        </div>
+        <form method="dialog" id="carRegisterForm">
+          <div class="bd">
+            <div class="form-row">
+              <label>라이선스 플레이트 (번호판)</label>
+              <input type="text" id="licensePlate" placeholder="12가3456" required />
+            </div>
+            <div class="form-row">
+              <label>VIN 코드</label>
+              <input type="text" id="vinCode" placeholder="KMHL14JA1PA123456" required />
+            </div>
+          </div>
+          <div class="ft">
+            <button class="btn ghost" type="button" id="btnCancelCarRegister">취소</button>
+            <button class="btn brand" id="btnSubmitCarRegister" type="submit">확인</button>
+          </div>
+        </form>
+      </dialog>
+      
+      <!-- 차량 확인 모달 -->
+      <dialog class="modal" id="dlgCarConfirm" style="display: none;">
+        <div class="hd">
+          차량 정보 확인
+          <button type="button" class="btn-close" id="btnCloseCarConfirm">×</button>
+        </div>
+        <div class="bd" id="carConfirmContent">
+          <!-- 차량 정보가 동적으로 표시됩니다 -->
+        </div>
+        <div class="ft">
+          <button class="btn ghost" type="button" id="btnCancelCarConfirm">아니오</button>
+          <button class="btn brand" id="btnConfirmCarRegister">네, 맞습니다</button>
+        </div>
+      </dialog>`;
         card.appendChild(body);
         return card;
     };

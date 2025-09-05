@@ -30,8 +30,19 @@
 
 /* 스토어 모달 (네이티브 dialog) */
 dialog.modal { width:min(560px, 92vw); border:none; padding:0; border-radius:14px; background:#0b1421; color:#d6f0ff; }
+dialog.modal.wide { width:min(720px, 92vw); }
 dialog.modal::backdrop { background: rgba(0,0,0,.55); }
-.modal .hd { padding:12px 14px; border-bottom:1px solid #1f3347; font-weight:700; }
+.modal .hd { 
+  padding:12px 14px; border-bottom:1px solid #1f3347; font-weight:700; 
+  display:flex; justify-content:space-between; align-items:center;
+}
+.modal .btn-close { 
+  background:none; border:none; color:#ffffff; font-size:24px; font-weight:bold; 
+  cursor:pointer; padding:0; width:32px; height:32px; display:flex; 
+  align-items:center; justify-content:center; border-radius:4px;
+  transition:background 0.2s;
+}
+.modal .btn-close:hover { background:rgba(0,0,0,0.1); }
 .modal .bd { padding:12px 14px; display:grid; gap:10px; }
 .modal .ft { padding:12px 14px; display:flex; gap:8px; justify-content:flex-end; border-top:1px solid #1f3347; }
 .form-row { display:grid; gap:6px; }

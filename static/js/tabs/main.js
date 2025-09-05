@@ -179,35 +179,174 @@ function renderMapSection(root, items, vehicleStatus = null, carInfo = null) {
 function setupMainEventListeners() {
     // 차량 등록 버튼
     const btnRegisterCar = document.getElementById('btnRegisterCar');
-    if (btnRegisterCar) {
+    const dlgCarRegister = document.getElementById('dlgCarRegister');
+    const dlgCarConfirm = document.getElementById('dlgCarConfirm');
+    const carRegisterForm = document.getElementById('carRegisterForm');
+    
+    if (btnRegisterCar && dlgCarRegister) {
         btnRegisterCar.addEventListener('click', () => {
-            UI.toast('차량 등록 기능은 준비 중입니다');
-            // 실제로는 차량 등록 페이지로 이동하거나 모달 표시
+            dlgCarRegister.showModal();
         });
     }
 
-    // 테스트 차량 할당 버튼
-    const btnTestCar = document.getElementById('btnTestCar');
-    if (btnTestCar) {
-        btnTestCar.addEventListener('click', async () => {
-            try {
-                const response = await fetch('/api/cars/assign-test-vehicle', {
-                    method: 'POST',
-                    credentials: 'include',
-                });
-                const data = await response.json();
+    // 차량 등록 모달 닫기
+    const btnCloseCarRegister = document.getElementById('btnCloseCarRegister');
+    const btnCancelCarRegister = document.getElementById('btnCancelCarRegister');
+    
+    if (btnCloseCarRegister) {
+        btnCloseCarRegister.addEventListener('click', () => {
+            dlgCarRegister.close();
+        });
+    }
+    
+    if (btnCancelCarRegister) {
+        btnCancelCarRegister.addEventListener('click', () => {
+            dlgCarRegister.close();
+        });
+    }
 
-                if (data.success) {
-                    UI.toast('테스트 차량이 할당되었습니다!');
-                    // 페이지 새로고침하여 새로운 차량 표시
-                    setTimeout(() => renderMain(), 1000);
+    // 차량 등록 폼 제출
+    if (carRegisterForm) {
+        carRegisterForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const licensePlate = document.getElementById('licensePlate').value.trim();
+            const vinCode = document.getElementById('vinCode').value.trim();
+            
+            if (!licensePlate || !vinCode) {
+                UI.toast('라이선스 플레이트와 VIN 코드를 모두 입력해주세요');
+                return;
+            }
+
+            try {
+                const btnSubmit = document.getElementById('btnSubmitCarRegister');
+                btnSubmit.disabled = true;
+                btnSubmit.textContent = '확인 중...';
+                
+                // 차량 정보 확인 API 호출
+                const response = await Api.verifyCarInfo({ licensePlate, vinCode });
+                
+                if (response.ok && response.car) {
+                    // 차량 정보가 일치하면 확인 모달 표시
+                    showCarConfirmModal(response.car, licensePlate, vinCode);
+                    dlgCarRegister.close();
                 } else {
-                    UI.toast(data.error || '차량 할당에 실패했습니다');
+                    UI.toast(response.message || '입력한 차량 정보와 일치하는 차량을 찾을 수 없습니다');
                 }
             } catch (error) {
+                console.error('Car verification error:', error);
                 UI.toast('서버 연결 실패');
+            } finally {
+                const btnSubmit = document.getElementById('btnSubmitCarRegister');
+                if (btnSubmit) {
+                    btnSubmit.disabled = false;
+                    btnSubmit.textContent = '확인';
+                }
             }
         });
+    }
+
+    // 차량 확인 모달 관련 이벤트
+    const btnCloseCarConfirm = document.getElementById('btnCloseCarConfirm');
+    const btnCancelCarConfirm = document.getElementById('btnCancelCarConfirm');
+    
+    if (btnCloseCarConfirm) {
+        btnCloseCarConfirm.addEventListener('click', () => {
+            dlgCarConfirm.close();
+        });
+    }
+    
+    if (btnCancelCarConfirm) {
+        btnCancelCarConfirm.addEventListener('click', () => {
+            dlgCarConfirm.close();
+        });
+    }
+}
+
+// 차량 확인 모달 표시 함수
+function showCarConfirmModal(carInfo, licensePlate, vinCode) {
+    const dlgCarConfirm = document.getElementById('dlgCarConfirm');
+    const carConfirmContent = document.getElementById('carConfirmContent');
+    
+    if (!dlgCarConfirm || !carConfirmContent) return;
+    
+    // 차량 정보 표시
+    carConfirmContent.innerHTML = `
+        <div style="text-align: center; margin-bottom: 20px;">
+            <div style="font-size: 48px; margin-bottom: 12px;">🚗</div>
+            <h3 style="margin-bottom: 8px;">${carInfo.model_name || '알 수 없음'}</h3>
+            <p style="color: #6b7280; margin-bottom: 16px;">이 차량이 맞습니까?</p>
+        </div>
+        <div class="form-row">
+            <label>차량 모델</label>
+            <div style="padding: 8px; background: #f3f4f6; border-radius: 4px;">${carInfo.model_name || '알 수 없음'}</div>
+        </div>
+        <div class="form-row">
+            <label>제조사</label>
+            <div style="padding: 8px; background: #f3f4f6; border-radius: 4px;">${carInfo.manufacturer || '알 수 없음'}</div>
+        </div>
+        <div class="form-row">
+            <label>연식</label>
+            <div style="padding: 8px; background: #f3f4f6; border-radius: 4px;">${carInfo.year || '알 수 없음'}</div>
+        </div>
+        <div class="form-row">
+            <label>연료 타입</label>
+            <div style="padding: 8px; background: #f3f4f6; border-radius: 4px;">${carInfo.fuel_type || '알 수 없음'}</div>
+        </div>
+    `;
+    
+    // 확인 버튼에 이벤트 리스너 추가
+    const btnConfirmCarRegister = document.getElementById('btnConfirmCarRegister');
+    if (btnConfirmCarRegister) {
+        // 기존 이벤트 리스너 제거
+        const newBtn = btnConfirmCarRegister.cloneNode(true);
+        btnConfirmCarRegister.parentNode.replaceChild(newBtn, btnConfirmCarRegister);
+        
+        // 새 이벤트 리스너 추가
+        newBtn.addEventListener('click', async () => {
+            await registerCar(carInfo.id, licensePlate, vinCode);
+        });
+    }
+    
+    dlgCarConfirm.showModal();
+}
+
+// 최종 차량 등록 함수
+async function registerCar(carId, licensePlate, vinCode) {
+    try {
+        const btnConfirm = document.getElementById('btnConfirmCarRegister');
+        if (btnConfirm) {
+            btnConfirm.disabled = true;
+            btnConfirm.textContent = '등록 중...';
+        }
+        
+        const response = await Api.registerCar({ carId, licensePlate, vinCode });
+        
+        if (response.ok) {
+            UI.toast('차량이 성공적으로 등록되었습니다!');
+            document.getElementById('dlgCarConfirm').close();
+            
+            // 사용자 상태 업데이트
+            const { user } = State.get();
+            if (user) {
+                user.hasCar = true;
+                State.setUser(user);
+            }
+            
+            // 메인 화면 다시 렌더링
+            setTimeout(() => renderMain(), 1000);
+        } else {
+            UI.toast(response.message || '차량 등록에 실패했습니다');
+        }
+    } catch (error) {
+        console.error('Car registration error:', error);
+        UI.toast('서버 연결 실패');
+    } finally {
+        const btnConfirm = document.getElementById('btnConfirmCarRegister');
+        if (btnConfirm) {
+            btnConfirm.disabled = false;
+            btnConfirm.textContent = '네, 맞습니다';
+        }
     }
 
     // 차량 선택 이벤트

@@ -20,14 +20,8 @@ export function renderSettings() {
               token
                   ? `
                <button class="btn danger" id="btnLogout">로그아웃</button>
-               <div class="spacer"></div>
-               <!-- ✅ 로그인 상태에서만 차량 등록 토글 노출 -->
-               <button class="btn ghost" id="btnToggleCar">
-                 ${user?.hasCar ? '차량 등록 해제' : '차량 등록(가상)'}
-               </button>
               `
                   : `
-               <!-- ✅ 비로그인: 차량 등록 토글 자체를 렌더하지 않음 -->
                <button class="btn brand" id="btnOpenLogin2">로그인</button>
               `
           }
@@ -43,15 +37,7 @@ export function renderSettings() {
             UI.toast('로그아웃 되었습니다.');
             renderSettings();
         });
-        baseCard.querySelector('#btnToggleCar')?.addEventListener('click', async () => {
-            const cur = State.get().user;
-            const res = await Api.setHasCar(!cur?.hasCar);
-            if (res.ok) {
-                State.setUser(res.user);
-                UI.toast(res.user.hasCar ? '차량이 등록되었습니다.' : '차량 등록이 해제되었습니다.');
-                renderSettings();
-            }
-        });
+
     } else {
         baseCard.querySelector('#btnOpenLogin2')?.addEventListener('click', () => {
             // 상위에서 로그인 모달 열어주는 위임 로직이 있으므로 버튼만 노출

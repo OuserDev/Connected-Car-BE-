@@ -100,6 +100,22 @@ export function renderStore() {
         </div>
       </form>
     </dialog>
+
+    <!-- 신규: 게시글 상세보기 모달 -->
+    <dialog class="modal wide" id="dlgPostDetail">
+      <div class="hd">
+        <span id="detailTitle">게시글 상세</span>
+        <button class="btn-close" id="btnDetailClose">×</button>
+      </div>
+      <div class="bd" style="max-height: 70vh; overflow-y: auto;">
+        <div id="detailContent">
+          <!-- 상세 내용이 여기에 로드됩니다 -->
+        </div>
+      </div>
+      <div class="ft" id="detailActions">
+        <!-- 작성자인 경우 수정/삭제 버튼, 아닌 경우 연락하기 등 -->
+      </div>
+    </dialog>
   `;
 
     const $newGrid = document.getElementById('newGrid');
@@ -143,9 +159,8 @@ export function renderStore() {
           <button class="btn" data-id="${it.id}">구매</button>
         </div>`;
             el.querySelector('button').addEventListener('click', async (e) => {
-                const pid = e.currentTarget.getAttribute('data-id');
-                const res = await Api.purchase(pid);
-                UI.toast(res.ok ? res.message : res.message || '구매 실패');
+                e.preventDefault();
+                UI.toast('구매 기능은 추후 구현 예정입니다');
             });
             $newGrid.appendChild(el);
         });
@@ -174,10 +189,76 @@ export function renderStore() {
           <div class="d">${(it.body || '').slice(0, 120)}</div>
         </div>`;
 
-            // 게시글 클릭 시 상세보기 (추후 구현 가능)
-            el.addEventListener('click', () => {
-                // console.log('게시글 상세보기:', it.id);
-                UI.toast(`게시글 ID: ${it.id} - 상세보기 기능은 추후 구현 예정`);
+            // 게시글 클릭 시 상세보기
+            el.addEventListener('click', async () => {
+                try {
+                    const res = await Api.getMarketPost(it.id);
+                    if (!res.ok) {
+                        UI.toast(res.message || '상세 조회 실패');
+                        return;
+                    }
+                    const post = res.post;
+                    // 상세 모달 내용 구성
+                    document.getElementById('detailTitle').textContent = post.title;
+                    document.getElementById('detailContent').innerHTML = `
+                        <div style="font-size:1.2em; font-weight:bold; margin-bottom:8px;">${post.title}</div>
+                        <div class="muted" style="margin-bottom:8px;">${post.seller} · ${new Date(post.created_at).toLocaleString()} · 조회 ${post.view_count}</div>
+                        <div style="margin-bottom:12px; color:#444; white-space:pre-line;">${post.body}</div>
+                        <div style="font-weight:bold; font-size:1.1em; color:#1976d2; margin-bottom:8px;">${fmtWon(post.price)}</div>
+                        <div style="margin-bottom:8px;">상태: <span class="tag ${post.status}">${post.status === 'sold' ? '판매완료' : post.status === 'reserved' ? '예약중' : '판매중'}</span></div>
+                    `;
+                    // 작성자 여부에 따라 버튼 표시
+                    const $actions = document.getElementById('detailActions');
+                    $actions.innerHTML = '';
+                    if (post.is_author) {
+                        $actions.innerHTML = `
+                            <button class="btn" id="btnEditPost">수정</button>
+                            <button class="btn ghost" id="btnDeletePost">삭제</button>
+                        `;
+                        
+                        // 수정 버튼 이벤트
+                        document.getElementById('btnEditPost').addEventListener('click', () => {
+                            // 기존 작성 폼에 데이터 채우기
+                            $fTitle.value = post.title;
+                            $fBody.value = post.body;
+                            $fPrice.value = post.price;
+                            
+                            // 수정 모드임을 표시
+                            $dlg.querySelector('.hd').textContent = '판매글 수정';
+                            $btnSubmit.textContent = '수정하기';
+                            $btnSubmit.dataset.editId = post.id;
+                            
+                            $dlgPostDetail.close();
+                            $dlg.showModal();
+                        });
+                        
+                        // 삭제 버튼 이벤트
+                        document.getElementById('btnDeletePost').addEventListener('click', async () => {
+                            if (!confirm('정말 삭제하시겠습니까?')) return;
+                            
+                            const res = await Api.deleteMarketPost(post.id);
+                            if (res.ok) {
+                                UI.toast(res.message || '게시글이 삭제되었습니다.');
+                                $dlgPostDetail.close();
+                                // 목록 새로고침
+                                const u = await Api.getMarketPosts();
+                                if (u.ok) renderUsed(u.posts);
+                            } else {
+                                UI.toast(res.message || '삭제 실패');
+                            }
+                        });
+                    } else {
+                        $actions.innerHTML = `<button class="btn" id="btnContact">연락하기</button>`;
+                        
+                        // 연락하기 버튼 이벤트
+                        document.getElementById('btnContact').addEventListener('click', () => {
+                            UI.toast('연락하기 기능은 추후 구현 예정입니다.');
+                        });
+                    }
+                    document.getElementById('dlgPostDetail').showModal();
+                } catch (e) {
+                    UI.toast('상세 조회 중 오류 발생');
+                }
             });
 
             $usedList.appendChild(el);
@@ -190,10 +271,19 @@ export function renderStore() {
         cards.forEach((c) => {
             const row = document.createElement('label');
             row.className = 'card-item';
+            // 카드사명 매핑 (Unknown → 실제 카드사명)
+            const cardBrandName = {
+                'VISA': 'VISA',
+                'Mastercard': 'Mastercard', 
+                'Unknown': '현대카드',  // Unknown일 때 현대카드로 표시
+                'AMEX': 'American Express',
+                'Discover': 'Discover'
+            }[c.brand] || c.brand;
+            
             row.innerHTML = `
         <input type="radio" name="paycard" value="${c.id}" ${c.id === activeId ? 'checked' : ''} />
         <div>
-          <div class="brand">${c.brand}</div>
+          <div class="brand">${cardBrandName}</div>
           <div class="num" ${c.isTest && c.fullNumber ? `data-full="${c.fullNumber}"` : ''}>${mask('', c.last4)}</div>
           <div class="sub">만료 ${c.exp} · ${c.holder}${c.isTest ? ' · 테스트 카드' : ''}</div>
           <div class="row" style="margin-top:6px; gap:8px;">
@@ -307,13 +397,21 @@ export function renderStore() {
     });
 
     // ---------- 모달/폼: 중고 판매글 ----------
-    document.getElementById('btnWrite').addEventListener('click', () => $dlg.showModal());
+    document.getElementById('btnWrite').addEventListener('click', () => {
+        // 새 작성 모드로 초기화
+        $dlg.querySelector('.hd').textContent = '판매글 작성';
+        $btnSubmit.textContent = '작성하기';
+        delete $btnSubmit.dataset.editId;
+        $dlg.showModal();
+    });
     $btnCancel.addEventListener('click', () => {
         $dlg.close();
         $form.reset();
+        delete $btnSubmit.dataset.editId;
     });
     $dlg.addEventListener('close', () => {
         $form.reset();
+        delete $btnSubmit.dataset.editId;
     });
     $form.addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -324,18 +422,37 @@ export function renderStore() {
                 body: $fBody.value.trim(),
                 price: Number($fPrice.value || 0),
             };
-            const r = await Api.createMarketPost(payload); // 새로운 API 메서드
+            
+            let r;
+            const editId = $btnSubmit.dataset.editId;
+            
+            if (editId) {
+                // 수정 모드
+                r = await Api.updateMarketPost(editId, payload);
+            } else {
+                // 작성 모드
+                r = await Api.createMarketPost(payload);
+            }
+            
             if (!r.ok) {
-                UI.toast(r.message || '작성 실패');
+                UI.toast(r.message || (editId ? '수정 실패' : '작성 실패'));
                 return;
             }
-            UI.toast(r.message || '판매글이 등록되었습니다.');
+            UI.toast(r.message || (editId ? '게시글이 수정되었습니다.' : '판매글이 등록되었습니다.'));
             $dlg.close();
-            const u = await Api.getMarketPosts(); // 새로운 API 메서드
+            const u = await Api.getMarketPosts();
             if (u.ok) renderUsed(u.posts);
         } finally {
             $btnSubmit.disabled = false;
         }
+    });
+
+    // ---------- 모달/폼: 상세보기 ----------
+    const $dlgPostDetail = document.getElementById('dlgPostDetail');
+    const $btnDetailClose = document.getElementById('btnDetailClose');
+    
+    $btnDetailClose.addEventListener('click', () => {
+        $dlgPostDetail.close();
     });
 
     // ---------- 모달/폼: 카드 추가 ----------

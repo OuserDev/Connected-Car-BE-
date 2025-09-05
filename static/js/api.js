@@ -591,7 +591,7 @@ const RealApi = {
     // 🚗 차량 제어 기록 조회
     async getVehicleHistory(vehicleId = null, options = {}) {
         console.log('🔍 [DEBUG] getVehicleHistory 시작 - vehicleId:', vehicleId, 'options:', options);
-        
+
         try {
             // vehicleId가 없으면 첫 번째 차량 사용
             let targetVehicleId = vehicleId;
@@ -599,10 +599,10 @@ const RealApi = {
                 console.log('🔍 [DEBUG] vehicleId 없음, 차량 목록 조회 중...');
                 const carsResponse = await fetch(`${BASE_URL}/api/cars`, { credentials: 'include' });
                 console.log('🔍 [DEBUG] 차량 API 응답 상태:', carsResponse.status);
-                
+
                 const carsData = await carsResponse.json();
                 console.log('🔍 [DEBUG] 차량 목록 데이터:', carsData);
-                
+
                 if (carsData.success && carsData.data && carsData.data.length > 0) {
                     targetVehicleId = carsData.data[0].id;
                     console.log('🔍 [DEBUG] 첫 번째 차량 ID 선택:', targetVehicleId);
@@ -648,6 +648,164 @@ const RealApi = {
             return { ok: false, message: `서버 연결 실패: ${error.message}` };
         }
     },
+
+    // 💳 카드 관리 API
+    async getCards() {
+        try {
+            const response = await fetch(`${BASE_URL}/api/cards`, {
+                credentials: 'include',
+            });
+
+            const data = await response.json();
+            if (data.success) {
+                return {
+                    ok: true,
+                    cards: data.cards,
+                    totalCount: data.totalCount,
+                };
+            } else {
+                return { ok: false, message: data.error || '카드 목록 조회 실패' };
+            }
+        } catch (error) {
+            console.error('Cards fetch error:', error);
+            return { ok: false, message: '서버 연결 실패' };
+        }
+    },
+
+    async addCard(payload) {
+        try {
+            // store.js에서 보내는 구조: { brand, holder, exp, last4, fullNumber, cvc, isTest, setDefault }
+            // 백엔드 API에 맞게 변환
+            const requestData = {
+                cardNumber: payload.fullNumber,
+                cardName: payload.holder,
+                expiryDate: payload.exp,
+                setAsDefault: payload.setDefault || false,
+                brand: payload.brand,
+                last4: payload.last4,
+                cvc: payload.cvc,
+                isTest: payload.isTest || false
+            };
+
+            const response = await fetch(`${BASE_URL}/api/cards`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify(requestData),
+            });
+
+            const data = await response.json();
+            if (data.success) {
+                return {
+                    ok: true,
+                    message: data.message,
+                    card: data.card,
+                };
+            } else {
+                return { ok: false, message: data.error || '카드 등록 실패' };
+            }
+        } catch (error) {
+            console.error('Card add error:', error);
+            return { ok: false, message: '서버 연결 실패' };
+        }
+    },
+
+    async setDefaultCard(cardId) {
+        try {
+            const response = await fetch(`${BASE_URL}/api/cards/${cardId}/set-default`, {
+                method: 'POST',
+                credentials: 'include',
+            });
+
+            const data = await response.json();
+            if (data.success) {
+                return {
+                    ok: true,
+                    message: data.message,
+                    defaultCardId: data.defaultCardId,
+                };
+            } else {
+                return { ok: false, message: data.error || '기본 카드 설정 실패' };
+            }
+        } catch (error) {
+            console.error('Set default card error:', error);
+            return { ok: false, message: '서버 연결 실패' };
+        }
+    },
+
+    async deleteCard(cardId) {
+        try {
+            const response = await fetch(`${BASE_URL}/api/cards/${cardId}`, {
+                method: 'DELETE',
+                credentials: 'include',
+            });
+
+            const data = await response.json();
+            if (data.success) {
+                return {
+                    ok: true,
+                    message: data.message,
+                };
+            } else {
+                return { ok: false, message: data.error || '카드 삭제 실패' };
+            }
+        } catch (error) {
+            console.error('Delete card error:', error);
+            return { ok: false, message: '서버 연결 실패' };
+        }
+    },
+
+    // 차량 정보 검증 (라이선스 플레이트 + VIN 코드로 DB에서 조회)
+    async verifyCarInfo({ licensePlate, vinCode }) {
+        try {
+            const response = await fetch(`${BASE_URL}/api/cars/verify`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({ licensePlate, vinCode }),
+            });
+
+            const data = await response.json();
+            if (data.success) {
+                return {
+                    ok: true,
+                    car: data.car,
+                    message: data.message,
+                };
+            } else {
+                return { ok: false, message: data.error || '차량 정보 확인 실패' };
+            }
+        } catch (error) {
+            console.error('Car verification error:', error);
+            return { ok: false, message: '서버 연결 실패' };
+        }
+    },
+
+    // 차량 등록 (owner_id를 현재 사용자로 업데이트)
+    async registerCar({ carId, licensePlate, vinCode }) {
+        try {
+            const response = await fetch(`${BASE_URL}/api/cars/register`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({ carId, licensePlate, vinCode }),
+            });
+
+            const data = await response.json();
+            if (data.success) {
+                return {
+                    ok: true,
+                    car: data.car,
+                    message: data.message,
+                };
+            } else {
+                return { ok: false, message: data.error || '차량 등록 실패' };
+            }
+        } catch (error) {
+            console.error('Car registration error:', error);
+            return { ok: false, message: '서버 연결 실패' };
+        }
+    },
 };
 
 export const Api = {
@@ -677,15 +835,22 @@ export const Api = {
     // Vehicle control history - Real BE API
     controlLogs: RealApi.getVehicleHistory, // 실제 제어 기록 조회
 
+    // 💳 Cards (결제 수단) - Real BE API
+    cardsList: RealApi.getCards,
+    cardSelect: RealApi.setDefaultCard,
+    cardsAdd: RealApi.addCard,
+    cardsDelete: RealApi.deleteCard,
+
+    // 🚗 Car registration - Real BE API
+    verifyCarInfo: RealApi.verifyCarInfo,
+    registerCar: RealApi.registerCar,
+
     // Keep mock for other features for now
-    setHasCar: MockApi.setHasCar,
     recommendedPlaces: MockApi.recommendedPlaces,
     controlLogsClear: MockApi.controlLogsClear, // 제어 로그 초기화
     storeNew: MockApi.storeNew,
     storeUsedList: MockApi.storeUsedList, // 이제 실제 API로 대체됨
     storeUsedCreate: MockApi.storeUsedCreate, // 이제 실제 API로 대체됨
-    cardsList: MockApi.cardsList,
-    cardSelect: MockApi.cardSelect,
-    cardsAddTest: MockApi.cardsAddTest,
+    cardsAddTest: MockApi.cardsAddTest, // 테스트 카드 추가용
     purchase: MockApi.purchase,
 };

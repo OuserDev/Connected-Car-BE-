@@ -12,10 +12,10 @@ from datetime import datetime
 
 vehicle_bp = Blueprint('vehicle', __name__)
 
-# 차량 등록 API (MySQL 기반)
-@vehicle_bp.route('/api/cars/register', methods=['POST'])
+# 차량 등록 API (MySQL 기반) - 기존 방식
+@vehicle_bp.route('/api/cars/register-old', methods=['POST'])
 @login_required
-def register_car():
+def register_car_old():
     """새 차량 등록 (MySQL 기반)"""
     try:
         user_id = session.get('user_id')
@@ -465,3 +465,145 @@ def assign_test_vehicle():
         
     except Exception as e:
         return jsonify({'error': f'테스트 차량 할당 실패: {str(e)}'}), 500
+
+
+# 차량 정보 검증 API (라이선스 플레이트 + VIN 코드로 조회)
+@vehicle_bp.route('/api/cars/verify', methods=['POST'])
+@login_required
+def verify_car_info():
+    """라이선스 플레이트와 VIN 코드로 차량 정보 확인"""
+    try:
+        data = request.get_json()
+        
+        if not data:
+            return jsonify({'error': 'JSON 데이터가 필요합니다'}), 400
+        
+        license_plate = data.get('licensePlate', '').strip()
+        vin_code = data.get('vinCode', '').strip()
+        
+        if not license_plate or not vin_code:
+            return jsonify({'error': '라이선스 플레이트와 VIN 코드를 모두 입력해주세요'}), 400
+        
+        # 차량 조회 (owner_id가 NULL인 차량만)
+        query = """
+        SELECT c.*, vs.model_name, vs.manufacturer, vs.year, vs.fuel_type 
+        FROM cars c
+        LEFT JOIN vehicle_specs vs ON c.model_id = vs.id
+        WHERE c.license_plate = %s AND c.vin = %s AND c.owner_id IS NULL
+        """
+        
+        result = DatabaseHelper.execute_query(query, (license_plate, vin_code))
+        
+        if not result:
+            return jsonify({
+                'success': False,
+                'error': '입력한 정보와 일치하는 차량을 찾을 수 없거나 이미 등록된 차량입니다'
+            }), 404
+        
+        car_info = result[0]
+        
+        return jsonify({
+            'success': True,
+            'car': {
+                'id': car_info['id'],
+                'license_plate': car_info['license_plate'],
+                'vin': car_info['vin'],
+                'model_name': car_info['model_name'],
+                'manufacturer': car_info['manufacturer'],
+                'year': car_info['year'],
+                'fuel_type': car_info['fuel_type']
+            },
+            'message': '차량 정보를 찾았습니다'
+        })
+        
+    except Exception as e:
+        return jsonify({'error': f'차량 정보 확인 실패: {str(e)}'}), 500
+
+
+# 차량 등록 완료 API (owner_id 업데이트)
+@vehicle_bp.route('/api/cars/register', methods=['POST'])
+@login_required
+def complete_car_registration():
+    """검증된 차량을 현재 사용자에게 등록"""
+    try:
+        user_id = session.get('user_id')
+        data = request.get_json()
+        
+        if not data:
+            return jsonify({'error': 'JSON 데이터가 필요합니다'}), 400
+        
+        car_id = data.get('carId')
+        license_plate = data.get('licensePlate', '').strip()
+        vin_code = data.get('vinCode', '').strip()
+        
+        if not all([car_id, license_plate, vin_code]):
+            return jsonify({'error': '차량 ID, 라이선스 플레이트, VIN 코드가 모두 필요합니다'}), 400
+        
+        # 차량 존재 및 소유권 확인
+        verify_query = """
+        SELECT id FROM cars 
+        WHERE id = %s AND license_plate = %s AND vin = %s AND owner_id IS NULL
+        """
+        
+        result = DatabaseHelper.execute_query(verify_query, (car_id, license_plate, vin_code))
+        
+        if not result:
+            return jsonify({
+                'success': False,
+                'error': '차량을 찾을 수 없거나 이미 등록된 차량입니다'
+            }), 404
+        
+        # 사용자가 이미 다른 차량을 소유하고 있는지 확인
+        existing_car_query = "SELECT id FROM cars WHERE owner_id = %s"
+        existing_car = DatabaseHelper.execute_query(existing_car_query, (user_id,))
+        
+        if existing_car:
+            return jsonify({
+                'success': False,
+                'error': '이미 등록된 차량이 있습니다. 한 사용자당 하나의 차량만 등록 가능합니다'
+            }), 409
+        
+        # 차량 소유권 업데이트
+        update_query = "UPDATE cars SET owner_id = %s WHERE id = %s"
+        DatabaseHelper.execute_update(update_query, (user_id, car_id))
+        
+        # 차량 등록 이력 추가
+        CarHistory.add(
+            car_id=car_id,
+            action='register',
+            details=f'사용자 {user_id}에게 차량 등록됨'
+        )
+        
+        # 등록된 차량 정보 조회
+        car_info_query = """
+        SELECT c.*, vs.model_name, vs.manufacturer, vs.year, vs.fuel_type 
+        FROM cars c
+        LEFT JOIN vehicle_specs vs ON c.model_id = vs.id
+        WHERE c.id = %s
+        """
+        
+        car_info = DatabaseHelper.execute_query(car_info_query, (car_id,))
+        
+        if car_info:
+            car_data = car_info[0]
+            return jsonify({
+                'success': True,
+                'car': {
+                    'id': car_data['id'],
+                    'license_plate': car_data['license_plate'],
+                    'vin': car_data['vin'],
+                    'model_name': car_data['model_name'],
+                    'manufacturer': car_data['manufacturer'],
+                    'year': car_data['year'],
+                    'fuel_type': car_data['fuel_type']
+                },
+                'message': '차량이 성공적으로 등록되었습니다'
+            })
+        else:
+            return jsonify({
+                'success': True,
+                'message': '차량이 등록되었지만 정보 조회에 실패했습니다'
+            })
+        
+    except Exception as e:
+        return jsonify({'error': f'차량 등록 실패: {str(e)}'}), 500

@@ -95,9 +95,19 @@ header.appbar{
 .tab svg{width:20px;height:20px;opacity:.85}
 
 /* 커스텀 모달 오버레이 */
-.scrim{ position:fixed; inset:0; background:rgba(0,0,0,.45); display:none; align-items:center; justify-content:center; z-index:9999 }
+.scrim{ position:fixed; inset:0; background:rgba(0,0,0,.75); display:none; align-items:center; justify-content:center; z-index:9999; backdrop-filter: blur(2px); }
 .scrim.show{ display:flex }
-.dialog{ position:relative; z-index:10000 }
+.dialog{ 
+  position:relative; z-index:10000; 
+  background:linear-gradient(180deg,var(--card),#0d1230);
+  border:1px solid var(--border); 
+  border-radius:var(--radius); 
+  box-shadow:var(--shadow); 
+  padding:20px; 
+  width:min(400px, 90vw);
+  max-height:90vh;
+  overflow-y:auto;
+}
 .modal-open #map-main, .modal-open #map-page, .modal-open .tabbar { pointer-events:none !important; }
 .modal-open #map-main, .modal-open #map-page { filter: blur(1px); }
 
