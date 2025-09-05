@@ -7,31 +7,48 @@ import { getRoot } from '../core/shared.js';
 export async function renderControl() {
     const root = getRoot();
     const { user } = State.get();
+    let { selectedCarId } = State.get();
 
-    // 내부 상태(홈에서 받아온 스냅) - 상세 화면에서 일부 값 반영용
-    let snap = null;
+    // 선택된 차량 정보 및 상태
+    let currentCar = null;
+    let vehicleStatus = null;
 
     // ─────────────────────────────────────────────────────────
     // 공통 유틸
     // ─────────────────────────────────────────────────────────
-    function mountCarArt() {
+    function mountCarArt(carInfo) {
         const wrap = document.getElementById('vehicleSvg');
         if (!wrap) return;
-        const img = new Image();
-        img.src = '/static/assets/cars/GRHYB.png';
-        img.alt = '차량';
-        img.decoding = 'async';
-        img.fetchPriority = 'high';
-        img.addEventListener('error', () => {
-            wrap.innerHTML = '';
-            try {
-                wrap.appendChild(UI.svgFallback('#58d3ff', 'Vehicle', '등록번호'));
-            } catch {
+
+        if (carInfo && carInfo.id) {
+            // API에서 제공하는 controlImageUrl 사용
+            const img = new Image();
+            img.src = carInfo.controlImageUrl || `/static/assets/cars/control_car_images/${carInfo.id}.png`;
+            img.alt = carInfo.model_name || carInfo.model || '차량';
+            img.decoding = 'async';
+            img.fetchPriority = 'high';
+            img.addEventListener('error', () => {
+                // 이미지 로드 실패시 폴백
+                wrap.innerHTML = '';
+                try {
+                    wrap.appendChild(UI.svgFallback('#58d3ff', carInfo.model_name || 'Vehicle', carInfo.license_plate || '등록번호'));
+                } catch {
+                    wrap.innerHTML = `<div style="width:220px;height:120px;border-radius:60px;background:#102235;border:1px solid #2b5d80"></div>`;
+                }
+            });
+            wrap.appendChild(img);
+        } else {
+            // 차량 정보 없을 때 기본 이미지 (첫 번째 차량 이미지 사용)
+            const img = new Image();
+            img.src = '/static/assets/cars/control_car_images/1.png';
+            img.alt = '차량';
+            img.addEventListener('error', () => {
                 wrap.innerHTML = `<div style="width:220px;height:120px;border-radius:60px;background:#102235;border:1px solid #2b5d80"></div>`;
-            }
-        });
-        wrap.appendChild(img);
+            });
+            wrap.appendChild(img);
+        }
     }
+
     const fmtDate = (iso) => (iso ? new Date(iso).toLocaleString() : '-');
     const safe = (v) => (typeof v === 'number' && Number.isFinite(v) ? v : '-');
 
@@ -39,9 +56,54 @@ export async function renderControl() {
     // ① 제어 홈
     // ─────────────────────────────────────────────────────────
     async function renderHome() {
+        // 선택된 차량 정보 로드
+        try {
+            // selectedCarId가 없으면 먼저 차량 목록을 가져와서 첫 번째 차량을 선택
+            if (!selectedCarId) {
+                const carsResponse = await fetch('/api/cars', { credentials: 'include' });
+                if (carsResponse.ok) {
+                    const carsData = await carsResponse.json();
+                    if (carsData.success && carsData.data && carsData.data.length > 0) {
+                        const firstCarId = carsData.data[0].id;
+                        State.setSelectedCarId(firstCarId);
+                        selectedCarId = firstCarId;
+                        console.log(`자동으로 첫 번째 차량 선택: ${firstCarId}`);
+                    } else {
+                        console.warn('등록된 차량이 없습니다');
+                        // 차량이 없는 경우 데모 모드로 진행
+                        selectedCarId = null;
+                    }
+                }
+            }
+
+            const vehicleResponse = await Api.vehicleStatus();
+            if (vehicleResponse.ok) {
+                if (vehicleResponse.allCars && vehicleResponse.allCars.length > 1) {
+                    // 여러 차량 중 선택된 차량 찾기
+                    currentCar = vehicleResponse.allCars.find((car) => car.id === selectedCarId) || vehicleResponse.carInfo;
+                } else {
+                    currentCar = vehicleResponse.carInfo;
+                }
+                vehicleStatus = vehicleResponse.status;
+            }
+        } catch (error) {
+            console.error('차량 정보 로드 실패:', error);
+        }
+
         root.innerHTML = `
       <div class="card control-stage">
         <div class="kicker">제어</div>
+        
+        ${
+            currentCar
+                ? `
+        <div class="car-info" style="text-align: center; margin-bottom: 16px;">
+            <div style="font-weight: 600; color: #fff;">${currentCar.model_name || currentCar.model}</div>
+            <div style="font-size: 14px; color: #8b9dc3;">${currentCar.license_plate || currentCar.licensePlate}</div>
+        </div>
+        `
+                : ''
+        }
 
         ${
             !user?.hasCar
@@ -60,40 +122,47 @@ export async function renderControl() {
             <button id="hLock"    class="hex-btn hex-pos-lock"   title="문 잠금/해제">🔒</button>
             <button id="hHorn"    class="hex-btn hex-pos-horn"   title="경적">📣</button>
             <button id="hFlash"   class="hex-btn hex-pos-flash"  title="비상등">⚠️</button>
-            <button id="hWindow"  class="hex-btn hex-pos-window" title="윈도우" disabled>🪟</button>
+            <button id="hAC"      class="hex-btn hex-pos-window" title="에어컨">❄️</button>
           </div>
         </div>
 
         <div class="control-hint">차량 및 경고등을 선택하면 상세 내용을 확인할 수 있습니다.</div>
       </div>
 
-      <div class="ac-line">
-        <div>현재 설정 온도</div>
-        <div class="spacer"></div>
-        <div id="stBottomTemp">—</div>
-      </div>
       
       <div class="grid" style="grid-template-columns: repeat(3, minmax(0,1fr)); gap:8px; margin:10px 0 6px">
         <div class="chip"><span class="k">도어</span><b id="stLocked">—</b></div>
         <div class="chip"><span class="k">시동</span><b id="stEngine">—</b></div>
+        <div class="chip"><span class="k">에어컨</span><b id="stAC">—</b></div>
+      </div>
+      
+      <div class="grid" style="grid-template-columns: repeat(3, minmax(0,1fr)); gap:8px; margin:0 0 16px">
         <div class="chip"><span class="k">실내온도</span><b id="stCabin">—</b></div>
+        <div class="chip"><span class="k">연료</span><b id="stFuel">—</b></div>
+        <div class="chip"><span class="k">배터리</span><b id="stBattery">—</b></div>
       </div>
 
-      <div class="ctrl-cards">
+      <div class="ctrl-cards" style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin: 16px 0;">
         <div class="ctrl-card clickable" id="cardACLow" role="button" tabindex="0" aria-label="에어컨을 켜고 18도로 설정">
-          <div class="value">Low</div>
+          <div class="value">18℃</div>
           <div class="title">가장 시원하게</div>
           <div>❄️ 에어컨 ON</div>
         </div>
 
-        <div class="ctrl-card">
+        <div class="ctrl-card" style="text-align: center;">
           <div class="value" id="stTarget">—</div>
-          <div class="title">스마트 공조</div>
-          <div style="display:flex; gap:6px">
-            <button class="btn" id="btnTempDown">- 온도</button>
-            <button class="btn" id="btnTempUp">+ 온도</button>
-            <button class="btn ghost" id="btnACOff">🛑 OFF</button>
+          <div class="title">현재 설정</div>
+          <div style="display:flex; gap:4px; justify-content: center; flex-wrap: wrap;">
+            <button class="btn" id="btnTempDown" style="font-size: 12px; padding: 4px 8px;">-</button>
+            <button class="btn" id="btnTempUp" style="font-size: 12px; padding: 4px 8px;">+</button>
+            <button class="btn ghost" id="btnACOff" style="font-size: 12px; padding: 4px 8px;">OFF</button>
           </div>
+        </div>
+        
+        <div class="ctrl-card clickable" id="cardHeat" role="button" tabindex="0" aria-label="히터를 켜고 25도로 설정">
+          <div class="value">25℃</div>
+          <div class="title">따뜻하게</div>
+          <div>🔥 히터 ON</div>
         </div>
       </div>
 
@@ -116,40 +185,119 @@ export async function renderControl() {
       </div>
     `;
 
-        mountCarArt();
+        mountCarArt(currentCar);
 
         const $locked = document.getElementById('stLocked');
         const $engine = document.getElementById('stEngine');
         const $cabin = document.getElementById('stCabin');
         const $target = document.getElementById('stTarget');
-        const $btmT = document.getElementById('stBottomTemp');
+        const $ac = document.getElementById('stAC');
+        const $fuel = document.getElementById('stFuel');
+        const $battery = document.getElementById('stBattery');
 
         const $hEngine = document.getElementById('hEngine');
         const $hLock = document.getElementById('hLock');
         const $hHorn = document.getElementById('hHorn');
         const $hFlash = document.getElementById('hFlash');
+        const $hAC = document.getElementById('hAC');
 
         const $btnACOff = document.getElementById('btnACOff');
         const $btnTempUp = document.getElementById('btnTempUp');
         const $btnTempDw = document.getElementById('btnTempDown');
         const $cardACLow = document.getElementById('cardACLow');
+        const $cardHeat = document.getElementById('cardHeat');
 
         function reflect(state) {
-            snap = state;
-            // (주의) 기존 코드에서 문구가 반대로 되어 있었음: locked=true → "잠김"
-            $locked.textContent = state.locked ? 'locked' : 'unlocked';
-            $engine.textContent = state.engineOn ? 'ON' : 'OFF';
-            const cabinNow = Number.isFinite(state.cabinTemp) ? state.cabinTemp : null;
-            $cabin.textContent = cabinNow !== null ? `${cabinNow}℃` : '—';
-            const t = Number.isFinite(state.cabinTempTarget) ? state.cabinTempTarget : 22;
-            $target.textContent = `${t}℃`;
-            $btmT.textContent = `${t.toFixed(1)}℃`;
+            console.log('reflect called with state:', state);
+            vehicleStatus = state;
 
-            $hEngine.classList.toggle('active', !!state.engineOn);
-            $hLock.classList.toggle('active', !!state.locked);
+            // state가 없거나 undefined인 경우 기본값 처리
+            if (!state) {
+                console.warn('reflect: state is undefined');
+                $locked.textContent = '—';
+                $engine.textContent = '—';
+                $ac.textContent = '—';
+                $cabin.textContent = '—';
+                $target.textContent = '—';
+                $fuel.textContent = '—';
+                $battery.textContent = '—';
+                return;
+            }
 
+            // 도어 상태 표시 (실제 API boolean과 MockAPI 문자열 모두 지원)
+            let doorState;
+            if (state.door_state !== undefined) {
+                doorState = state.door_state ? 'locked' : 'unlocked'; // boolean → string
+            } else if (state.doorState !== undefined) {
+                doorState = state.doorState;
+            } else if (state.locked !== undefined) {
+                doorState = state.locked ? 'locked' : 'unlocked';
+            } else {
+                doorState = 'unlocked';
+            }
+            const doorText = doorState === 'locked' ? '잠김' : '열림';
+            console.log('Door state:', state.door_state, '-> doorState:', doorState, '-> Display:', doorText);
+            $locked.textContent = doorText;
+
+            // 시동 상태 표시 (실제 API boolean과 MockAPI 문자열 모두 지원)
+            let engineState;
+            if (state.engine_state !== undefined) {
+                engineState = state.engine_state ? 'on' : 'off'; // boolean → string
+            } else if (state.engineState !== undefined) {
+                engineState = state.engineState;
+            } else if (state.engineOn !== undefined) {
+                engineState = state.engineOn ? 'on' : 'off';
+            } else {
+                engineState = 'off';
+            }
+            const engineText = engineState === 'on' ? 'ON' : 'OFF';
+            console.log('Engine state:', state.engine_state, '-> engineState:', engineState, '-> Display:', engineText);
+            $engine.textContent = engineText;
+
+            // 에어컨 상태 표시 (실제 API boolean과 MockAPI 문자열 모두 지원)
+            let acState;
+            const acValue = state.climate?.ac_state || state.ac_state;
+            if (acValue !== undefined) {
+                acState = acValue ? 'on' : 'off'; // boolean → string
+            } else if (state.acOn !== undefined) {
+                acState = state.acOn ? 'on' : 'off';
+            } else {
+                acState = 'off';
+            }
+            const acText = acState === 'on' ? 'ON' : 'OFF';
+            console.log('AC state:', acValue, '-> acState:', acState, '-> Display:', acText);
+            $ac.textContent = acText;
+
+            // 온도 표시 (MockAPI와 실제 API 형식 모두 지원)
+            const currentTemp = state.climate?.current_temp || state.current_temp || state.cabinTemp;
+            const targetTemp = state.climate?.target_temp || state.target_temp || state.targetTemp || state.cabinTempTarget || 22;
+            console.log('Temperature - current:', currentTemp, 'target:', targetTemp);
+            $cabin.textContent = currentTemp !== null ? `${currentTemp.toFixed(2)}℃` : '—';
+            $target.textContent = `${targetTemp}℃`;
+
+            // 연료 및 배터리 표시 (실제 API와 MockAPI 형식 모두 지원)
+            const fuel = state.fuel || 75;
+            let battery = state.battery;
+            if (!battery && state.battery_voltage) {
+                battery = state.battery_voltage; // 실제 API에서 battery_voltage 사용
+            } else if (!battery && state.batteryPct) {
+                battery = state.batteryPct / 100 * 12.6; // MockAPI batteryPct를 전압으로 변환
+            } else if (!battery) {
+                battery = 12.6; // 기본값
+            }
+            
+            console.log('Fuel:', fuel, 'Battery:', battery);
+            $fuel.textContent = `${fuel}%`;
+            $battery.textContent = `${battery.toFixed(1)}V`;
+
+            // 버튼 상태 업데이트
+            $hEngine.classList.toggle('active', engineState === 'on');
+            $hLock.classList.toggle('active', doorState === 'locked');
+            $hAC.classList.toggle('active', acState === 'on');
+
+            // 차량 시각적 효과
             const $veh = document.getElementById('vehicleSvg');
-            if ($veh) $veh.classList.toggle('glow', !!state.engineOn);
+            if ($veh) $veh.classList.toggle('glow', engineState === 'on');
         }
 
         async function load() {
@@ -162,45 +310,122 @@ export async function renderControl() {
         }
 
         async function doAct(action, data) {
-            const res = await Api.vehicleControl(action, data);
-            if (!res.ok) {
-                UI.toast(res.message || '제어 실패');
-                return;
+            try {
+                if (!selectedCarId) {
+                    UI.toast('차량을 선택해주세요');
+                    return;
+                }
+                
+                const res = await Api.vehicleControl(selectedCarId, action, data);
+                if (!res.ok) {
+                    UI.toast(res.message || '제어 실패');
+                    return;
+                }
+                UI.toast(res.message || '제어 완료');
+
+                // 응답에 status가 있는 경우에만 reflect 호출
+                console.log('doAct result:', res);
+                if (res.status) {
+                    console.log('Updating status with:', res.status);
+                    reflect(res.status);
+                } else {
+                    console.log('No status in response, reloading...');
+                    // status가 없으면 전체 상태를 다시 로드
+                    setTimeout(() => load(), 500); // 약간의 지연 후 상태 새로고침
+                }
+            } catch (error) {
+                console.error('doAct error:', error);
+                UI.toast('제어 요청 중 오류가 발생했습니다');
             }
-            UI.toast(res.message);
-            reflect(res.status);
         }
 
         async function acLowQuick() {
-            const on = await Api.vehicleControl('acOn');
-            if (!on.ok) {
-                UI.toast(on.message || '제어 실패');
-                return;
+            try {
+                await doAct('ac_state', { value: true });
+                await doAct('target_temp', { value: 18 });
+                UI.toast('❄️ 에어컨 ON · 18℃');
+            } catch (error) {
+                UI.toast('에어컨 제어 실패');
             }
-            const temp = await Api.vehicleControl('setTemp', { target: 18 });
-            if (!temp.ok) {
-                UI.toast(temp.message || '제어 실패');
-                reflect(on.status);
-                return;
-            }
-            reflect(temp.status);
-            UI.toast('❄️ 에어컨 ON · 18℃');
         }
 
-        // 육각 버튼
+        async function heatQuick() {
+            try {
+                await doAct('heater_state', { value: true });
+                await doAct('target_temp', { value: 25 });
+                UI.toast('🔥 히터 ON · 25℃');
+            } catch (error) {
+                UI.toast('히터 제어 실패');
+            }
+        }
+
+        // 육각 버튼 이벤트
         $hEngine.addEventListener('click', () => {
-            snap?.engineOn ? doAct('engineOff') : doAct('engineOn');
+            // 실제 API는 boolean, MockAPI는 string 처리
+            let currentState;
+            if (vehicleStatus?.engine_state !== undefined) {
+                currentState = vehicleStatus.engine_state; // boolean
+            } else if (vehicleStatus?.engineState !== undefined) {
+                currentState = vehicleStatus.engineState === 'on'; // string → boolean
+            } else if (vehicleStatus?.engineOn !== undefined) {
+                currentState = vehicleStatus.engineOn; // boolean
+            } else {
+                currentState = false;
+            }
+            const newState = !currentState; // boolean toggle
+            doAct('engine_state', { value: newState });
         });
+
         $hLock.addEventListener('click', () => {
-            snap?.locked ? doAct('unlock') : doAct('lock');
+            // 실제 API는 boolean, MockAPI는 string 처리
+            let currentState;
+            if (vehicleStatus?.door_state !== undefined) {
+                currentState = vehicleStatus.door_state; // boolean
+            } else if (vehicleStatus?.doorState !== undefined) {
+                currentState = vehicleStatus.doorState === 'locked'; // string → boolean
+            } else if (vehicleStatus?.locked !== undefined) {
+                currentState = vehicleStatus.locked; // boolean
+            } else {
+                currentState = false;
+            }
+            const newState = !currentState; // boolean toggle
+            doAct('door_state', { value: newState });
         });
-        $hHorn.addEventListener('click', () => doAct('horn'));
-        $hFlash.addEventListener('click', () => doAct('flash'));
+
+        $hHorn.addEventListener('click', () => {
+            doAct('horn', { value: true });
+        });
+
+        $hFlash.addEventListener('click', () => {
+            doAct('flash', { value: true });
+        });
+
+        $hAC.addEventListener('click', () => {
+            // 실제 API는 boolean, MockAPI는 string 처리
+            let currentState;
+            const acValue = vehicleStatus?.climate?.ac_state || vehicleStatus?.ac_state;
+            if (acValue !== undefined) {
+                currentState = acValue; // boolean
+            } else if (vehicleStatus?.acOn !== undefined) {
+                currentState = vehicleStatus.acOn; // boolean
+            } else {
+                currentState = false;
+            }
+            const newState = !currentState; // boolean toggle
+            doAct('ac_state', { value: newState });
+        });
 
         // 카드 동작
-        $btnACOff.addEventListener('click', () => doAct('acOff'));
-        $btnTempUp.addEventListener('click', () => doAct('setTemp', { target: (snap?.cabinTempTarget ?? 22) + 1 }));
-        $btnTempDw.addEventListener('click', () => doAct('setTemp', { target: (snap?.cabinTempTarget ?? 22) - 1 }));
+        $btnACOff.addEventListener('click', () => doAct('ac_state', { value: false }));
+        $btnTempUp.addEventListener('click', () => {
+            const currentTemp = vehicleStatus?.climate?.target_temp || vehicleStatus?.target_temp || vehicleStatus?.targetTemp || vehicleStatus?.cabinTempTarget || 22;
+            doAct('target_temp', { value: Math.min(currentTemp + 1, 30), target: Math.min(currentTemp + 1, 30) });
+        });
+        $btnTempDw.addEventListener('click', () => {
+            const currentTemp = vehicleStatus?.climate?.target_temp || vehicleStatus?.target_temp || vehicleStatus?.targetTemp || vehicleStatus?.cabinTempTarget || 22;
+            doAct('target_temp', { value: Math.max(currentTemp - 1, 16), target: Math.max(currentTemp - 1, 16) });
+        });
+
         $cardACLow.addEventListener('click', acLowQuick);
         $cardACLow.addEventListener('keydown', (e) => {
             if (e.key === 'Enter' || e.key === ' ') {
@@ -209,12 +434,25 @@ export async function renderControl() {
             }
         });
 
+        $cardHeat.addEventListener('click', heatQuick);
+        $cardHeat.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                heatQuick();
+            }
+        });
+
         // 상세 진입
         document.getElementById('btnGoStatus')?.addEventListener('click', renderStatusView);
         document.getElementById('btnGoLogs')?.addEventListener('click', renderLogsView);
         document.getElementById('btnGoVideos')?.addEventListener('click', rendervideosView);
 
-        await load();
+        // 초기 상태 로드
+        if (vehicleStatus) {
+            reflect(vehicleStatus);
+        } else {
+            await load();
+        }
     }
 
     // ─────────────────────────────────────────────────────────
@@ -331,12 +569,14 @@ export async function renderControl() {
         };
 
         let detail = DEMO_STATUS;
-        // 홈 스냅(제어 홈에서 가져온 최신 스냅) 반영
-        if (snap) {
+        // 홈에서 가져온 최신 차량 상태 반영
+        if (vehicleStatus) {
             detail = {
                 ...detail,
-                engine_state: snap.engineOn ? 'on' : 'off',
-                door_state: snap.locked ? 'locked' : 'unlocked',
+                engine_state: vehicleStatus.engine_state || vehicleStatus.engineState || 'off',
+                door_state: vehicleStatus.door_state || vehicleStatus.doorState || 'unlocked',
+                fuel: vehicleStatus.fuel || 75,
+                battery: vehicleStatus.battery || 12.6,
             };
         }
 
@@ -445,12 +685,12 @@ export async function renderControl() {
                 // 없으면 데모+홈 스냅 반영 유지
                 if (!next) next = detail;
 
-                // 홈 스냅(엔진/도어 최신화)
-                if (snap) {
+                // 홈에서 가져온 최신 상태 반영 (엔진/도어 최신화)
+                if (vehicleStatus) {
                     next = {
                         ...next,
-                        engine_state: snap.engineOn ? 'on' : 'off',
-                        door_state: snap.locked ? 'locked' : 'unlocked',
+                        engine_state: vehicleStatus.engine_state || vehicleStatus.engineState || 'off',
+                        door_state: vehicleStatus.door_state || vehicleStatus.doorState || 'unlocked',
                     };
                 }
 
@@ -474,22 +714,87 @@ export async function renderControl() {
         pollTimer = setInterval(fetchLatest, 15000);
     }
     // ─────────────────────────────────────────────────────────
-    // ③ 제어 기록(지금은 간단 문구)
+    // ③ 제어 기록 (실제 API 연동)
     // ─────────────────────────────────────────────────────────
     async function renderLogsView() {
+        let logs = [];
+        let loading = true;
+
+        // 로딩 상태 표시
         root.innerHTML = `
       <div class="card"><div class="body">
         <div class="row" style="gap:8px; align-items:center;">
           <button class="btn ghost" id="btnBackHome2">← 뒤로가기</button>
           <div class="kicker">차량 제어 기록</div>
+          <div class="spacer"></div>
+          <button class="btn ghost" id="btnRefreshLogs">새로고침</button>
         </div>
       </div></div>
 
       <div class="card"><div class="body">
-        <div>제어 기록 목록이 여기에 표시됩니다.</div>
+        <div id="logsContent">로딩 중...</div>
       </div></div>
     `;
+
+        const $content = document.getElementById('logsContent');
+        
+        async function loadLogs() {
+            try {
+                loading = true;
+                $content.innerHTML = '로딩 중...';
+                
+                // MockAPI에서 제어 로그 가져오기
+                const result = await Api.controlLogs();
+                if (result.ok) {
+                    logs = result.logs || [];
+                    renderLogsList();
+                } else {
+                    $content.innerHTML = '<div class="muted">제어 기록을 불러올 수 없습니다.</div>';
+                }
+            } catch (error) {
+                console.error('Control logs error:', error);
+                $content.innerHTML = '<div class="muted">제어 기록 로딩 중 오류가 발생했습니다.</div>';
+            } finally {
+                loading = false;
+            }
+        }
+
+        function renderLogsList() {
+            if (logs.length === 0) {
+                $content.innerHTML = '<div class="muted">아직 제어 기록이 없습니다.</div>';
+                return;
+            }
+
+            const logItems = logs.slice(0, 50).map(log => {
+                const timestamp = new Date(log.ts).toLocaleString();
+                const statusIcon = log.ok ? '✅' : '❌';
+                const actionText = log.message || `${log.action} 실행`;
+                
+                return `
+                    <div class="chip" style="margin-bottom: 8px; display: flex; align-items: center; gap: 8px;">
+                        <span style="font-size: 16px;">${statusIcon}</span>
+                        <div style="flex: 1;">
+                            <div style="font-weight: 500;">${actionText}</div>
+                            <div class="muted" style="font-size: 12px;">${timestamp}</div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            $content.innerHTML = `
+                <div style="margin-bottom: 12px;">
+                    <span class="muted">최근 ${logs.length}개의 제어 기록</span>
+                </div>
+                ${logItems}
+            `;
+        }
+
+        // 이벤트 리스너
         document.getElementById('btnBackHome2')?.addEventListener('click', renderHome);
+        document.getElementById('btnRefreshLogs')?.addEventListener('click', loadLogs);
+
+        // 초기 로딩
+        await loadLogs();
     }
 
     // ─────────────────────────────────────────────────────────

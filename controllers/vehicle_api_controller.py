@@ -121,7 +121,29 @@ def control_vehicle(vehicle_id):
         if not ownership_check:
             return jsonify({'error': '해당 차량에 대한 권한이 없습니다'}), 403
         
-        # car-api 명세에 맞는 요청 데이터 구성
+        # horn과 hazard_lights는 이력만 남기고 car-api에 전송하지 않음
+        if data['property'] in ['horn', 'hazard_lights']:
+            # 제어 이력 저장 (BE 데이터베이스에만)
+            CarHistory.add(
+                car_id=vehicle_id,
+                action=f"{data['property']}_activated",
+                user_id=user_id,
+                parameters={
+                    'property': data['property'],
+                    'value': data['value'],
+                    'note': 'Temporary action - logged only'
+                },
+                success=True
+            )
+            
+            # 성공 응답 반환 (상태는 변경하지 않음)
+            return jsonify({
+                'success': True,
+                'message': f"{data['property']} 명령이 실행되었습니다",
+                'data': None  # 상태 변경 없음
+            }), 200
+        
+        # 일반 제어 명령은 car-api로 전송
         control_data = {
             'id': vehicle_id,
             'property': data['property'],

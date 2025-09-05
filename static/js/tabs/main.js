@@ -27,19 +27,19 @@ export async function renderMain() {
     // 로그인되어 있고 차량이 있는 경우에만 API 호출
     if (user && token && user.hasCar) {
         const [{ ok: okP, items = [] } = {}, vehicleResponse = {}] = await Promise.all([Api.recommendedPlaces(), Api.vehicleStatus()]);
-        
+
         // 디버깅용 로그
         console.log('🚗 Main.js - Vehicle Response:', vehicleResponse);
         console.log('🚗 Vehicle Status:', vehicleResponse.status);
         console.log('🚗 Car Info:', vehicleResponse.carInfo);
-        
+
         renderAuthenticatedUser(root, user, vehicleResponse, okP, items);
     } else {
         // 로그인하지 않았거나 차량이 없으면 로그인 유도 화면만 표시
         console.log('🚫 로그인하지 않았거나 차량 정보 없음 - 로그인 유도 화면 표시');
         renderUnauthenticatedUser(root);
     }
-    
+
     // 렌더링 완료
     _isRendering = false;
 }
@@ -52,7 +52,7 @@ function renderAuthenticatedUser(root, user, vehicleResponse, okP, items) {
     } else if (vehicleResponse.ok && vehicleResponse.allCars && vehicleResponse.allCars.length > 1) {
         // 여러 차량을 소유한 경우 - 히어로 먼저, 차량 선택기는 아래에
         const selectedCarId = State.selectedCarId || vehicleResponse.carInfo?.id;
-        const selectedCar = vehicleResponse.allCars.find(car => car.id === selectedCarId) || vehicleResponse.carInfo;
+        const selectedCar = vehicleResponse.allCars.find((car) => car.id === selectedCarId) || vehicleResponse.carInfo;
         root.appendChild(UI.carHero(user, vehicleResponse.status, selectedCar));
         root.appendChild(UI.carSelector(vehicleResponse.allCars, selectedCarId));
     } else if (vehicleResponse.ok && vehicleResponse.status) {
@@ -67,13 +67,13 @@ function renderAuthenticatedUser(root, user, vehicleResponse, okP, items) {
     let currentCarInfo = null;
     if (vehicleResponse.ok && vehicleResponse.allCars && vehicleResponse.allCars.length > 1) {
         const selectedCarId = State.selectedCarId || vehicleResponse.carInfo?.id;
-        currentCarInfo = vehicleResponse.allCars.find(car => car.id === selectedCarId) || vehicleResponse.carInfo;
+        currentCarInfo = vehicleResponse.allCars.find((car) => car.id === selectedCarId) || vehicleResponse.carInfo;
     } else if (vehicleResponse.carInfo) {
         currentCarInfo = vehicleResponse.carInfo;
     }
-    
+
     renderMapSection(root, items, vehicleResponse.status, currentCarInfo);
-    
+
     // 추천 리스트는 지도 아래에 렌더링
     renderRecommendedPlaces(root, okP, items);
 }
@@ -81,9 +81,9 @@ function renderAuthenticatedUser(root, user, vehicleResponse, okP, items) {
 function renderUnauthenticatedUser(root) {
     // 로그인 유도 화면 표시
     root.appendChild(UI.loginCallout());
-    
-    // 추천 장소는 로그인 없이도 표시 (빈 배열로)
-    renderRecommendedPlaces(root, false, []);
+
+    // 로그인하지 않은 경우 추천 장소 섹션을 표시하지 않음
+    // renderRecommendedPlaces(root, false, []);
 }
 
 function renderRecommendedPlaces(root, okP, items) {
@@ -109,7 +109,7 @@ function renderRecommendedPlaces(root, okP, items) {
         <button class="btn ghost place-detail-btn" data-index="${index}">자세히</button>`;
             list.appendChild(row);
         });
-        
+
         // "자세히" 버튼 이벤트 리스너 추가
         list.addEventListener('click', (e) => {
             if (e.target.classList.contains('place-detail-btn')) {
@@ -118,7 +118,7 @@ function renderRecommendedPlaces(root, okP, items) {
                 if (place && typeof place.lat === 'number' && typeof place.lng === 'number') {
                     console.log('🗺️ Moving to place:', place.name, place.lat, place.lng);
                     moveToLocation(place.lat, place.lng, place.name);
-                    
+
                     // 지도로 스크롤 (지도가 위쪽에 있으므로 상단으로 스크롤)
                     setTimeout(() => {
                         const mapElement = document.querySelector('.map');
@@ -147,23 +147,23 @@ function renderMapSection(root, items, vehicleStatus = null, carInfo = null) {
         try {
             await waitForNaver();
             mountMap('#map-main', { places: items });
-            
+
             // 차량 위치 정보가 있으면 차량 마커 추가
             console.log('🗺️ Checking vehicle location:', { vehicleStatus, carInfo });
             if (vehicleStatus?.location && carInfo) {
                 const { lat, lng } = vehicleStatus.location;
                 console.log('🗺️ Adding vehicle marker:', { lat, lng, carInfo });
-                
+
                 addVehicleMarker(lat, lng, {
                     model: carInfo.model_name || carInfo.model,
-                    plate: carInfo.license_plate || carInfo.licensePlate
+                    plate: carInfo.license_plate || carInfo.licensePlate,
                 });
             } else {
-                console.log('❌ No vehicle location data:', { 
-                    hasLocation: !!vehicleStatus?.location, 
+                console.log('❌ No vehicle location data:', {
+                    hasLocation: !!vehicleStatus?.location,
                     hasCarInfo: !!carInfo,
                     vehicleStatus,
-                    carInfo 
+                    carInfo,
                 });
             }
         } catch (e) {

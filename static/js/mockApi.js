@@ -168,11 +168,14 @@ export const MockApi = {
         batteryPct: Math.max(0, Math.min(100, battery)),
         charging: false,
         outsideTemp: 24,
-        cabinTemp: ctl.acOn ? ctl.targetTemp : 28,  // 간단 모델
+        cabinTemp: ctl.acOn ? (ctl.targetTemp + (Math.random() * 2 - 1)) : (28 + (Math.random() * 4 - 2)),  // 약간의 변동 추가
         cabinTempTarget: ctl.targetTemp,
+        targetTemp: ctl.targetTemp,  // 추가: 일관성을 위해
         locked: ctl.locked,
         engineOn: ctl.engineOn,
         acOn: ctl.acOn,
+        fuel: 75,  // 연료 정보 추가
+        battery: Math.max(0, Math.min(100, battery)) / 100 * 12.6,  // 배터리 전압으로 변환
       }
     };
   },

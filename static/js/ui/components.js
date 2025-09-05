@@ -77,8 +77,14 @@ export const UI = (() => {
         const plate = carInfo?.license_plate || carInfo?.licensePlate || user?.car?.plate || '등록번호';
         const caption = el('div', 'caption', `${model} · ${plate}`);
 
-        // 우선순위: user.carPhotoData > carInfo.imageUrl > user.car.imageUrl > PLACEHOLDER > SVG
-        const prefer = [user?.carPhotoData, carInfo?.imageUrl, user?.car?.imageUrl, PLACEHOLDER_IMG].filter(Boolean);
+        // 차량 ID에 맞는 이미지 경로 생성 (main_car_images 폴더 사용)
+        let carImagePath = PLACEHOLDER_IMG;
+        if (carInfo?.id) {
+            carImagePath = `/static/assets/cars/main_car_images/${carInfo.id}.jpg`;
+        }
+
+        // 우선순위: user.carPhotoData > 차량별 이미지 > carInfo.imageUrl > user.car.imageUrl > PLACEHOLDER > SVG
+        const prefer = [user?.carPhotoData, carImagePath, carInfo?.imageUrl, user?.car?.imageUrl, PLACEHOLDER_IMG].filter(Boolean);
 
         const img = new Image();
         img.className = 'hero-img';
@@ -115,7 +121,7 @@ export const UI = (() => {
 
         // 메트릭을 모델명과 동일한 스타일로 변경
         const metrics = el('div', 'hero-metrics');
-        
+
         // 모델명과 동일한 스타일의 박스 생성
         const createStatusBox = (label, value, isWarning = false) => {
             const box = el('div');
@@ -136,10 +142,10 @@ export const UI = (() => {
         // 실제 차량 상태 데이터 사용
         const fuel = status && typeof status.fuel === 'number' ? `${status.fuel}%` : '데이터 없음';
         const engineState = status?.engine_state === true ? 'ON' : status?.engine_state === false ? 'OFF' : '알 수 없음';
-        
+
         // 연료가 낮으면 경고 색상
         const isFuelLow = status && typeof status.fuel === 'number' && status.fuel < 30;
-        
+
         metrics.appendChild(createStatusBox('연료', fuel, isFuelLow));
         metrics.appendChild(createStatusBox('시동', engineState));
 
@@ -154,8 +160,8 @@ export const UI = (() => {
         body.innerHTML = `
       <div class="kicker">접속 필요</div>
       <div class="cta" style="text-align: center; padding: 24px 16px;">
-        <div>차량 정보 보기를 위해 <b>로그인</b> 해주세요.</div>
-        <div class="row" style="justify-content: center;">
+        <div style="margin-bottom: 20px;">차량 정보 보기를 위해 <b>로그인</b> 해주세요.</div>
+        <div class="row" style="justify-content: center; gap: 12px;">
           <button class="btn brand" id="btnOpenLogin">로그인</button>
           <button class="btn ghost" id="btnSkip">회원가입</button>
         </div>
@@ -171,10 +177,10 @@ export const UI = (() => {
         body.innerHTML = `
       <div class="kicker">차량 등록 필요</div>
       <div class="cta" style="text-align: center; padding: 24px 16px;">
-        <div>🚗</div>
-        <div style="margin: 16px 0;">등록된 차량이 없습니다.</div>
-        <div style="margin-bottom: 16px; color: #6b7280;">차량을 등록하여 원격 제어 기능을 사용해보세요.</div>
-        <div class="row" style="justify-content: center;">
+        <div style="font-size: 48px; margin-bottom: 16px;">🚗</div>
+        <div style="margin-bottom: 12px; font-weight: 600;">등록된 차량이 없습니다</div>
+        <div style="margin-bottom: 20px; color: #6b7280;">차량을 등록하여 원격 제어 기능을 사용해보세요</div>
+        <div class="row" style="justify-content: center; gap: 12px;">
           <button class="btn brand" id="btnRegisterCar">차량 등록</button>
           <button class="btn ghost" id="btnTestCar">테스트 차량 할당</button>
         </div>
