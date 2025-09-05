@@ -94,18 +94,18 @@ export async function navigate() {
                 const data = await response.json();
                 hasActualCars = data.success && data.data && data.data.length > 0;
             }
-            
+
             // 실제 차량이 등록되지 않았으면 차단
             if (!hasActualCars) {
                 // 토스트 메시지 표시하고 메인으로 리다이렉트
-                UI.toast("차량을 먼저 등록해야 합니다");
+                UI.toast('차량을 먼저 등록해야 합니다');
                 location.hash = '#/main';
                 return;
             }
         } catch (error) {
             console.error('차량 등록 상태 체크 실패:', error);
             // 오류 발생 시에도 토스트 메시지 표시하고 메인으로 리다이렉트
-            UI.toast("차량을 먼저 등록해야 합니다");
+            UI.toast('차량을 먼저 등록해야 합니다');
             location.hash = '#/main';
             return;
         }

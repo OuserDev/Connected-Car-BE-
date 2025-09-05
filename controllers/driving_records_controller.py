@@ -1,5 +1,5 @@
 # 주행 기록 관리 API 컨트롤러
-from flask import Blueprint, jsonify, request, session
+from flask import Blueprint, jsonify, request, session, send_from_directory, abort
 from models.car import Car
 from utils.auth import login_required
 import json
@@ -175,3 +175,56 @@ def delete_driving_record(record_id):
         
     except Exception as e:
         return jsonify({'error': f'주행 기록 삭제 실패: {str(e)}'}), 500
+
+# 주행 영상 다운로드 API
+@driving_records_bp.route('/api/driving/records/<int:record_id>/video', methods=['GET'])
+@login_required
+def download_driving_video(record_id):
+    """주행 영상 파일 다운로드"""
+    try:
+
+        
+        user_id = session.get('user_id')
+        
+        # 사용자 소유 차량 목록 조회
+        user_cars = Car.get_by_owner(user_id)
+        user_car_ids = [car['id'] for car in user_cars]
+        
+        # 주행 기록 로드
+        all_records = load_driving_records()
+        trips = all_records.get('trips', [])
+        
+        # 해당 주행 기록 찾기
+        record = None
+        for trip in trips:
+            if trip.get('id') == record_id:
+                record = trip
+                break
+        
+        if not record:
+            return jsonify({'error': '주행 기록을 찾을 수 없습니다'}), 404
+            
+        # 소유권 확인
+        if record.get('car_id') not in user_car_ids:
+            return jsonify({'error': '해당 주행 기록에 접근할 권한이 없습니다'}), 403
+            
+        # 영상 파일 확인
+        video_file = record.get('video_file')
+        if not video_file:
+            return jsonify({'error': '해당 기록에 영상 파일이 없습니다'}), 404
+            
+        # 파일 경로 확인
+        video_path = os.path.join('static/assets/videos', video_file)
+        if not os.path.exists(video_path):
+            return jsonify({'error': '영상 파일을 찾을 수 없습니다'}), 404
+            
+        # 파일 다운로드 제공
+        return send_from_directory(
+            directory='static/assets/videos',
+            path=video_file,
+            as_attachment=True,
+            download_name=f'주행기록_{record_id}_{video_file}'
+        )
+        
+    except Exception as e:
+        return jsonify({'error': f'영상 다운로드 실패: {str(e)}'}), 500
