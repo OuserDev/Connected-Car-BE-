@@ -657,20 +657,41 @@ export function renderSettings() {
               // 주행 기록 로드 함수
               async function loadDrivingRecords() {
                   try {
+                      // 현재 사용자 상태 확인
+                      const state = State.get();
+                      console.log('👤 현재 State:', {
+                          token: !!state.token,
+                          user: state.user,
+                          userId: state.user?.id,
+                      });
+
+                      console.log('🔍 주행 기록 요청 시작...');
                       const response = await fetch('/api/driving/records', { credentials: 'include' });
+                      console.log('📡 Response status:', response.status);
+
                       const data = await response.json();
+                      console.log('📋 받은 데이터:', data);
 
                       const recordsList = c.querySelector('#recordsList');
                       const recordsCount = c.querySelector('#recordsCount');
                       const recordsContainer = c.querySelector('#recordsContainer');
 
+                      console.log('🔍 조건 체크:', {
+                          success: data.success,
+                          hasData: !!data.data,
+                          dataLength: data.data ? data.data.length : 'null',
+                          dataType: typeof data.data,
+                      });
+
                       if (data.success && data.data && data.data.length > 0) {
+                          console.log('✅ 주행 기록 있음, 렌더링 시작');
                           recordsCount.textContent = data.data.length;
                           recordsList.style.display = 'block';
 
                           recordsContainer.innerHTML = '';
 
-                          data.data.forEach((record) => {
+                          data.data.forEach((record, index) => {
+                              console.log(`📝 기록 ${index + 1}:`, record);
                               const recordDiv = document.createElement('div');
                               recordDiv.style.cssText = `
                             border: 1px solid #2b5d80; border-radius: 8px; padding: 16px; margin-bottom: 12px;
@@ -721,6 +742,14 @@ export function renderSettings() {
                               recordsContainer.appendChild(recordDiv);
                           });
                       } else {
+                          console.log('❌ 주행 기록 없음 또는 조건 불만족');
+                          console.log('🔍 상세 분석:', {
+                              success: data.success,
+                              dataExists: !!data.data,
+                              dataIsArray: Array.isArray(data.data),
+                              dataLength: data.data ? data.data.length : 'no data',
+                              fullData: data,
+                          });
                           recordsList.style.display = 'block';
                           recordsCount.textContent = '0';
                           recordsContainer.innerHTML = '<div style="color: #88a9bf; text-align: center; padding: 20px;">주행 기록이 없습니다.</div>';

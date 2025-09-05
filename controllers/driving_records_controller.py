@@ -14,12 +14,20 @@ DRIVING_RECORDS_FILE = 'data/driving_records.json'
 def load_driving_records():
     """주행 기록 데이터 로드"""
     try:
+        print(f"🔍 Debug: 파일 경로 확인: {DRIVING_RECORDS_FILE}")
+        print(f"🔍 Debug: 파일 존재 여부: {os.path.exists(DRIVING_RECORDS_FILE)}")
+        
         if os.path.exists(DRIVING_RECORDS_FILE):
             with open(DRIVING_RECORDS_FILE, 'r', encoding='utf-8') as f:
-                return json.load(f)
-    except Exception:
-        pass
-    return []
+                data = json.load(f)
+                print(f"🔍 Debug: 로드된 데이터 구조: {type(data)}")
+                print(f"🔍 Debug: 데이터 키들: {data.keys() if isinstance(data, dict) else 'Not dict'}")
+                if isinstance(data, dict) and 'trips' in data:
+                    print(f"🔍 Debug: trips 개수: {len(data['trips'])}")
+                return data
+    except Exception as e:
+        print(f"❌ Debug: 파일 로드 오류: {e}")
+    return {}
 
 def save_driving_records(records):
     """주행 기록 데이터 저장"""
@@ -33,19 +41,28 @@ def get_driving_records():
     """로그인한 사용자의 주행 기록 조회"""
     try:
         user_id = session.get('user_id')
+        print(f"🔍 Debug: user_id from session: {user_id}")
+        print(f"🔍 Debug: full session: {dict(session)}")
         
         # 사용자 소유 차량 목록 조회
         user_cars = Car.get_by_owner(user_id)
         user_car_ids = [car['id'] for car in user_cars]
+        print(f"🔍 Debug: user_cars: {user_cars}")
+        print(f"🔍 Debug: user_car_ids: {user_car_ids}")
         
         # 주행 기록 로드
-        all_records = load_driving_records()
+        all_data = load_driving_records()
+        all_trips = all_data.get('trips', []) if all_data else []
         
         # 사용자 차량의 주행 기록만 필터링
         user_records = [
-            record for record in all_records 
+            record for record in all_trips 
             if record.get('car_id') in user_car_ids
         ]
+        
+        print(f"🔍 Debug: user_id={user_id}, user_car_ids={user_car_ids}")
+        print(f"🔍 Debug: total_trips={len(all_trips)}, user_records={len(user_records)}")
+        print(f"🔍 Debug: user_records={user_records[:2]}")  # 처음 2개만 출력
         
         return jsonify({
             'success': True,
