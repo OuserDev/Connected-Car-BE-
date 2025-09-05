@@ -146,10 +146,18 @@ def add_card():
         cursor = conn.cursor()
         
         # 이미 등록된 카드인지 확인
+        '''
         cursor.execute("""
             SELECT id FROM registered_cards 
             WHERE user_id = %s AND card_number = %s
         """, (user_id, card_number))
+        '''
+
+        sql = (
+            "SELECT id FROM registered_cards "
+            f"WHERE user_id = {user_id} AND card_number = '{card_number}'"
+        )
+        cursor.execute(sql)
         
         existing_card = cursor.fetchone()
         if existing_card:
