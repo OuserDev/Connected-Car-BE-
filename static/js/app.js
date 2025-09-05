@@ -72,8 +72,8 @@ export async function navigate() {
         user_id: localStorage.getItem('cc_user_id'),
     });
 
-    // 완전 초기화 - 개발/디버깅 시에만 사용
-    localStorage.clear(); // 임시로 모든 localStorage 초기화
+    // 완전 초기화 - 개발/디버깅 시에만 사용 (현재 비활성화)
+    // localStorage.clear(); // 임시로 모든 localStorage 초기화
 
     // 세션 복원 - 토큰과 사용자 정보가 모두 있고 유효한 경우에만
     const { token, user } = State.get();

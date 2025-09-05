@@ -452,6 +452,202 @@ const RealApi = {
             return { ok: false, message: '서버 연결 실패' };
         }
     },
+
+    // 🛍️ 중고장터 API
+    async getMarketPosts(page = 1, limit = 20, status = 'all') {
+        try {
+            const params = new URLSearchParams({ page, limit, status });
+            const response = await fetch(`${BASE_URL}/api/market/posts?${params}`);
+
+            const data = await response.json();
+            if (data.success) {
+                return {
+                    ok: true,
+                    posts: data.posts,
+                    pagination: data.pagination,
+                };
+            } else {
+                return { ok: false, message: data.error || '게시글 목록 조회 실패' };
+            }
+        } catch (error) {
+            console.error('Market posts fetch error:', error);
+            return { ok: false, message: '서버 연결 실패' };
+        }
+    },
+
+    async getMarketPost(postId) {
+        try {
+            const response = await fetch(`${BASE_URL}/api/market/posts/${postId}`);
+
+            const data = await response.json();
+            if (data.success) {
+                return {
+                    ok: true,
+                    post: data.post,
+                };
+            } else {
+                return { ok: false, message: data.error || '게시글 조회 실패' };
+            }
+        } catch (error) {
+            console.error('Market post fetch error:', error);
+            return { ok: false, message: '서버 연결 실패' };
+        }
+    },
+
+    async createMarketPost({ title, body, price }) {
+        try {
+            const response = await fetch(`${BASE_URL}/api/market/posts`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({ title, body, price }),
+            });
+
+            const data = await response.json();
+            if (data.success) {
+                return {
+                    ok: true,
+                    message: data.message,
+                    post: data.post,
+                };
+            } else {
+                return { ok: false, message: data.error || '게시글 작성 실패' };
+            }
+        } catch (error) {
+            console.error('Market post create error:', error);
+            return { ok: false, message: '서버 연결 실패' };
+        }
+    },
+
+    async updateMarketPost(postId, { title, body, price, status }) {
+        try {
+            const response = await fetch(`${BASE_URL}/api/market/posts/${postId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({ title, body, price, status }),
+            });
+
+            const data = await response.json();
+            if (data.success) {
+                return {
+                    ok: true,
+                    message: data.message,
+                    post: data.post,
+                };
+            } else {
+                return { ok: false, message: data.error || '게시글 수정 실패' };
+            }
+        } catch (error) {
+            console.error('Market post update error:', error);
+            return { ok: false, message: '서버 연결 실패' };
+        }
+    },
+
+    async deleteMarketPost(postId) {
+        try {
+            const response = await fetch(`${BASE_URL}/api/market/posts/${postId}`, {
+                method: 'DELETE',
+                credentials: 'include',
+            });
+
+            const data = await response.json();
+            if (data.success) {
+                return {
+                    ok: true,
+                    message: data.message,
+                };
+            } else {
+                return { ok: false, message: data.error || '게시글 삭제 실패' };
+            }
+        } catch (error) {
+            console.error('Market post delete error:', error);
+            return { ok: false, message: '서버 연결 실패' };
+        }
+    },
+
+    async getMyMarketPosts() {
+        try {
+            const response = await fetch(`${BASE_URL}/api/market/my-posts`, {
+                credentials: 'include',
+            });
+
+            const data = await response.json();
+            if (data.success) {
+                return {
+                    ok: true,
+                    posts: data.posts,
+                    totalCount: data.total_count,
+                };
+            } else {
+                return { ok: false, message: data.error || '내 게시글 조회 실패' };
+            }
+        } catch (error) {
+            console.error('My market posts fetch error:', error);
+            return { ok: false, message: '서버 연결 실패' };
+        }
+    },
+
+    // 🚗 차량 제어 기록 조회
+    async getVehicleHistory(vehicleId = null, options = {}) {
+        console.log('🔍 [DEBUG] getVehicleHistory 시작 - vehicleId:', vehicleId, 'options:', options);
+        
+        try {
+            // vehicleId가 없으면 첫 번째 차량 사용
+            let targetVehicleId = vehicleId;
+            if (!targetVehicleId) {
+                console.log('🔍 [DEBUG] vehicleId 없음, 차량 목록 조회 중...');
+                const carsResponse = await fetch(`${BASE_URL}/api/cars`, { credentials: 'include' });
+                console.log('🔍 [DEBUG] 차량 API 응답 상태:', carsResponse.status);
+                
+                const carsData = await carsResponse.json();
+                console.log('🔍 [DEBUG] 차량 목록 데이터:', carsData);
+                
+                if (carsData.success && carsData.data && carsData.data.length > 0) {
+                    targetVehicleId = carsData.data[0].id;
+                    console.log('🔍 [DEBUG] 첫 번째 차량 ID 선택:', targetVehicleId);
+                } else {
+                    console.error('❌ [ERROR] 차량이 없거나 API 실패:', carsData);
+                    return { ok: false, message: '등록된 차량이 없습니다' };
+                }
+            }
+
+            // 옵션 처리
+            const params = new URLSearchParams({
+                limit: options.limit || 50,
+                page: options.page || 1,
+            });
+
+            const historyUrl = `${BASE_URL}/api/vehicle/${targetVehicleId}/history?${params}`;
+            console.log('🔍 [DEBUG] 제어 기록 API 호출:', historyUrl);
+
+            const response = await fetch(historyUrl, {
+                credentials: 'include',
+            });
+
+            console.log('🔍 [DEBUG] 제어 기록 API 응답 상태:', response.status);
+
+            const data = await response.json();
+            console.log('🔍 [DEBUG] 제어 기록 데이터:', data);
+
+            if (data.success) {
+                const logs = data.data.records || [];
+                console.log('🔍 [DEBUG] 성공! 기록 개수:', logs.length);
+                return {
+                    ok: true,
+                    logs: logs,
+                    pagination: data.data.pagination,
+                    vehicleId: targetVehicleId,
+                };
+            } else {
+                console.error('❌ [ERROR] 제어 기록 API 실패:', data.error);
+                return { ok: false, message: data.error || '제어 기록 조회 실패' };
+            }
+        } catch (error) {
+            console.error('❌ [ERROR] 제어 기록 fetch 오류:', error);
+            return { ok: false, message: `서버 연결 실패: ${error.message}` };
+        }
+    },
 };
 
 export const Api = {
@@ -470,14 +666,24 @@ export const Api = {
     deleteCarPhoto: RealApi.deleteCarPhoto,
     clearAllCarPhotos: RealApi.clearAllCarPhotos,
 
+    // 🛍️ Market (중고장터) - Real BE API
+    getMarketPosts: RealApi.getMarketPosts,
+    getMarketPost: RealApi.getMarketPost,
+    createMarketPost: RealApi.createMarketPost,
+    updateMarketPost: RealApi.updateMarketPost,
+    deleteMarketPost: RealApi.deleteMarketPost,
+    getMyMarketPosts: RealApi.getMyMarketPosts,
+
+    // Vehicle control history - Real BE API
+    controlLogs: RealApi.getVehicleHistory, // 실제 제어 기록 조회
+
     // Keep mock for other features for now
     setHasCar: MockApi.setHasCar,
     recommendedPlaces: MockApi.recommendedPlaces,
-    controlLogs: MockApi.controlLogs, // 제어 로그 조회
     controlLogsClear: MockApi.controlLogsClear, // 제어 로그 초기화
     storeNew: MockApi.storeNew,
-    storeUsedList: MockApi.storeUsedList,
-    storeUsedCreate: MockApi.storeUsedCreate,
+    storeUsedList: MockApi.storeUsedList, // 이제 실제 API로 대체됨
+    storeUsedCreate: MockApi.storeUsedCreate, // 이제 실제 API로 대체됨
     cardsList: MockApi.cardsList,
     cardSelect: MockApi.cardSelect,
     cardsAddTest: MockApi.cardsAddTest,

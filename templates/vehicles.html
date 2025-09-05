@@ -364,12 +364,18 @@
             }
 
             function updateAuthStatus(user = null) {
+                console.log('🔄 [DEBUG] updateAuthStatus() 호출됨, user:', user);
                 const statusEl = document.getElementById('authStatus');
+                console.log('🔄 [DEBUG] authStatus 엘리먼트:', statusEl);
+                
                 if (user) {
+                    console.log('🔄 [DEBUG] 로그인 상태로 업데이트');
                     statusEl.textContent = `로그인됨: ${user.username} (${user.name})`;
                     statusEl.className = 'auth-status auth-success';
                     currentUser = user;
+                    console.log('🔄 [DEBUG] currentUser 설정됨:', currentUser);
                 } else {
+                    console.log('🔄 [DEBUG] 로그아웃 상태로 업데이트');
                     statusEl.textContent = '로그인이 필요합니다';
                     statusEl.className = 'auth-status auth-failed';
                     currentUser = null;
@@ -416,20 +422,36 @@
             }
 
             async function checkAuthStatus() {
+                console.log('🔍 [DEBUG] checkAuthStatus() 호출됨');
                 try {
+                    console.log('🔍 [DEBUG] fetch 요청 시작:', `${API}/api/auth/status`);
                     const response = await fetch(`${API}/api/auth/status`, {
                         credentials: 'include',
                     });
 
+                    console.log('🔍 [DEBUG] response.status:', response.status);
+                    console.log('🔍 [DEBUG] response.ok:', response.ok);
+
                     const data = await response.json();
+                    console.log('🔍 [DEBUG] 서버 응답 데이터:', data);
                     log(data);
 
-                    if (data.user) {
-                        updateAuthStatus(data.user);
+                    if (data.authenticated && data.user_id) {
+                        console.log('🔍 [DEBUG] 로그인 상태 확인됨 - 사용자 정보 설정');
+                        // /api/auth/status 응답 구조에 맞게 user 객체 생성
+                        const user = {
+                            id: data.user_id,
+                            username: data.username,
+                            name: data.username // name이 없으면 username 사용
+                        };
+                        console.log('🔍 [DEBUG] 생성된 user 객체:', user);
+                        updateAuthStatus(user);
                     } else {
+                        console.log('🔍 [DEBUG] 로그인 상태 아님 - 로그아웃 상태로 설정');
                         updateAuthStatus();
                     }
                 } catch (error) {
+                    console.error('❌ [ERROR] checkAuthStatus 오류:', error);
                     log({ error: error.message });
                     updateAuthStatus();
                 }
@@ -838,6 +860,7 @@
 
             // 페이지 로드 시 인증 상태 확인
             window.onload = function () {
+                console.log('🚀 [DEBUG] window.onload 이벤트 발생');
                 checkAuthStatus();
             };
         </script>

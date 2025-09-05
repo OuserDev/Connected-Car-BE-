@@ -138,3 +138,35 @@ class CarHistory:
             statistics['car_id'] = car_id
         
         return statistics
+    
+    @staticmethod
+    def get_by_car_id(car_id: int, limit: int = 50, offset: int = 0) -> List[Dict]:
+        """차량별 제어 기록 조회 (페이징 지원)"""
+        query = """
+        SELECT ch.*, u.username 
+        FROM car_history ch
+        LEFT JOIN users u ON ch.user_id = u.id
+        WHERE ch.car_id = %s
+        ORDER BY ch.timestamp DESC
+        LIMIT %s OFFSET %s
+        """
+        results = DatabaseHelper.execute_query(query, (car_id, limit, offset))
+        
+        # parameters JSON 파싱
+        for result in results:
+            if result.get('parameters'):
+                try:
+                    result['parameters'] = json.loads(result['parameters'])
+                except:
+                    result['parameters'] = {}
+            else:
+                result['parameters'] = {}
+        
+        return results
+    
+    @staticmethod
+    def get_count_by_car_id(car_id: int) -> int:
+        """차량별 제어 기록 총 개수 조회"""
+        query = "SELECT COUNT(*) as count FROM car_history WHERE car_id = %s"
+        result = DatabaseHelper.execute_query(query, (car_id,))
+        return result[0]['count'] if result else 0

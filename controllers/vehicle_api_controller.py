@@ -304,3 +304,68 @@ def check_car_api_health():
             'car_api_status': 'unknown',
             'error': str(e)
         }), 500
+
+# 차량 제어 기록 조회 API
+@vehicle_api_bp.route('/api/vehicle/<int:vehicle_id>/history', methods=['GET'])
+@login_required
+def get_vehicle_control_history(vehicle_id):
+    """차량 제어 기록 조회 (car_history 테이블에서)"""
+    try:
+        user_id = session.get('user_id')
+        
+        # 차량 소유권 확인
+        if not Car.verify_ownership(user_id, vehicle_id):
+            return jsonify({'error': '해당 차량에 대한 권한이 없습니다'}), 403
+        
+        # URL 파라미터 처리
+        limit = request.args.get('limit', 50, type=int)  # 기본 50개
+        page = request.args.get('page', 1, type=int)     # 기본 1페이지
+        
+        # 제한값 검증
+        if limit > 200:
+            limit = 200  # 최대 200개
+        if page < 1:
+            page = 1
+            
+        offset = (page - 1) * limit
+        
+        # car_history에서 해당 차량의 제어 기록 조회
+        history_records = CarHistory.get_by_car_id(
+            car_id=vehicle_id, 
+            limit=limit, 
+            offset=offset
+        )
+        
+        # 전체 기록 수 조회 (페이징 정보용)
+        total_records = CarHistory.get_count_by_car_id(vehicle_id)
+        
+        # 응답 데이터 구성
+        records = []
+        for record in history_records:
+            records.append({
+                'id': record.get('id'),
+                'action': record.get('action'),
+                'timestamp': record.get('timestamp').isoformat() if record.get('timestamp') else None,
+                'parameters': record.get('parameters', {}),
+                'result': record.get('result', 'success'),
+                'user_id': record.get('user_id')
+            })
+        
+        return jsonify({
+            'success': True,
+            'data': {
+                'vehicle_id': vehicle_id,
+                'records': records,
+                'pagination': {
+                    'total_records': total_records,
+                    'page': page,
+                    'limit': limit,
+                    'total_pages': (total_records + limit - 1) // limit,
+                    'has_next': (page * limit) < total_records,
+                    'has_prev': page > 1
+                }
+            }
+        })
+        
+    except Exception as e:
+        return jsonify({'error': f'제어 기록 조회 실패: {str(e)}'}), 500

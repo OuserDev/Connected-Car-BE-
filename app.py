@@ -15,11 +15,15 @@ from controllers.vehicle_api_controller import vehicle_api_bp
 from controllers.user_controller import user_bp
 from controllers.driving_records_controller import driving_records_bp
 from controllers.photo_controller import photo_bp
+from controllers.market_controller import market_bp
 
 # 데이터베이스 연결 테스트
 from models.base import test_database_connection
 
 app = Flask(__name__)
+
+# 업로드 폴더 설정 (정적 파일 서빙)
+app.config['UPLOAD_FOLDER'] = 'static/uploads'
 
 # 로깅 설정
 def setup_logging(app):
@@ -101,6 +105,7 @@ app.register_blueprint(vehicle_bp)
 app.register_blueprint(vehicle_api_bp)
 app.register_blueprint(driving_records_bp)
 app.register_blueprint(photo_bp)
+app.register_blueprint(market_bp)
 
 @app.route('/')
 def hello():
@@ -136,28 +141,28 @@ def health_check():
 
 if __name__ == '__main__':
     # 서버 시작 로그
-    startup_message = "🚗 커넥티드카 BE 서버 시작 중..."
-    print(startup_message)
+    startup_message = "커넥티드카 BE 서버 시작 중..."
+    print("🚗 " + startup_message)
     app.logger.info(startup_message)
     
-    db_message = "📊 MySQL 기반 데이터 관리"
-    print(db_message)
+    db_message = "MySQL 기반 데이터 관리"
+    print("📊 " + db_message)
     app.logger.info(db_message)
     
-    api_message = "🔗 car-api 서버 연동 (localhost:9000)"
-    print(api_message)
+    api_message = "car-api 서버 연동 (localhost:9000)"
+    print("🔗 " + api_message)
     app.logger.info(api_message)
     
     # 데이터베이스 연결 확인
     if test_database_connection():
-        success_message = "✅ MySQL 데이터베이스 연결 성공"
-        print(success_message)
+        success_message = "MySQL 데이터베이스 연결 성공"
+        print("✅ " + success_message)
         app.logger.info(success_message)
     else:
-        error_message = "❌ MySQL 데이터베이스 연결 실패"
-        warning_message = "⚠️  로컬 MySQL 서버가 실행 중인지 확인하세요"
-        print(error_message)
-        print(warning_message)
+        error_message = "MySQL 데이터베이스 연결 실패"
+        warning_message = "로컬 MySQL 서버가 실행 중인지 확인하세요"
+        print("❌ " + error_message)
+        print("⚠️ " + warning_message)
         app.logger.error(error_message)
         app.logger.warning(warning_message)
     

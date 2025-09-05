@@ -543,40 +543,39 @@ export async function renderControl() {
     // ② 차량 상태 상세 (실시간 업데이트 표시 + 주기적 새로고침)
     // ─────────────────────────────────────────────────────────
     async function renderStatusView() {
-        // 데모 기본값 (API 미존재 시)
-        const DEMO_STATUS = {
-            engine_state: 'off',
-            door_state: 'unlocked',
-            fuel: 75,
-            battery: 12.6,
-            voltage: '12V',
-            tire_pressure: {
-                front_left: 33,
-                front_right: 34,
-                rear_left: 34,
-                rear_right: 33,
-                recommended: 33,
-                unit: 'bar',
-                warning_threshold: 30,
-                last_checked: '2024-01-15T10:00:00Z',
-            },
-            odometer: {
-                total_km: 15420,
-                trip_a_km: 523.7,
-                trip_b_km: 87.3,
-                last_updated: '2024-01-15T10:00:00Z',
-            },
+        // 기본값 (API 데이터가 없을 경우에만)
+        let detail = {
+            engine_state: 'unknown',
+            door_state: 'unknown',
+            fuel: 0,
+            battery: 0,
+            voltage: '알 수 없음',
+            tire_pressure: null,
+            odometer: null,
         };
-
-        let detail = DEMO_STATUS;
         // 홈에서 가져온 최신 차량 상태 반영
         if (vehicleStatus) {
             detail = {
                 ...detail,
                 engine_state: vehicleStatus.engine_state || vehicleStatus.engineState || 'off',
                 door_state: vehicleStatus.door_state || vehicleStatus.doorState || 'unlocked',
-                fuel: vehicleStatus.fuel || 75,
-                battery: vehicleStatus.battery || 12.6,
+                fuel: vehicleStatus.fuel || 0,
+                battery: vehicleStatus.battery_voltage || vehicleStatus.battery || 0,
+                voltage: vehicleStatus.target_voltage ? `${vehicleStatus.target_voltage}V` : '알 수 없음',
+                // car-api에서 제공하는 실제 타이어 압력 데이터 사용
+                tire_pressure: vehicleStatus.tire_pressure || null,
+                // car-api에서 제공하는 실제 주행 거리 데이터 사용 (Trip A/B는 서버에서 미제공)
+                odometer: vehicleStatus.odometer ? {
+                    ...vehicleStatus.odometer,
+                    // Trip A/B는 car-api에서 제공하지 않으므로 기본값 사용
+                    trip_a_km: vehicleStatus.odometer.trip_a_km || null,
+                    trip_b_km: vehicleStatus.odometer.trip_b_km || null,
+                    last_updated: vehicleStatus.last_updated || new Date().toISOString()
+                } : null,
+                // 기타 car-api 제공 데이터
+                climate: vehicleStatus.climate || null,
+                location: vehicleStatus.location || null,
+                last_updated: vehicleStatus.last_updated || new Date().toISOString()
             };
         }
 
@@ -644,10 +643,10 @@ export async function renderControl() {
 
         <div class="card"><div class="body">
           <div class="kicker">주행 정보</div>
-          <div class="grid" style="grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px;">
+          <div class="grid" style="grid-template-columns:repeat(${p.odometer?.trip_a_km || p.odometer?.trip_b_km ? '3' : '1'},minmax(0,1fr)); gap:10px;">
             <div class="chip"><span class="k">총 주행</span><b>${typeof p.odometer?.total_km === 'number' ? p.odometer.total_km.toLocaleString() : '-'} km</b></div>
-            <div class="chip"><span class="k">Trip A</span><b>${safe(p.odometer?.trip_a_km)} km</b></div>
-            <div class="chip"><span class="k">Trip B</span><b>${safe(p.odometer?.trip_b_km)} km</b></div>
+            ${p.odometer?.trip_a_km ? `<div class="chip"><span class="k">Trip A</span><b>${safe(p.odometer.trip_a_km)} km</b></div>` : ''}
+            ${p.odometer?.trip_b_km ? `<div class="chip"><span class="k">Trip B</span><b>${safe(p.odometer.trip_b_km)} km</b></div>` : ''}
           </div>
           <div class="muted" id="odoMeta" style="margin-top:6px">
             업데이트: <span id="odoRel">-</span> <span class="muted">(${fmtDate(p.odometer?.last_updated)})</span>
@@ -739,24 +738,64 @@ export async function renderControl() {
         const $content = document.getElementById('logsContent');
         
         async function loadLogs() {
+            console.log('🔍 [DEBUG] control.js loadLogs() 시작');
+            
             try {
                 loading = true;
                 $content.innerHTML = '로딩 중...';
+                console.log('🔍 [DEBUG] loading 상태 설정, UI 업데이트됨');
                 
-                // MockAPI에서 제어 로그 가져오기
+                // RealAPI에서 제어 로그 가져오기
+                console.log('🔍 [DEBUG] Api.controlLogs() 호출 시작');
                 const result = await Api.controlLogs();
+                console.log('🔍 [DEBUG] Api.controlLogs() 결과:', result);
+                
                 if (result.ok) {
                     logs = result.logs || [];
+                    console.log('🔍 [DEBUG] 로그 데이터 설정됨, 개수:', logs.length);
+                    console.log('🔍 [DEBUG] 첫 번째 로그 샘플:', logs[0]);
                     renderLogsList();
                 } else {
-                    $content.innerHTML = '<div class="muted">제어 기록을 불러올 수 없습니다.</div>';
+                    console.error('❌ [ERROR] controlLogs 실패:', result.message);
+                    $content.innerHTML = `<div class="muted">제어 기록을 불러올 수 없습니다: ${result.message}</div>`;
                 }
             } catch (error) {
-                console.error('Control logs error:', error);
-                $content.innerHTML = '<div class="muted">제어 기록 로딩 중 오류가 발생했습니다.</div>';
+                console.error('❌ [ERROR] Control logs error:', error);
+                $content.innerHTML = `<div class="muted">제어 기록 로딩 중 오류: ${error.message}</div>`;
             } finally {
                 loading = false;
+                console.log('🔍 [DEBUG] loadLogs() 완료, loading = false');
             }
+        }
+
+        // action을 사용자 친화적 텍스트로 변환
+        function convertActionToFriendly(action) {
+            const actionMap = {
+                'door_state_True': '🔒 문 잠금',
+                'door_state_False': '🔓 문 열기',
+                'engine_state_True': '🚗 시동 켜기',
+                'engine_state_False': '🔴 시동 끄기',
+                'ac_state_True': '❄️ 에어컨 켜기',
+                'ac_state_False': '🔴 에어컨 끄기',
+                'target_temp_18': '🌡️ 온도 18°C 설정',
+                'target_temp_19': '🌡️ 온도 19°C 설정',
+                'target_temp_20': '🌡️ 온도 20°C 설정',
+                'target_temp_21': '🌡️ 온도 21°C 설정',
+                'target_temp_22': '🌡️ 온도 22°C 설정',
+                'target_temp_23': '🌡️ 온도 23°C 설정',
+                'target_temp_24': '🌡️ 온도 24°C 설정',
+                'target_temp_25': '🌡️ 온도 25°C 설정',
+                'horn_activated': '📣 경적',
+                'hazard_lights_activated': '💡 비상등'
+            };
+            
+            // 동적으로 온도 설정 처리
+            if (action && action.startsWith('target_temp_')) {
+                const temp = action.split('_')[2];
+                return `🌡️ 온도 ${temp}°C 설정`;
+            }
+            
+            return actionMap[action] || action;
         }
 
         function renderLogsList() {
@@ -766,16 +805,22 @@ export async function renderControl() {
             }
 
             const logItems = logs.slice(0, 50).map(log => {
-                const timestamp = new Date(log.ts).toLocaleString();
-                const statusIcon = log.ok ? '✅' : '❌';
-                const actionText = log.message || `${log.action} 실행`;
+                // 실제 API 응답 구조에 맞게 수정
+                const timestamp = new Date(log.timestamp).toLocaleString();
+                const statusIcon = (log.result === 'success' || log.result === undefined) ? '✅' : '❌';
+                
+                // action을 사용자 친화적으로 변환
+                const actionText = convertActionToFriendly(log.action) || log.action || '알 수 없는 동작';
                 
                 return `
                     <div class="chip" style="margin-bottom: 8px; display: flex; align-items: center; gap: 8px;">
                         <span style="font-size: 16px;">${statusIcon}</span>
                         <div style="flex: 1;">
                             <div style="font-weight: 500;">${actionText}</div>
-                            <div class="muted" style="font-size: 12px;">${timestamp}</div>
+                            <div class="muted" style="font-size: 12px;">
+                                ${timestamp}
+                                ${log.parameters?.value !== undefined ? ` • ${log.parameters.value}` : ''}
+                            </div>
                         </div>
                     </div>
                 `;
