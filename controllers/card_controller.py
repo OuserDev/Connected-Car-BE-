@@ -133,8 +133,8 @@ def add_card():
         expiry_date = data.get('expiryDate', '').strip()
         set_as_default = data.get('setAsDefault', False)
         
-        if not card_number or len(card_number) < 13:
-            return jsonify({'error': '유효한 카드번호를 입력해주세요.'}), 400
+        #if not card_number or len(card_number) < 13:
+            #return jsonify({'error': '유효한 카드번호를 입력해주세요.'}), 400
             
         if not card_name:
             return jsonify({'error': '카드 소유자명을 입력해주세요.'}), 400
@@ -146,10 +146,18 @@ def add_card():
         cursor = conn.cursor()
         
         # 이미 등록된 카드인지 확인
+        '''
         cursor.execute("""
             SELECT id FROM registered_cards 
             WHERE user_id = %s AND card_number = %s
         """, (user_id, card_number))
+        '''
+
+        sql = (
+            "SELECT id FROM registered_cards "
+            f"WHERE user_id = {user_id} AND card_number = '{card_number}'"
+        )
+        cursor.execute(sql)
         
         existing_card = cursor.fetchone()
         if existing_card:
