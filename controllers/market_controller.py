@@ -4,18 +4,23 @@ from utils.auth import login_required
 from models.base import DatabaseHelper, DatabaseConnection
 import pymysql
 from datetime import datetime
+import os
+from dotenv import load_dotenv
+
+# .env 파일 로드
+load_dotenv()
 
 market_bp = Blueprint('market', __name__)
 
-# 간편한 DB 연결 함수
+# 간편한 DB 연결 함수 (환경변수 직접 사용)
 def get_db_connection():
-    """데이터베이스 연결 반환"""
+    """데이터베이스 연결 반환 - 환경변수 기반"""
     return pymysql.connect(
-        host='localhost',
-        port=3307,
-        user='admin',
-        password='STRONGMAN',
-        database='connected_car_service',
+        host=os.getenv('DB_HOST', 'localhost'),
+        port=int(os.getenv('DB_PORT', 3306)),
+        user=os.getenv('DB_USER', 'root'),
+        password=os.getenv('DB_PASSWORD', 'student'),
+        database=os.getenv('DB_NAME', 'connected_car_service'),
         charset='utf8mb4',
         autocommit=True,
         cursorclass=pymysql.cursors.DictCursor
@@ -24,11 +29,14 @@ def get_db_connection():
 @market_bp.route('/api/market/posts', methods=['GET'])
 def get_market_posts():
     """중고장터 게시글 목록 조회 (로그인 불필요)"""
+    print("[DEBUG] GET market posts started")
     try:
         # 페이지네이션 파라미터
         page = int(request.args.get('page', 1))
         limit = int(request.args.get('limit', 20))
         status = request.args.get('status', 'all')  # all, sale, reserved, sold
+        
+        print(f"[DEBUG] Params: page={page}, limit={limit}, status={status}")
         
         offset = (page - 1) * limit
         
@@ -39,8 +47,10 @@ def get_market_posts():
             status_condition = "WHERE status = %s"
             params.append(status)
         
+        print("[DEBUG] Attempting DB connection...")
         conn = get_db_connection()
         cursor = conn.cursor()
+        print("[DEBUG] DB connection successful")
         
         try:
             # 전체 개수 조회
@@ -112,6 +122,11 @@ def get_market_posts():
         })
         
     except Exception as e:
+        print(f"[ERROR] GET market posts failed: {str(e)}")
+        print(f"[ERROR] Error type: {type(e).__name__}")
+        import traceback
+        print(f"[ERROR] Traceback: {traceback.format_exc()}")
+        
         if 'cursor' in locals():
             cursor.close()
         if 'conn' in locals():
