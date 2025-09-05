@@ -67,15 +67,51 @@ header.appbar {
 .appbar .btn-logout {
     font-size: 11px;
     padding: 4px 8px;
-    background: var(--danger);
-    border: 1px solid #ff5555;
+    background: var(--accent);
+    border: 1px solid #6ba3ff;
     border-radius: 6px;
     color: white;
     cursor: pointer;
     transition: background 0.2s;
 }
 .appbar .btn-logout:hover {
-    background: #ff5555;
+    background: #6ba3ff;
+}
+
+/* 헤더 중앙 차량 정보 */
+.appbar .header-center {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+.selected-vehicle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.selected-vehicle .vehicle-icon {
+    font-size: 18px;
+}
+
+.selected-vehicle .vehicle-details {
+    display: flex;
+    flex-direction: column;
+    text-align: center;
+}
+
+.selected-vehicle .vehicle-model {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--brand);
+    line-height: 1.2;
+}
+
+.selected-vehicle .vehicle-plate {
+    font-size: 11px;
+    color: var(--muted);
+    line-height: 1.2;
 }
 .container {
     width: min(980px, 100%);

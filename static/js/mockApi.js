@@ -1,9 +1,7 @@
 // mockApi.js - local demo-only API with coordinates for real map
 const delay = (ms=200) => new Promise(r=>setTimeout(r,ms));
-const DEFAULT_CAR_IMAGE = "./assets/cars/USER1_GRANDEUR.jpg";
-// const DEFAULT_CAR_IMAGE = "./assets/cars/GRHYB.png";
-
-// const DEFAULT_CAR_IMAGE = "./assets/cars/GRANDEUR.jpg";
+// 하드코딩된 이미지 경로 제거 - 실제 차량 이미지는 model_id 기반으로 처리
+const DEFAULT_CAR_IMAGE = null;
 
 // mockApi.js 상단 근처
 const userKey = (id) => `cc_user_${id}`;
@@ -84,7 +82,7 @@ export const MockApi = {
 //         id: "admin",
 //         name: "Admin",
 //         hasCar: true,
-//         car: { model: "GRANDEUR", plate: "12가 3456", color: "#79d1ff", imageUrl: DEFAULT_CAR_IMAGE }
+//         car: { model: "GRANDEUR", plate: "12가 3456", color: "#79d1ff" }
 //       };
 //       localStorage.setItem("cc_user", JSON.stringify(user));
 //       localStorage.setItem("cc_token", "demo-token");
@@ -102,7 +100,7 @@ export const MockApi = {
         id: uid,
         name: "Admin",
         hasCar: true,
-        car: { model: "GRANDEUR", plate: "12가 3456", color: "#79d1ff", imageUrl: DEFAULT_CAR_IMAGE }
+        car: { model: "GRANDEUR", plate: "12가 3456", color: "#79d1ff" }
       };
   
       const preserve = {

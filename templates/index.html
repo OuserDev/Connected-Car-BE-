@@ -20,6 +20,15 @@
   <div class="app">
     <header class="appbar">
       <h1>Connected Car</h1>
+      <div class="header-center" id="headerVehicleInfo" style="display: none;">
+        <div class="selected-vehicle">
+          <span class="vehicle-icon">🚗</span>
+          <div class="vehicle-details">
+            <div class="vehicle-model" id="headerVehicleModel">—</div>
+            <div class="vehicle-plate" id="headerVehiclePlate">—</div>
+          </div>
+        </div>
+      </div>
       <div class="header-right">
         <div class="badge" id="badgeAuth">게스트</div>
         <button class="btn-logout" id="btnLogout" style="display: none;">로그아웃</button>

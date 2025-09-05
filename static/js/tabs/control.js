@@ -58,25 +58,27 @@ export async function renderControl() {
     async function renderHome() {
         // 선택된 차량 정보 로드
         try {
-            // 항상 최신 차량 목록을 가져와서 첫 번째 차량을 선택 (캐시 문제 방지)
+            // 사용자의 차량 목록 가져오기
             const carsResponse = await fetch('/api/cars', { credentials: 'include' });
             if (carsResponse.ok) {
                 const carsData = await carsResponse.json();
                 console.log('Cars API response:', carsData);
                 if (carsData.success && carsData.data && carsData.data.length > 0) {
-                    const firstCarId = carsData.data[0].id;
-                    // 기존 선택된 차량과 다르면 업데이트
-                    if (selectedCarId !== firstCarId) {
+                    // selectedCarId가 없거나 목록에 없으면 첫 번째 차량 선택
+                    if (!selectedCarId || !carsData.data.find((car) => car.id === selectedCarId)) {
+                        const firstCarId = carsData.data[0].id;
                         State.setSelectedCarId(firstCarId);
                         selectedCarId = firstCarId;
-                        console.log(`차량 선택 업데이트: ${selectedCarId} → ${firstCarId}`);
+                        console.log(`차량 선택 설정: ${firstCarId}`);
                     } else {
-                        console.log(`현재 선택된 차량 유지: ${firstCarId}`);
+                        console.log(`현재 선택된 차량 유지: ${selectedCarId}`);
                     }
+                    // 선택된 차량 정보 찾기
+                    currentCar = carsData.data.find((car) => car.id === selectedCarId) || carsData.data[0];
                 } else {
                     console.warn('등록된 차량이 없습니다');
-                    // 차량이 없는 경우 데모 모드로 진행
                     selectedCarId = null;
+                    currentCar = null;
                 }
             } else {
                 console.error('Cars API 호출 실패:', carsResponse.status);
@@ -99,26 +101,6 @@ export async function renderControl() {
         root.innerHTML = `
       <div class="card control-stage">
         <div class="kicker">제어</div>
-        
-        ${
-            currentCar
-                ? `
-        <div class="car-info" style="text-align: center; margin-bottom: 16px;">
-            <div style="font-weight: 600; color: #fff;">${currentCar.model_name || currentCar.model}</div>
-            <div style="font-size: 14px; color: #8b9dc3;">${currentCar.license_plate || currentCar.licensePlate}</div>
-        </div>
-        `
-                : ''
-        }
-
-        ${
-            !user?.hasCar
-                ? `
-          <div class="cta" style="margin:6px 0 8px">
-            <div>차량이 미등록 상태입니다. 아래 제어는 데모로 동작합니다.</div>
-          </div>`
-                : ``
-        }
 
         <div class="vehicle-wrap">
           <div id="vehicleSvg" class="car" aria-label="차량"></div>
@@ -172,21 +154,33 @@ export async function renderControl() {
         </div>
       </div>
 
-      <!-- 상세 진입 버튼 (세로, 크게) -->
-      <div style="margin:14px 0; display:flex; flex-direction:column; gap:10px;">
-        <button class="btn" id="btnGoStatus"
-          style="width:100%; padding:14px 16px; font-size:16px; line-height:1.2; border-radius:12px;">
-          차량상태 조회
-        </button>
+      <!-- 상세 차량 상태 정보 -->
+      <div class="card" style="margin: 16px 0;"><div class="body">
+        <div class="kicker">상세 차량 상태</div>
+        <div class="grid" style="grid-template-columns:repeat(4,minmax(0,1fr)); gap:10px; margin: 12px 0;">
+          <div class="chip"><span class="k">타이어 FL</span><b id="tireFrontLeft">—</b></div>
+          <div class="chip"><span class="k">타이어 FR</span><b id="tireFrontRight">—</b></div>
+          <div class="chip"><span class="k">타이어 RL</span><b id="tireRearLeft">—</b></div>
+          <div class="chip"><span class="k">타이어 RR</span><b id="tireRearRight">—</b></div>
+        </div>
+        <div class="grid" style="grid-template-columns:repeat(1,minmax(0,1fr)); gap:10px;">
+          <div class="chip"><span class="k">총 주행거리</span><b id="totalKm">—</b></div>
+        </div>
+        <div class="muted" style="margin-top:8px; font-size:12px;">
+          <span id="statusUpdate">상태 업데이트: —</span>
+        </div>
+      </div></div>
 
+      <!-- 마지막 버튼들 (제어기록, 주행기록만) -->
+      <div style="margin:14px 0; display:flex; flex-direction:column; gap:10px;">
         <button class="btn" id="btnGoLogs"
           style="width:100%; padding:14px 16px; font-size:16px; line-height:1.2; border-radius:12px;">
-          차량제어기록
+          차량 제어 기록
         </button>
 
         <button class="btn" id="btnGoVideos"
           style="width:100%; padding:14px 16px; font-size:16px; line-height:1.2; border-radius:12px;">
-          차량주행영상기록
+          차량 주행영상 기록
         </button>
       </div>
     `;
@@ -212,6 +206,14 @@ export async function renderControl() {
         const $btnTempDw = document.getElementById('btnTempDown');
         const $cardACLow = document.getElementById('cardACLow');
         const $cardHeat = document.getElementById('cardHeat');
+
+        // 새로 추가된 상세 상태 요소들
+        const $tireFrontLeft = document.getElementById('tireFrontLeft');
+        const $tireFrontRight = document.getElementById('tireFrontRight');
+        const $tireRearLeft = document.getElementById('tireRearLeft');
+        const $tireRearRight = document.getElementById('tireRearRight');
+        const $totalKm = document.getElementById('totalKm');
+        const $statusUpdate = document.getElementById('statusUpdate');
 
         function reflect(state) {
             console.log('reflect called with state:', state);
@@ -287,11 +289,11 @@ export async function renderControl() {
             if (!battery && state.battery_voltage) {
                 battery = state.battery_voltage; // 실제 API에서 battery_voltage 사용
             } else if (!battery && state.batteryPct) {
-                battery = state.batteryPct / 100 * 12.6; // MockAPI batteryPct를 전압으로 변환
+                battery = (state.batteryPct / 100) * 12.6; // MockAPI batteryPct를 전압으로 변환
             } else if (!battery) {
                 battery = 12.6; // 기본값
             }
-            
+
             console.log('Fuel:', fuel, 'Battery:', battery);
             $fuel.textContent = `${fuel}%`;
             $battery.textContent = `${battery.toFixed(1)}V`;
@@ -304,15 +306,62 @@ export async function renderControl() {
             // 차량 시각적 효과
             const $veh = document.getElementById('vehicleSvg');
             if ($veh) $veh.classList.toggle('glow', engineState === 'on');
+
+            // 상세 차량 상태 업데이트 (타이어 압력)
+            const tireData = state.tire_pressure;
+            if (tireData) {
+                $tireFrontLeft.textContent = `${tireData.front_left || '—'}`;
+                $tireFrontRight.textContent = `${tireData.front_right || '—'}`;
+                $tireRearLeft.textContent = `${tireData.rear_left || '—'}`;
+                $tireRearRight.textContent = `${tireData.rear_right || '—'}`;
+            } else {
+                $tireFrontLeft.textContent = '—';
+                $tireFrontRight.textContent = '—';
+                $tireRearLeft.textContent = '—';
+                $tireRearRight.textContent = '—';
+            }
+
+            // 주행거리 정보 업데이트
+            const odometerData = state.odometer;
+            if (odometerData) {
+                $totalKm.textContent = typeof odometerData.total_km === 'number' ? `${odometerData.total_km.toLocaleString()} km` : '—';
+            } else {
+                $totalKm.textContent = '—';
+            }
+
+            // 상태 업데이트 시간 표시
+            const updateTime = state.last_updated || new Date().toISOString();
+            $statusUpdate.textContent = `상태 업데이트: ${new Date(updateTime).toLocaleString()}`;
         }
 
         async function load() {
-            const res = await Api.vehicleStatus();
-            if (!res.ok) {
-                UI.toast('상태를 불러오지 못했습니다.');
+            if (!selectedCarId) {
+                console.warn('선택된 차량이 없어 상태를 불러올 수 없습니다.');
                 return;
             }
-            reflect(res.status);
+
+            try {
+                // 선택된 차량의 상태 조회
+                const response = await fetch(`/api/vehicle/${selectedCarId}/status`, {
+                    credentials: 'include',
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.success) {
+                        reflect(data.data);
+                    } else {
+                        console.error('차량 상태 조회 실패:', data.error);
+                        UI.toast('차량 상태를 불러오지 못했습니다.');
+                    }
+                } else {
+                    console.error('차량 상태 API 호출 실패:', response.status);
+                    UI.toast('차량 상태를 불러오지 못했습니다.');
+                }
+            } catch (error) {
+                console.error('차량 상태 로드 오류:', error);
+                UI.toast('차량 상태를 불러오지 못했습니다.');
+            }
         }
 
         async function doAct(action, data) {
@@ -321,7 +370,7 @@ export async function renderControl() {
                     UI.toast('차량을 선택해주세요');
                     return;
                 }
-                
+
                 const res = await Api.vehicleControl(selectedCarId, action, data);
                 if (!res.ok) {
                     UI.toast(res.message || '제어 실패');
@@ -449,7 +498,6 @@ export async function renderControl() {
         });
 
         // 상세 진입
-        document.getElementById('btnGoStatus')?.addEventListener('click', renderStatusView);
         document.getElementById('btnGoLogs')?.addEventListener('click', renderLogsView);
         document.getElementById('btnGoVideos')?.addEventListener('click', rendervideosView);
 
@@ -459,6 +507,50 @@ export async function renderControl() {
         } else {
             await load();
         }
+
+        // 실시간 상태 업데이트 (3초마다)
+        let statusPollingInterval = null;
+        
+        const startStatusPolling = () => {
+            // 기존 폴링이 있다면 제거
+            if (statusPollingInterval) {
+                clearInterval(statusPollingInterval);
+            }
+            
+            statusPollingInterval = setInterval(async () => {
+                if (selectedCarId) {
+                    console.log('🔄 실시간 상태 업데이트 중...');
+                    await load();
+                }
+            }, 3000); // 3초마다 실행
+            
+            console.log('✅ 실시간 상태 폴링 시작 (3초 간격)');
+        };
+        
+        // 폴링 정리 함수
+        window.cleanupControlPolling = () => {
+            if (statusPollingInterval) {
+                clearInterval(statusPollingInterval);
+                statusPollingInterval = null;
+                console.log('🛑 실시간 상태 폴링 정지');
+            }
+        };
+        
+        // 페이지가 제어 탭에 있을 때만 폴링 시작
+        if (location.hash === '#/control') {
+            startStatusPolling();
+        }
+        
+        // 해시 변경 시 폴링 관리
+        const handleHashChange = () => {
+            if (location.hash === '#/control') {
+                startStatusPolling();
+            } else {
+                window.cleanupControlPolling();
+            }
+        };
+        
+        window.addEventListener('hashchange', handleHashChange);
     }
 
     // ─────────────────────────────────────────────────────────
@@ -571,17 +663,19 @@ export async function renderControl() {
                 // car-api에서 제공하는 실제 타이어 압력 데이터 사용
                 tire_pressure: vehicleStatus.tire_pressure || null,
                 // car-api에서 제공하는 실제 주행 거리 데이터 사용 (Trip A/B는 서버에서 미제공)
-                odometer: vehicleStatus.odometer ? {
-                    ...vehicleStatus.odometer,
-                    // Trip A/B는 car-api에서 제공하지 않으므로 기본값 사용
-                    trip_a_km: vehicleStatus.odometer.trip_a_km || null,
-                    trip_b_km: vehicleStatus.odometer.trip_b_km || null,
-                    last_updated: vehicleStatus.last_updated || new Date().toISOString()
-                } : null,
+                odometer: vehicleStatus.odometer
+                    ? {
+                          ...vehicleStatus.odometer,
+                          // Trip A/B는 car-api에서 제공하지 않으므로 기본값 사용
+                          trip_a_km: vehicleStatus.odometer.trip_a_km || null,
+                          trip_b_km: vehicleStatus.odometer.trip_b_km || null,
+                          last_updated: vehicleStatus.last_updated || new Date().toISOString(),
+                      }
+                    : null,
                 // 기타 car-api 제공 데이터
                 climate: vehicleStatus.climate || null,
                 location: vehicleStatus.location || null,
-                last_updated: vehicleStatus.last_updated || new Date().toISOString()
+                last_updated: vehicleStatus.last_updated || new Date().toISOString(),
             };
         }
 
@@ -742,20 +836,20 @@ export async function renderControl() {
     `;
 
         const $content = document.getElementById('logsContent');
-        
+
         async function loadLogs() {
             console.log('🔍 [DEBUG] control.js loadLogs() 시작');
-            
+
             try {
                 loading = true;
                 $content.innerHTML = '로딩 중...';
                 console.log('🔍 [DEBUG] loading 상태 설정, UI 업데이트됨');
-                
+
                 // RealAPI에서 제어 로그 가져오기
                 console.log('🔍 [DEBUG] Api.controlLogs() 호출 시작');
                 const result = await Api.controlLogs();
                 console.log('🔍 [DEBUG] Api.controlLogs() 결과:', result);
-                
+
                 if (result.ok) {
                     logs = result.logs || [];
                     console.log('🔍 [DEBUG] 로그 데이터 설정됨, 개수:', logs.length);
@@ -777,30 +871,30 @@ export async function renderControl() {
         // action을 사용자 친화적 텍스트로 변환
         function convertActionToFriendly(action) {
             const actionMap = {
-                'door_state_True': '🔒 문 잠금',
-                'door_state_False': '🔓 문 열기',
-                'engine_state_True': '🚗 시동 켜기',
-                'engine_state_False': '🔴 시동 끄기',
-                'ac_state_True': '❄️ 에어컨 켜기',
-                'ac_state_False': '🔴 에어컨 끄기',
-                'target_temp_18': '🌡️ 온도 18°C 설정',
-                'target_temp_19': '🌡️ 온도 19°C 설정',
-                'target_temp_20': '🌡️ 온도 20°C 설정',
-                'target_temp_21': '🌡️ 온도 21°C 설정',
-                'target_temp_22': '🌡️ 온도 22°C 설정',
-                'target_temp_23': '🌡️ 온도 23°C 설정',
-                'target_temp_24': '🌡️ 온도 24°C 설정',
-                'target_temp_25': '🌡️ 온도 25°C 설정',
-                'horn_activated': '📣 경적',
-                'hazard_lights_activated': '💡 비상등'
+                door_state_True: '🔒 문 잠금',
+                door_state_False: '🔓 문 열기',
+                engine_state_True: '🚗 시동 켜기',
+                engine_state_False: '🔴 시동 끄기',
+                ac_state_True: '❄️ 에어컨 켜기',
+                ac_state_False: '🔴 에어컨 끄기',
+                target_temp_18: '🌡️ 온도 18°C 설정',
+                target_temp_19: '🌡️ 온도 19°C 설정',
+                target_temp_20: '🌡️ 온도 20°C 설정',
+                target_temp_21: '🌡️ 온도 21°C 설정',
+                target_temp_22: '🌡️ 온도 22°C 설정',
+                target_temp_23: '🌡️ 온도 23°C 설정',
+                target_temp_24: '🌡️ 온도 24°C 설정',
+                target_temp_25: '🌡️ 온도 25°C 설정',
+                horn_activated: '📣 경적',
+                hazard_lights_activated: '💡 비상등',
             };
-            
+
             // 동적으로 온도 설정 처리
             if (action && action.startsWith('target_temp_')) {
                 const temp = action.split('_')[2];
                 return `🌡️ 온도 ${temp}°C 설정`;
             }
-            
+
             return actionMap[action] || action;
         }
 
@@ -810,15 +904,17 @@ export async function renderControl() {
                 return;
             }
 
-            const logItems = logs.slice(0, 50).map(log => {
-                // 실제 API 응답 구조에 맞게 수정
-                const timestamp = new Date(log.timestamp).toLocaleString();
-                const statusIcon = (log.result === 'success' || log.result === undefined) ? '✅' : '❌';
-                
-                // action을 사용자 친화적으로 변환
-                const actionText = convertActionToFriendly(log.action) || log.action || '알 수 없는 동작';
-                
-                return `
+            const logItems = logs
+                .slice(0, 50)
+                .map((log) => {
+                    // 실제 API 응답 구조에 맞게 수정
+                    const timestamp = new Date(log.timestamp).toLocaleString();
+                    const statusIcon = log.result === 'success' || log.result === undefined ? '✅' : '❌';
+
+                    // action을 사용자 친화적으로 변환
+                    const actionText = convertActionToFriendly(log.action) || log.action || '알 수 없는 동작';
+
+                    return `
                     <div class="chip" style="margin-bottom: 8px; display: flex; align-items: center; gap: 8px;">
                         <span style="font-size: 16px;">${statusIcon}</span>
                         <div style="flex: 1;">
@@ -830,7 +926,8 @@ export async function renderControl() {
                         </div>
                     </div>
                 `;
-            }).join('');
+                })
+                .join('');
 
             $content.innerHTML = `
                 <div style="margin-bottom: 12px;">

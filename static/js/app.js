@@ -1,8 +1,9 @@
 // app.js
 import { Api } from './api.js';
 import { State } from './state.js';
-import { setActiveTabByHash, updateAuthBadge } from './core/shared.js';
+import { setActiveTabByHash, updateAuthBadge, updateHeaderVehicleInfo } from './core/shared.js';
 import { attachAuthDelegates } from './core/auth.js';
+import { UI } from './ui/components.js';
 
 import { renderMain } from './tabs/main.js';
 import { renderMap } from './tabs/map-page.js';
@@ -55,6 +56,11 @@ export async function navigate() {
     const h = location.hash || '#/main';
     const authed = !!State.get().token;
 
+    // 제어 페이지를 벗어날 때 폴링 정리
+    if (h !== '#/control' && window.cleanupControlPolling) {
+        window.cleanupControlPolling();
+    }
+
     // ⬇ 비로그인 + 보호 라우트면 안내만 렌더하고 종료
     if (!authed && !PUBLIC_ROUTES.has(h)) {
         renderLoginRequired();
@@ -99,6 +105,20 @@ export async function navigate() {
     }
     updateAuthBadge();
     attachAuthDelegates();
+
+    // 전역 차량 선택 이벤트 리스너
+    window.addEventListener('carSelected', (event) => {
+        const selectedCar = event.detail;
+        console.log('차량 선택됨:', selectedCar);
+        State.setSelectedCarId(selectedCar.id);
+        UI.toast(`${selectedCar.model_name} 차량이 선택되었습니다`);
+        // 헤더 차량 정보 업데이트
+        updateHeaderVehicleInfo();
+        // 현재 페이지가 메인이면 다시 렌더링
+        if (location.hash === '#/main') {
+            renderMain();
+        }
+    });
 
     if (!location.hash) location.hash = '#/main';
     window.addEventListener('hashchange', navigate);

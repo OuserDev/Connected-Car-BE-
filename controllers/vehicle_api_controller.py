@@ -103,12 +103,14 @@ def get_vehicle_status(vehicle_id):
 def control_vehicle(vehicle_id):
     """car-api로 차량 원격 제어 명령 전송 (새 명세에 맞게)"""
     try:
-        user_id = session.get('user_id')
-        data = request.get_json()
+        print(f"[DEBUG] Control Vehicle 시작 - vehicle_id: {vehicle_id}")
         
-        print(f"[DEBUG] Control Vehicle - user_id: {user_id}, vehicle_id: {vehicle_id}")
-        print(f"[DEBUG] Session data: {dict(session)}")
+        user_id = session.get('user_id')
+        print(f"[DEBUG] user_id: {user_id}")
+        
+        data = request.get_json()
         print(f"[DEBUG] Request data: {data}")
+        print(f"[DEBUG] Session data: {dict(session)}")
         
         # 필수 필드 검증
         if not data or not data.get('property') or 'value' not in data:
@@ -133,13 +135,19 @@ def control_vehicle(vehicle_id):
                     'value': data['value'],
                     'note': 'Temporary action - logged only'
                 },
-                success=True
+                result='success'
             )
             
             # 성공 응답 반환 (상태는 변경하지 않음)
+            if data['property'] == 'flash':
+                message = "비상등을 켭니다"
+            elif data['property'] == 'horn':
+                message = "경적을 울립니다"
+            else:
+                message = f"{data['property']} 명령이 실행되었습니다"
             return jsonify({
                 'success': True,
-                'message': f"{data['property']} 명령이 실행되었습니다",
+                'message': message,
                 'data': None  # 상태 변경 없음
             }), 200
         
@@ -150,8 +158,27 @@ def control_vehicle(vehicle_id):
             'value': data['value']
         }
         
-        # car-api로 제어 명령 전송
-        api_response = call_car_api('/api/vehicle/control', 'POST', control_data)
+        # car-api로 제어 명령 전송 (실패 시 자동 재시도, 사용자에게는 최종 결과만 반환)
+        api_response = None
+        last_error = None
+        
+        for attempt in range(3):  # 최대 3번 시도로 증가
+            try:
+                api_response = call_car_api('/api/vehicle/control', 'POST', control_data)
+                if attempt > 0:
+                    print(f"[SUCCESS] car-api 재시도 성공 (시도 {attempt + 1}/3)")
+                break  # 성공하면 루프 종료
+            except Exception as e:
+                last_error = e
+                print(f"[WARNING] car-api 요청 실패 (시도 {attempt + 1}/3): {e}")
+                if attempt < 2:  # 마지막 시도가 아니면 재시도
+                    import time
+                    time.sleep(0.2 * (attempt + 1))  # 점진적 대기 (0.2초, 0.4초)
+                    continue
+        
+        # 모든 시도가 실패한 경우에만 예외 발생
+        if api_response is None:
+            raise last_error
         
         if api_response.get('error'):
             return jsonify({
@@ -181,85 +208,23 @@ def control_vehicle(vehicle_id):
         })
         
     except Exception as e:
+        print(f"[ERROR] Control Vehicle 예외 발생: {str(e)}")
+        print(f"[ERROR] Exception type: {type(e).__name__}")
+        import traceback
+        print(f"[ERROR] Traceback: {traceback.format_exc()}")
+        
         # 실패 이력도 저장
         try:
-            CarHistory.create(
-                vehicle_id=vehicle_id,
-                user_id=session.get('user_id'),
-                command=data.get('property', 'unknown'),
-                value=str(data.get('value', 'unknown')),
-                status='error',
-                result=str(e)
-            )
-        except:
-            pass
-        
-        return jsonify({'error': f'차량 제어 실패: {str(e)}'}), 500
-        if not Car.verify_ownership(user_id, vehicle_id):
-            return jsonify({'error': '해당 차량에 대한 권한이 없습니다'}), 403
-        
-        command = data.get('command')
-        parameters = data.get('parameters', {})
-        
-        # 지원되는 명령어 검증
-        supported_commands = [
-            'engine_start', 'engine_stop',
-            'door_lock', 'door_unlock',
-            'climate_on', 'climate_off',
-            'set_temperature', 'set_fan_speed',
-            'toggle_auto_mode', 'reset_trip_meter',
-            'update_location'
-        ]
-        
-        if command not in supported_commands:
-            return jsonify({'error': f'지원하지 않는 명령어입니다: {command}'}), 400
-        
-        # car-api로 제어 명령 전송
-        control_data = {
-            'command': command,
-            'parameters': parameters
-        }
-        
-        api_response = call_car_api(
-            f'/api/vehicle/{vehicle_id}/control',
-            method='POST',
-            data=control_data
-        )
-        
-        # BE 데이터베이스에 제어 이력 추가
-        CarHistory.add(
-            car_id=vehicle_id,
-            action=command,
-            user_id=user_id,
-            parameters=parameters
-        )
-        
-        if not api_response.get('success', True):
-            # car-api 통신 실패 시에도 이력은 남기되 실패로 표시
-            return jsonify({
-                'success': False,
-                'error': api_response.get('error', 'car-api 제어 실패'),
-                'message': '명령이 기록되었지만 차량에 전달되지 않았을 수 있습니다'
-            }), 503
-        
-        return jsonify({
-            'success': True,
-            'message': f'차량 제어 명령({command})이 성공적으로 실행되었습니다',
-            'data': api_response.get('data', {}),
-            'executed_at': datetime.now().isoformat()
-        })
-        
-    except Exception as e:
-        # 오류 발생 시에도 이력에 실패 기록
-        try:
-            CarHistory.add(
-                car_id=vehicle_id,
-                action=f"failed_{data.get('command', 'unknown')}",
-                user_id=user_id,
-                parameters={'error': str(e)}
-            )
-        except:
-            pass  # 이력 기록 실패는 무시
+            if 'data' in locals() and data:
+                CarHistory.add(
+                    car_id=vehicle_id,
+                    action=f"control_error_{data.get('property', 'unknown')}",
+                    user_id=session.get('user_id'),
+                    parameters={'error': str(e)},
+                    result='error'
+                )
+        except Exception as history_error:
+            print(f"[ERROR] 이력 저장 실패: {history_error}")
         
         return jsonify({'error': f'차량 제어 실패: {str(e)}'}), 500
 

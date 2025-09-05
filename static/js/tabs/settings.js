@@ -3,6 +3,172 @@ import { Api } from '../api.js';
 import { State } from '../state.js';
 import { UI } from '../ui/components.js';
 
+// 차량 등록 모달 함수
+function showVehicleRegistrationModal() {
+    // 기존 모달이 있다면 제거
+    const existingModal = document.getElementById('vehicleRegistrationModal');
+    if (existingModal) existingModal.remove();
+
+    // 모달 생성
+    const modal = document.createElement('div');
+    modal.id = 'vehicleRegistrationModal';
+    modal.style.cssText = `
+        position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+        background: rgba(0,0,0,0.8); display: flex; align-items: center; justify-content: center;
+        z-index: 10000; padding: 20px;
+    `;
+
+    modal.innerHTML = `
+        <div style="background: linear-gradient(180deg, #173147, #0d1b2d); border: 1px solid #2b5d80; 
+                    border-radius: 16px; padding: 24px; max-width: 400px; width: 100%;
+                    box-shadow: 0 20px 60px rgba(0,0,0,0.5);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h3 style="margin: 0; color: #52e8c6; font-size: 18px;">🚗 차량 추가 등록</h3>
+                <button id="closeModal" style="background: none; border: none; color: #88a9bf; 
+                                               font-size: 24px; cursor: pointer; padding: 0; line-height: 1;">×</button>
+            </div>
+            
+            <p style="margin: 0 0 20px 0; color: #88a9bf; font-size: 14px;">
+                새로운 차량을 등록하려면 라이선스 플레이트와 VIN 코드를 입력하세요.
+            </p>
+            
+            <div style="margin-bottom: 16px;">
+                <label style="display: block; margin-bottom: 6px; font-weight: 600; color: #3b82f6;">라이선스 플레이트</label>
+                <input type="text" id="modalLicensePlate" placeholder="예: 12가 3456" 
+                       style="width: 100%; padding: 12px; border: 1px solid #2b5d80; 
+                              background: rgba(0,0,0,0.3); color: white; border-radius: 8px;
+                              font-size: 14px; box-sizing: border-box;" maxlength="20">
+            </div>
+            
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; margin-bottom: 6px; font-weight: 600; color: #3b82f6;">VIN 코드</label>
+                <input type="text" id="modalVinCode" placeholder="예: KMHL24JA1PA234567" 
+                       style="width: 100%; padding: 12px; border: 1px solid #2b5d80; 
+                              background: rgba(0,0,0,0.3); color: white; border-radius: 8px;
+                              font-size: 14px; box-sizing: border-box;" maxlength="17">
+            </div>
+            
+            <div style="display: flex; gap: 10px; margin-bottom: 16px;">
+                <button class="btn brand" id="modalBtnVerify" style="flex: 1;">
+                    🔍 차량 정보 확인
+                </button>
+                <button class="btn" id="modalBtnRegister" style="flex: 1;" disabled>
+                    ✅ 등록 완료
+                </button>
+            </div>
+            
+            <div id="modalVehicleResult" style="display: none;">
+                <!-- 차량 정보 확인 결과 -->
+            </div>
+        </div>
+    `;
+
+    // 모달을 DOM에 추가
+    document.body.appendChild(modal);
+
+    // 이벤트 리스너 추가
+    const closeBtn = modal.querySelector('#closeModal');
+    const verifyBtn = modal.querySelector('#modalBtnVerify');
+    const registerBtn = modal.querySelector('#modalBtnRegister');
+    const resultDiv = modal.querySelector('#modalVehicleResult');
+
+    // 모달 닫기
+    closeBtn.addEventListener('click', () => modal.remove());
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) modal.remove();
+    });
+
+    // 차량 정보 확인
+    verifyBtn.addEventListener('click', async () => {
+        const licensePlate = modal.querySelector('#modalLicensePlate').value.trim();
+        const vinCode = modal.querySelector('#modalVinCode').value.trim();
+
+        if (!licensePlate || !vinCode) {
+            UI.toast('라이선스 플레이트와 VIN 코드를 모두 입력해주세요.');
+            return;
+        }
+
+        try {
+            const response = await fetch('/api/cars/verify', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({ licensePlate, vinCode }),
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                resultDiv.style.display = 'block';
+                resultDiv.innerHTML = `
+                    <div style="padding: 12px; background: rgba(34, 197, 94, 0.1); 
+                                border: 1px solid rgba(34, 197, 94, 0.3); border-radius: 8px;">
+                        <div style="color: #22c55e; font-weight: 600; margin-bottom: 8px;">
+                            ✅ 차량 정보가 확인되었습니다!
+                        </div>
+                        <div style="font-size: 14px; color: #88a9bf;">
+                            <strong>${data.car.model_name}</strong> · ${data.car.manufacturer} · ${data.car.year}
+                            <br>연료: ${data.car.fuel_type} · 번호판: ${data.car.license_plate}
+                        </div>
+                    </div>
+                `;
+                registerBtn.disabled = false;
+                registerBtn.dataset.carId = data.car.id;
+            } else {
+                resultDiv.style.display = 'block';
+                resultDiv.innerHTML = `
+                    <div style="padding: 12px; background: rgba(239, 68, 68, 0.1); 
+                                border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 8px;">
+                        <div style="color: #ef4444; font-weight: 600; margin-bottom: 4px;">
+                            ❌ 차량 정보를 찾을 수 없습니다
+                        </div>
+                        <div style="font-size: 14px; color: #88a9bf;">
+                            입력한 정보가 올바른지 확인해주세요.
+                        </div>
+                    </div>
+                `;
+                registerBtn.disabled = true;
+            }
+        } catch (error) {
+            UI.toast('차량 정보 확인 중 오류가 발생했습니다.');
+            console.error('Vehicle verification error:', error);
+        }
+    });
+
+    // 차량 등록 완료
+    registerBtn.addEventListener('click', async () => {
+        const licensePlate = modal.querySelector('#modalLicensePlate').value.trim();
+        const vinCode = modal.querySelector('#modalVinCode').value.trim();
+        const carId = registerBtn.dataset.carId;
+
+        try {
+            const response = await fetch('/api/cars/register', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({ carId: parseInt(carId), licensePlate, vinCode }),
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                UI.toast('🎉 차량이 성공적으로 등록되었습니다!');
+                modal.remove();
+
+                // 메인 페이지로 이동
+                setTimeout(() => {
+                    location.hash = '#/main';
+                }, 1000);
+            } else {
+                UI.toast(data.error || '차량 등록에 실패했습니다.');
+            }
+        } catch (error) {
+            UI.toast('차량 등록 중 오류가 발생했습니다.');
+            console.error('Vehicle registration error:', error);
+        }
+    });
+}
+
 export function renderSettings() {
     const root = document.getElementById('view');
     const { token, user } = State.get();
@@ -15,10 +181,11 @@ export function renderSettings() {
       <div class="kicker">설정</div>
       <div class="cta">
         <div>인증 상태: <b id="authState">${token ? '로그인됨' : '게스트'}</b></div>
-        <div class="row" style="margin-top:10px">
+        <div class="row" style="margin-top:10px; gap: 8px;">
           ${
               token
                   ? `
+               <button class="btn brand" id="btnRegisterVehicle">🚗 차량 등록</button>
                <button class="btn danger" id="btnLogout">로그아웃</button>
               `
                   : `
@@ -31,11 +198,17 @@ export function renderSettings() {
 
     // 이벤트 바인딩
     if (token) {
+        // 로그아웃 버튼
         baseCard.querySelector('#btnLogout')?.addEventListener('click', () => {
             State.setToken(null);
             State.setUser(null);
             UI.toast('로그아웃 되었습니다.');
             renderSettings();
+        });
+
+        // 차량 등록 버튼
+        baseCard.querySelector('#btnRegisterVehicle')?.addEventListener('click', () => {
+            showVehicleRegistrationModal();
         });
     } else {
         baseCard.querySelector('#btnOpenLogin2')?.addEventListener('click', () => {
@@ -66,8 +239,8 @@ export function renderSettings() {
 
         <!-- 업로드/도구줄 -->
         <div class="row" style="gap:8px; flex-wrap:wrap">
-          <input id="carPhotoFiles" type="file" accept="image/*" multiple>
-          <button class="btn brand" id="btnAddPhotos">추가</button>
+          <input id="carPhotoFiles" type="file" accept="image/*" multiple style="display: none;">
+          <button class="btn brand" id="btnAddPhotos">📷 사진 추가</button>
           <button class="btn ghost" id="btnClearAll">전체 삭제</button>
           <div class="spacer"></div>
           <div class="muted" id="albumCount"></div>

@@ -60,14 +60,20 @@
   box-shadow: inset 0 0 0 1px rgba(23,49,71,0.25);
 }
 .hex-btn:hover { transform: translateY(-2px); filter: brightness(1.06); }
-.hex-btn.active { border-color: #52e8c6; box-shadow: 0 0 0 1px #52e8c6 inset; }
+.hex-btn.active { 
+  border-color: #52e8c6; 
+  box-shadow: 0 0 0 2px #52e8c6 inset, 0 0 20px rgba(82, 232, 198, 0.6), 0 0 40px rgba(82, 232, 198, 0.3);
+  background: linear-gradient(180deg, rgba(82, 232, 198, 0.25), rgba(82, 232, 198, 0.15)), linear-gradient(180deg, #173147, #0d1b2d);
+  color: #ffffff;
+  animation: activeGlow 2s ease-in-out infinite;
+}
 .hex-btn[disabled] { opacity: .35; border-color: #25394f; cursor: not-allowed; }
 
 .hex-pos-engine { left: 14%; top: 20%; }
 .hex-pos-lock   { left: 14%; top: 62%; }
-.hex-pos-horn   { right: 14%; top: 20%; }
+.hex-pos-horn   { right: 14%; top: 15%; }
 .hex-pos-flash  { right: 14%; top: 41%; }
-.hex-pos-window { right: 14%; top: 62%; }
+.hex-pos-window { right: 14%; top: 67%; }
 
 .control-hint {
   color: #8fb1c9; font-size: 12px; text-align: center; margin: 4px 8px 0;
@@ -99,3 +105,15 @@
 .ctrl-card.clickable { cursor: pointer; }
 .ctrl-card.clickable:active { transform: translateY(10px); }
 .ctrl-card[role="button"]:focus { outline: 3px solid #52e8c6; outline-offset: 3px; }
+
+/* 버튼 활성 상태 애니메이션 */
+@keyframes activeGlow {
+  0%,100% { 
+    box-shadow: 0 0 0 2px #52e8c6 inset, 0 0 20px rgba(82, 232, 198, 0.6), 0 0 40px rgba(82, 232, 198, 0.3);
+    transform: scale(1);
+  }
+  50% { 
+    box-shadow: 0 0 0 3px #52e8c6 inset, 0 0 30px rgba(82, 232, 198, 0.8), 0 0 60px rgba(82, 232, 198, 0.5);
+    transform: scale(1.05);
+  }
+}

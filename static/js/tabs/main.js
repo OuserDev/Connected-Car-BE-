@@ -351,12 +351,5 @@ async function registerCar(carId, licensePlate, vinCode) {
         }
     }
 
-    // 차량 선택 이벤트
-    window.addEventListener('carSelected', (event) => {
-        const selectedCar = event.detail;
-        UI.toast(`${selectedCar.model_name} 차량이 선택되었습니다`);
-        // 실제로는 선택된 차량으로 상태 업데이트
-        State.selectedCarId = selectedCar.id;
-        renderMain(); // 다시 렌더링
-    });
+    // 차량 선택 이벤트는 app.js에서 전역적으로 처리됨
 }

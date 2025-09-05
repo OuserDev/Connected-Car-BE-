@@ -64,8 +64,8 @@ export const UI = (() => {
         return wrap.firstElementChild;
     };
 
-    // 차량 이미지 기본 경로(플레이스홀더)
-    const PLACEHOLDER_IMG = './assets/cars/USER1_GRANDEUR.jpg';
+    // 차량 이미지 기본 경로(플레이스홀더) - null로 설정하여 SVG 폴백 사용
+    const PLACEHOLDER_IMG = null;
     // const PLACEHOLDER_IMG = "./assets/cars/GRHYB.png";
 
     // ✅ 메인 히어로: 업로드한 사진(State.user.carPhotoData)을 최우선으로 사용
@@ -77,10 +77,10 @@ export const UI = (() => {
         const plate = carInfo?.license_plate || carInfo?.licensePlate || user?.car?.plate || '등록번호';
         const caption = el('div', 'caption', `${model} · ${plate}`);
 
-        // 차량 ID에 맞는 이미지 경로 생성 (main_car_images 폴더 사용)
+        // 차량 모델 ID에 맞는 이미지 경로 생성 (main_car_images 폴더 사용)
         let carImagePath = PLACEHOLDER_IMG;
-        if (carInfo?.id) {
-            carImagePath = `/static/assets/cars/main_car_images/${carInfo.id}.jpg`;
+        if (carInfo?.model_id) {
+            carImagePath = `/static/assets/cars/main_car_images/${carInfo.model_id}.jpg`;
         }
 
         // 우선순위: user.carPhotoData > 차량별 이미지 > carInfo.imageUrl > user.car.imageUrl > PLACEHOLDER > SVG

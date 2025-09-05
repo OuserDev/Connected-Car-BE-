@@ -15,7 +15,7 @@ function getActionMessage(property, value) {
         case 'target_temp':
             return `🌡️ 목표온도 ${value}℃`;
         case 'horn':
-            return '📣 경적을 울렸습니다.';
+            return '📣 경적을 울립니다.';
         case 'hazard_lights':
             return '💡 비상등 점멸.';
         default:
@@ -68,7 +68,7 @@ const RealApi = {
                         id: data.user.username,
                         name: data.user.name,
                         hasCar: true,
-                        car: { model: 'GRANDEUR', plate: '12가 3456', color: '#79d1ff', imageUrl: '/static/assets/cars/USER1_GRANDEUR.jpg' },
+                        car: { model: 'GRANDEUR', plate: '12가 3456', color: '#79d1ff' },
                     },
                 };
             } else {
@@ -113,7 +113,7 @@ const RealApi = {
                         id: data.user.username,
                         name: data.user.name,
                         hasCar: true,
-                        car: { model: 'GRANDEUR', plate: '12가 3456', color: '#79d1ff', imageUrl: '/static/assets/cars/USER1_GRANDEUR.jpg' },
+                        car: { model: 'GRANDEUR', plate: '12가 3456', color: '#79d1ff' },
                     },
                 };
             } else {

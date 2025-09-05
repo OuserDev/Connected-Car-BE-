@@ -48,4 +48,55 @@ export function updateAuthBadge(){
       logoutBtn.style.display = "none";
     }
   }
+  
+  // 헤더 차량 정보도 함께 업데이트
+  updateHeaderVehicleInfo();
+}
+
+/* 헤더 중앙 차량 정보 업데이트 */
+export async function updateHeaderVehicleInfo(){
+  const { token, selectedCarId } = State.get();
+  const headerVehicleInfo = document.getElementById("headerVehicleInfo");
+  const headerVehicleModel = document.getElementById("headerVehicleModel");
+  const headerVehiclePlate = document.getElementById("headerVehiclePlate");
+  
+  if (!headerVehicleInfo || !headerVehicleModel || !headerVehiclePlate) return;
+  
+  if (!token) {
+    // 로그인하지 않은 경우 차량 정보 숨기기
+    headerVehicleInfo.style.display = "none";
+    return;
+  }
+  
+  if (!selectedCarId) {
+    // 선택된 차량이 없는 경우 차량 정보 숨기기
+    headerVehicleInfo.style.display = "none";
+    return;
+  }
+  
+  try {
+    // 사용자의 차량 목록 가져오기
+    const response = await fetch('/api/cars', { credentials: 'include' });
+    if (response.ok) {
+      const data = await response.json();
+      if (data.success && data.data && data.data.length > 0) {
+        // 선택된 차량 찾기
+        const selectedCar = data.data.find(car => car.id === selectedCarId);
+        if (selectedCar) {
+          headerVehicleModel.textContent = selectedCar.model_name || selectedCar.model || '차량';
+          headerVehiclePlate.textContent = selectedCar.license_plate || selectedCar.licensePlate || '번호판 미등록';
+          headerVehicleInfo.style.display = "block";
+        } else {
+          headerVehicleInfo.style.display = "none";
+        }
+      } else {
+        headerVehicleInfo.style.display = "none";
+      }
+    } else {
+      headerVehicleInfo.style.display = "none";
+    }
+  } catch (error) {
+    console.error('헤더 차량 정보 업데이트 실패:', error);
+    headerVehicleInfo.style.display = "none";
+  }
 }

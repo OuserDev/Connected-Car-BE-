@@ -560,14 +560,14 @@ def complete_car_registration():
                 'error': '차량을 찾을 수 없거나 이미 등록된 차량입니다'
             }), 404
         
-        # 사용자가 이미 다른 차량을 소유하고 있는지 확인
-        existing_car_query = "SELECT id FROM cars WHERE owner_id = %s"
-        existing_car = DatabaseHelper.execute_query(existing_car_query, (user_id,))
+        # 사용자가 이미 같은 차량을 소유하고 있는지 확인 (중복 등록 방지)
+        duplicate_car_query = "SELECT id FROM cars WHERE owner_id = %s AND id = %s"
+        duplicate_car = DatabaseHelper.execute_query(duplicate_car_query, (user_id, car_id))
         
-        if existing_car:
+        if duplicate_car:
             return jsonify({
                 'success': False,
-                'error': '이미 등록된 차량이 있습니다. 한 사용자당 하나의 차량만 등록 가능합니다'
+                'error': '이미 등록된 차량입니다'
             }), 409
         
         # 차량 소유권 업데이트
