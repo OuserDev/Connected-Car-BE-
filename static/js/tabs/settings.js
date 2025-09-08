@@ -2,7 +2,7 @@
 import { Api } from '../api.js';
 import { State } from '../state.js';
 import { UI } from '../ui/components.js';
-import { updateTabsDisabledState } from '../core/shared.js';
+import { updateTabsDisabledState, stopUserStatusCheck } from '../core/shared.js';
 
 // 차량 등록 모달 함수
 function showVehicleRegistrationModal() {
@@ -178,40 +178,33 @@ export function renderSettings() {
     // --------- 공통 카드(상단) ----------
     const baseCard = document.createElement('div');
     baseCard.className = 'card';
-    
-    if (!token) {
-        // 로그인하지 않은 상태 - 메인 페이지와 동일한 스타일
-        baseCard.innerHTML = `
-        <div class="body" style="text-align: center; padding: 40px 20px;">
-            <p style="color: #88a9bf; margin-bottom: 24px;">
-                차량 정보 보기를 위해 로그인 해주세요.
-            </p>
-            <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
-                <button class="btn brand" id="btnOpenLogin2">로그인</button>
-                <button class="btn ghost" id="btnRegister">회원가입</button>
-            </div>
+    baseCard.innerHTML = `
+    <div class="body">
+      <div class="kicker">설정</div>
+      <div class="cta">
+        <div>인증 상태: <b id="authState">${token ? '로그인됨' : '게스트'}</b></div>
+        <div class="row" style="margin-top:10px; gap: 8px;">
+          ${
+              token
+                  ? `
+               <button class="btn brand" id="btnRegisterVehicle">🚗 차량 등록</button>
+               <button class="btn danger" id="btnLogout">로그아웃</button>
+              `
+                  : `
+               <button class="btn brand" id="btnOpenLogin2">로그인</button>
+              `
+          }
         </div>
-        `;
-    } else {
-        // 로그인한 상태
-        baseCard.innerHTML = `
-        <div class="body">
-            <div class="kicker">설정</div>
-            <div class="cta">
-                <div>인증 상태: <b id="authState">로그인됨</b></div>
-                <div class="row" style="margin-top:10px; gap: 8px;">
-                    <button class="btn brand" id="btnRegisterVehicle">🚗 차량 등록</button>
-                    <button class="btn danger" id="btnLogout">로그아웃</button>
-                </div>
-            </div>
-        </div>
-        `;
-    }
+      </div>
+    </div>`;
 
     // 이벤트 바인딩
     if (token) {
         // 로그아웃 버튼
         baseCard.querySelector('#btnLogout')?.addEventListener('click', async () => {
+            // 사용자 상태 확인 중지
+            stopUserStatusCheck();
+            
             State.setToken(null);
             State.setUser(null);
             UI.toast('로그아웃 되었습니다.');
@@ -227,26 +220,19 @@ export function renderSettings() {
             showVehicleRegistrationModal();
         });
     } else {
-        // 로그인 버튼
         baseCard.querySelector('#btnOpenLogin2')?.addEventListener('click', () => {
             // 상위에서 로그인 모달 열어주는 위임 로직이 있으므로 버튼만 노출
             const evt = new Event('click', { bubbles: true });
             baseCard.querySelector('#btnOpenLogin2').dispatchEvent(evt);
-        });
-        
-        // 회원가입 버튼
-        baseCard.querySelector('#btnRegister')?.addEventListener('click', () => {
-            // 회원가입 모달 열기 (app.js에서 전역적으로 처리됨)
-            document.querySelector('#btnOpenRegister')?.click();
         });
     }
     // --------- 차량 사진 카드(앨범 업로드 & 선택) ----------
     const photoCard = token
         ? (() => {
               const MAX_PHOTOS = 12; // 앨범 최대 개수
-              const MAX_FILE_MB = 2; // 권장 파일 크기
-              const MIN_W = 320; // 너무 작은 사진 방지
-              const MAX_W = 1600; // 리사이즈 상한
+              // const MAX_FILE_MB = 2; // [VULN-LAB] 실습 편의상 리사이즈/용량 제한 미사용
+              // const MIN_W = 320;
+              // const MAX_W = 1600;
 
               const c = document.createElement('div');
               c.className = 'card';
@@ -262,7 +248,9 @@ export function renderSettings() {
 
         <!-- 업로드/도구줄 -->
         <div class="row" style="gap:8px; flex-wrap:wrap">
-          <input id="carPhotoFiles" type="file" accept="image/*" multiple style="display: none;">
+          <!-- [VULN-LAB] accept 제거. 어떤 확장자든 선택 가능 -->
+          <input id="carPhotoFiles" type="file" multiple style="display: none;">
+
           <button class="btn brand" id="btnAddPhotos">📷 사진 추가</button>
           <button class="btn ghost" id="btnClearAll">전체 삭제</button>
           <div class="spacer"></div>
@@ -272,7 +260,8 @@ export function renderSettings() {
         <!-- 앨범 썸네일 그리드 -->
         <div id="albumGrid" class="product-grid" style="grid-template-columns:repeat(auto-fill,minmax(140px,1fr)); gap:10px;"></div>
 
-        <div class="muted">권장: 가로 ${MAX_W}px 이하 자동 축소 · 파일당 최대 ${MAX_FILE_MB}MB(초과 시 자동 축소 시도)</div>
+        <!-- [VULN-LAB] 문구 수정 -->
+        <div class="muted">실습 모드: 원본 파일을 그대로 업로드하며 <code>filename</code>을 유지합니다 (Burp로 확장자 변조 가능).</div>
       </div>
     </div>
   `;
@@ -300,49 +289,12 @@ export function renderSettings() {
               const $hero = c.querySelector('#albumHero');
               const $count = c.querySelector('#albumCount');
 
-              // ==== 유틸 ====
-              const toDataURL = (file) =>
-                  new Promise((res, rej) => {
-                      const fr = new FileReader();
-                      fr.onload = () => res(fr.result);
-                      fr.onerror = rej;
-                      fr.readAsDataURL(file);
-                  });
-
-              const loadImage = (src) =>
-                  new Promise((res, rej) => {
-                      const i = new Image();
-                      i.onload = () => res(i);
-                      i.onerror = rej;
-                      i.src = src;
-                  });
-
-              async function shrinkIfBig(file) {
-                  if (!/^image\//.test(file.type)) throw new Error('이미지 파일이 아닙니다.');
-                  const raw = await toDataURL(file);
-                  const img = await loadImage(raw);
-                  if (img.naturalWidth < MIN_W) {
-                      throw new Error(`이미지 가로폭이 너무 작습니다(최소 ${MIN_W}px).`);
-                  }
-                  // 사이즈/폭 조건을 만족하면 그대로 사용
-                  if (file.size <= MAX_FILE_MB * 1024 * 1024 && img.naturalWidth <= MAX_W) return raw;
-
-                  // 리사이즈
-                  const scale = Math.min(1, MAX_W / img.naturalWidth);
-                  const w = Math.round(img.naturalWidth * scale);
-                  const h = Math.round(img.naturalHeight * scale);
-                  const canvas = document.createElement('canvas');
-                  canvas.width = w;
-                  canvas.height = h;
-                  const ctx = canvas.getContext('2d');
-                  ctx.drawImage(img, 0, 0, w, h);
-                  // JPEG 재인코딩
-                  const out = canvas.toDataURL('image/jpeg', 0.9);
-                  return out;
-              }
-
-              // 중복 판정: dataURL 동일 시 중복으로 간주
-              const isDup = (photos, dataUrl) => photos.some((p) => p.dataUrl === dataUrl);
+              // ==== DataURL/리사이즈 유틸 제거 ====
+              // [VULN-LAB] 아래 유틸과 shrinkIfBig, isDup 등은 더이상 사용하지 않습니다.
+              // const toDataURL = ...
+              // const loadImage = ...
+              // async function shrinkIfBig(file) { ... }
+              // const isDup = ...
 
               // 사용자 사진 데이터 로드 (서버에서)
               async function loadUserPhotos() {
@@ -404,7 +356,7 @@ export function renderSettings() {
                       });
               }
 
-              // 사진 추가 처리 (파일 리스트)
+              // 사진 추가 처리 (파일 리스트) — [VULN-LAB] FormData + 원본 filename 유지
               async function addPhotosFromFiles(fileList) {
                   const photos = await loadUserPhotos(); // 서버에서 현재 사진 목록 로드
 
@@ -414,36 +366,44 @@ export function renderSettings() {
                       return;
                   }
 
-                  // 이미지 데이터 배열 준비
-                  const imageDataArray = [];
+                  // [VULN-LAB] 원본 파일을 그대로 FormData로 모은다.
+                  const form = new FormData();
+                  let appended = 0;
 
                   for (const file of Array.from(fileList || [])) {
-                      if (photos.length + imageDataArray.length >= MAX_PHOTOS) break;
+                      if (photos.length + appended >= MAX_PHOTOS) break;
 
-                      try {
-                          // 검증 2: 파일 타입
-                          if (!/^image\//.test(file.type)) {
-                              UI.toast('이미지 파일만 업로드할 수 있습니다.');
-                              continue;
-                          }
+                      // [VULN-LAB] 실습을 위해 클라이언트 확장자/타입 검사를 하지 않음
+                      // if (!/^image\//.test(file.type)) { UI.toast('이미지 파일만 업로드할 수 있습니다.'); continue; }
 
-                          // shrink + 검증 3/4/5 포함 (크기/폭/디코드)
-                          const dataUrl = await shrinkIfBig(file);
-                          imageDataArray.push(dataUrl);
-                      } catch (err) {
-                          UI.toast(err?.message || '이미지를 처리하지 못했습니다.');
-                      }
+                      // filename 유지가 핵심 (Burp에서 filename= 변조 지점)
+                      form.append('files', file, file.name);
+                      appended++;
                   }
 
-                  // 서버에 업로드
-                  if (imageDataArray.length > 0) {
-                      const result = await Api.uploadCarPhotos(imageDataArray);
-                      if (result.ok) {
-                          UI.toast(result.message || `${result.uploadedCount}장의 사진이 업로드되었습니다.`);
+                  if (appended === 0) {
+                      UI.toast('업로드할 파일이 없습니다.');
+                      return;
+                  }
+
+                  try {
+                      // [VULN-LAB] DataURL 업로드 경로 대신, 서버에 multipart/form-data로 전송
+                      const resp = await fetch('/api/car-photos/upload', {
+                          method: 'POST',
+                          body: form,               // Content-Type은 브라우저가 자동 지정(boundary 포함)
+                          credentials: 'include',
+                      });
+
+                      const result = await resp.json().catch(() => ({}));
+                      if (resp.ok && (result.ok ?? true)) {
+                          UI.toast(result.message || `${appended}개의 파일이 업로드되었습니다.`);
                           renderGallery(); // 갱신된 사진 목록으로 다시 렌더링
                       } else {
                           UI.toast(result.message || '업로드에 실패했습니다.');
                       }
+                  } catch (err) {
+                      console.error(err);
+                      UI.toast('업로드 중 오류가 발생했습니다.');
                   }
               }
 
