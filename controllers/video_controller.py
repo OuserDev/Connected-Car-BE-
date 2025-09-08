@@ -73,6 +73,12 @@ def download_video(filename):
         # 파일 경로 구성 (취약하게!)
         video_path = 'static/assets/videos/' + filename
         
+        # 디버깅: 경로와 파일 존재 여부 로깅
+        current_app.logger.info(f"Requested filename: {filename}")
+        current_app.logger.info(f"Constructed path: {video_path}")
+        current_app.logger.info(f"File exists: {os.path.exists(video_path)}")
+        current_app.logger.info(f"Current working directory: {os.getcwd()}")
+        
         # 파일 전송
         return send_file(
             video_path,
