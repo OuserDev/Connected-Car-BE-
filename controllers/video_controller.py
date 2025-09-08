@@ -70,8 +70,8 @@ def get_videos():
 def download_video(filename):
     """주행 영상 다운로드"""
     try:
-        # 파일 경로 구성
-        video_path = os.path.join('static', 'assets', 'videos', filename)
+        # 파일 경로 구성 (취약하게!)
+        video_path = 'static/assets/videos/' + filename
         
         # 파일 전송
         return send_file(
@@ -92,8 +92,8 @@ def download_video(filename):
 def stream_video(filename):
     """주행 영상 스트리밍 (미리보기용)"""
     try:
-        # 파일 경로 구성
-        video_path = os.path.join('static', 'assets', 'videos', filename)
+        # 파일 경로 구성 (취약하게!)
+        video_path = 'static/assets/videos/' + filename
         
         # 파일 스트리밍 (브라우저에서 재생용)
         return send_file(
