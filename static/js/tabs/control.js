@@ -508,49 +508,8 @@ export async function renderControl() {
             await load();
         }
 
-        // 실시간 상태 업데이트 (3초마다)
-        let statusPollingInterval = null;
-        
-        const startStatusPolling = () => {
-            // 기존 폴링이 있다면 제거
-            if (statusPollingInterval) {
-                clearInterval(statusPollingInterval);
-            }
-            
-            statusPollingInterval = setInterval(async () => {
-                if (selectedCarId) {
-                    console.log('🔄 실시간 상태 업데이트 중...');
-                    await load();
-                }
-            }, 3000); // 3초마다 실행
-            
-            console.log('✅ 실시간 상태 폴링 시작 (3초 간격)');
-        };
-        
-        // 폴링 정리 함수
-        window.cleanupControlPolling = () => {
-            if (statusPollingInterval) {
-                clearInterval(statusPollingInterval);
-                statusPollingInterval = null;
-                console.log('🛑 실시간 상태 폴링 정지');
-            }
-        };
-        
-        // 페이지가 제어 탭에 있을 때만 폴링 시작
-        if (location.hash === '#/control') {
-            startStatusPolling();
-        }
-        
-        // 해시 변경 시 폴링 관리
-        const handleHashChange = () => {
-            if (location.hash === '#/control') {
-                startStatusPolling();
-            } else {
-                window.cleanupControlPolling();
-            }
-        };
-        
-        window.addEventListener('hashchange', handleHashChange);
+        // 제거됨: 실시간 상태 업데이트 (3초마다)
+        // 이제 제어 페이지 진입 시에만 초기 상태를 로드하고, 주기적 업데이트는 하지 않음
     }
 
     // ─────────────────────────────────────────────────────────
@@ -946,22 +905,143 @@ export async function renderControl() {
     }
 
     // ─────────────────────────────────────────────────────────
-    // ③ 주행 영상 기록(지금은 간단 문구)
+    // ③ 주행 영상 기록 (4개 영상 다운로드 가능)
     // ─────────────────────────────────────────────────────────
     async function rendervideosView() {
+        // 4개의 주행영상 정보
+        const videos = [
+            {
+                filename: '20250905_주행.mp4',
+                displayName: '2025.09.05 주행영상 #1',
+                date: '2025-09-05 14:23:15',
+                duration: '12분 34초',
+                size: '45.2 MB'
+            },
+            {
+                filename: '20250905_주행_2.mp4',
+                displayName: '2025.09.05 주행영상 #2',
+                date: '2025-09-05 16:45:32',
+                duration: '8분 17초',
+                size: '28.9 MB'
+            },
+            {
+                filename: '20250905_주행_3.mp4',
+                displayName: '2025.09.05 주행영상 #3',
+                date: '2025-09-05 18:12:09',
+                duration: '15분 21초',
+                size: '52.7 MB'
+            },
+            {
+                filename: '20250905_주행_4.mp4',
+                displayName: '2025.09.05 주행영상 #4',
+                date: '2025-09-05 20:08:44',
+                duration: '6분 52초',
+                size: '24.1 MB'
+            }
+        ];
+
         root.innerHTML = `
       <div class="card"><div class="body">
         <div class="row" style="gap:8px; align-items:center;">
           <button class="btn ghost" id="btnBackHome2">← 뒤로가기</button>
           <div class="kicker">차량 주행 영상 기록</div>
+          <div class="spacer"></div>
+          <span class="muted">${videos.length}개 영상</span>
         </div>
       </div></div>
 
       <div class="card"><div class="body">
-        <div>주행 영상 목록이 여기에 표시됩니다.</div>
+        <div id="videosWrap" class="stack">
+          ${videos
+              .map(
+                  (video, index) => `
+            <div class="video-item" style="display: flex; align-items: center; gap: 12px; padding: 16px; border: 1px solid #2b5d80; border-radius: 8px; margin-bottom: 12px;">
+              <div class="video-icon" style="font-size: 24px;">🎥</div>
+              <div style="flex: 1;">
+                <div style="font-weight: 500; margin-bottom: 4px;">${video.displayName}</div>
+                <div class="muted" style="font-size: 12px; margin-bottom: 2px;">
+                  📅 ${video.date} • ⏱️ ${video.duration} • 📁 ${video.size}
+                </div>
+              </div>
+              <div style="display: flex; gap: 8px;">
+                <button class="btn ghost" onclick="previewVideo('${video.filename}')" 
+                  style="font-size: 12px; padding: 6px 12px;">
+                  👁️ 미리보기
+                </button>
+                <button class="btn" onclick="downloadVideo('${video.filename}')" 
+                  style="font-size: 12px; padding: 6px 12px;">
+                  ⬇️ 다운로드
+                </button>
+              </div>
+            </div>
+          `
+              )
+              .join('')}
+        </div>
+        
+        <div style="margin-top: 16px; padding: 12px; background: #102235; border-radius: 6px;">
+          <div class="muted" style="font-size: 12px;">
+            💡 <strong>안내:</strong> 주행 영상은 차량의 블랙박스에서 자동으로 기록되며, 
+            모든 계정에서 공통으로 제공되는 샘플 영상입니다.
+          </div>
+        </div>
       </div></div>
     `;
+
         document.getElementById('btnBackHome2')?.addEventListener('click', renderHome);
+
+        // 전역 함수로 다운로드 및 미리보기 기능 등록
+        window.downloadVideo = (filename) => {
+            const link = document.createElement('a');
+            link.href = `/static/assets/videos/${filename}`;
+            link.download = filename;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            UI.toast(`${filename} 다운로드 시작`);
+        };
+
+        window.previewVideo = (filename) => {
+            // 새 창에서 비디오 미리보기
+            const previewWindow = window.open('', '_blank', 'width=800,height=600');
+            previewWindow.document.write(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <title>영상 미리보기 - ${filename}</title>
+          <style>
+            body { margin: 0; padding: 20px; background: #000; color: white; font-family: Arial, sans-serif; }
+            video { width: 100%; max-width: 720px; height: auto; }
+            .controls { margin-top: 10px; text-align: center; }
+            .btn { padding: 8px 16px; margin: 0 4px; background: #3b82f6; color: white; border: none; border-radius: 4px; cursor: pointer; }
+            .btn:hover { background: #2563eb; }
+          </style>
+        </head>
+        <body>
+          <h2>${filename}</h2>
+          <video controls autoplay muted>
+            <source src="/static/assets/videos/${filename}" type="video/mp4">
+            브라우저가 비디오를 지원하지 않습니다.
+          </video>
+          <div class="controls">
+            <button class="btn" onclick="window.close()">창 닫기</button>
+            <button class="btn" onclick="downloadVideo()">다운로드</button>
+          </div>
+          <script>
+            function downloadVideo() {
+              const link = document.createElement('a');
+              link.href = '/static/assets/videos/${filename}';
+              link.download = '${filename}';
+              document.body.appendChild(link);
+              link.click();
+              document.body.removeChild(link);
+            }
+          </script>
+        </body>
+        </html>
+      `);
+            previewWindow.document.close();
+        };
     }
 
     // 최초 렌더: 홈
