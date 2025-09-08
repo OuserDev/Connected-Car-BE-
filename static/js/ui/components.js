@@ -117,7 +117,6 @@ export const UI = (() => {
         }
 
         // 디버깅: 실제 status 데이터 확인
-        console.log('🔧 carHero status data:', status);
 
         // 메트릭을 모델명과 동일한 스타일로 변경
         const metrics = el('div', 'hero-metrics');

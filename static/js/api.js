@@ -126,25 +126,21 @@ const RealApi = {
 
     async vehicleStatus() {
         try {
-            console.log('🔍 API.vehicleStatus - Starting...');
 
             // 1. BE 앱에서 차량 등록 정보 조회 (정적 데이터)
             const carsResponse = await fetch(`${BASE_URL}/api/cars`, {
                 credentials: 'include',
             });
 
-            console.log('📋 Cars Response Status:', carsResponse.status);
 
             if (!carsResponse.ok) {
                 throw new Error('차량 목록 조회 실패');
             }
 
             const carsData = await carsResponse.json();
-            console.log('📋 Cars Data:', carsData);
 
             if (!carsData.success || !carsData.data || carsData.data.length === 0) {
                 // 차량이 없는 경우 에러가 아닌 특별한 응답 반환
-                console.log('❌ No cars found');
                 return {
                     ok: true,
                     noCars: true,
@@ -153,7 +149,6 @@ const RealApi = {
                 };
             }
 
-            console.log(`🚗 Found ${carsData.data.length} cars`);
             const carInfo = carsData.data[0]; // 첫 번째 차량의 등록 정보
             const vehicleId = carInfo.id;
 
@@ -163,9 +158,7 @@ const RealApi = {
                 credentials: 'include',
             });
 
-            console.log('🔍 Status Response Status:', statusResponse.status);
             const statusData = await statusResponse.json();
-            console.log('🔍 Status Data:', statusData);
 
             if (statusData.success) {
                 // 3. 정적 데이터(차량 등록 정보) + 동적 데이터(실시간 상태) 조합
@@ -191,8 +184,6 @@ const RealApi = {
                 throw new Error(statusData.error || '차량 상태 조회 실패');
             }
         } catch (error) {
-            console.error('❌ Vehicle status error:', error);
-            console.log('🔄 Falling back to MockAPI...');
             // MockAPI로 폴백
             return MockApi.vehicleStatus();
         }
@@ -325,12 +316,10 @@ const RealApi = {
                 throw new Error(controlData.error || '차량 제어 실패');
             }
         } catch (error) {
-            console.error('Vehicle control error:', error);
 
             // 구체적인 오류 메시지와 함께 MockAPI로 폴백
             const fallbackMessage = error.message.includes('서버') || error.message.includes('연결') ? '서버 연결 실패 - 시뮬레이션 모드로 동작합니다' : '제어 실패 - 시뮬레이션 모드로 동작합니다';
 
-            console.log('Falling back to MockAPI:', fallbackMessage);
 
             // property, value가 정의되지 않았을 경우를 대비해 기본값 제공
             const safeProperty = typeof property !== 'undefined' ? property : null;
@@ -365,7 +354,6 @@ const RealApi = {
                 return { ok: false, message: data.error || '업로드 실패' };
             }
         } catch (error) {
-            console.error('Photo upload error:', error);
             return { ok: false, message: '서버 연결 실패' };
         }
     },
@@ -388,7 +376,6 @@ const RealApi = {
                 return { ok: false, message: data.error || '사진 조회 실패' };
             }
         } catch (error) {
-            console.error('Photo fetch error:', error);
             return { ok: false, message: '서버 연결 실패' };
         }
     },
@@ -411,7 +398,6 @@ const RealApi = {
                 return { ok: false, message: data.error || '메인 사진 설정 실패' };
             }
         } catch (error) {
-            console.error('Set main photo error:', error);
             return { ok: false, message: '서버 연결 실패' };
         }
     },
@@ -435,7 +421,6 @@ const RealApi = {
                 return { ok: false, message: data.error || '사진 삭제 실패' };
             }
         } catch (error) {
-            console.error('Delete photo error:', error);
             return { ok: false, message: '서버 연결 실패' };
         }
     },
@@ -457,7 +442,6 @@ const RealApi = {
                 return { ok: false, message: data.error || '전체 삭제 실패' };
             }
         } catch (error) {
-            console.error('Clear all photos error:', error);
             return { ok: false, message: '서버 연결 실패' };
         }
     },
@@ -479,7 +463,6 @@ const RealApi = {
                 return { ok: false, message: data.error || '게시글 목록 조회 실패' };
             }
         } catch (error) {
-            console.error('Market posts fetch error:', error);
             return { ok: false, message: '서버 연결 실패' };
         }
     },
@@ -498,7 +481,6 @@ const RealApi = {
                 return { ok: false, message: data.error || '게시글 조회 실패' };
             }
         } catch (error) {
-            console.error('Market post fetch error:', error);
             return { ok: false, message: '서버 연결 실패' };
         }
     },
@@ -523,7 +505,6 @@ const RealApi = {
                 return { ok: false, message: data.error || '게시글 작성 실패' };
             }
         } catch (error) {
-            console.error('Market post create error:', error);
             return { ok: false, message: '서버 연결 실패' };
         }
     },
@@ -548,7 +529,6 @@ const RealApi = {
                 return { ok: false, message: data.error || '게시글 수정 실패' };
             }
         } catch (error) {
-            console.error('Market post update error:', error);
             return { ok: false, message: '서버 연결 실패' };
         }
     },
@@ -570,7 +550,6 @@ const RealApi = {
                 return { ok: false, message: data.error || '게시글 삭제 실패' };
             }
         } catch (error) {
-            console.error('Market post delete error:', error);
             return { ok: false, message: '서버 연결 실패' };
         }
     },
@@ -592,31 +571,24 @@ const RealApi = {
                 return { ok: false, message: data.error || '내 게시글 조회 실패' };
             }
         } catch (error) {
-            console.error('My market posts fetch error:', error);
             return { ok: false, message: '서버 연결 실패' };
         }
     },
 
     // 🚗 차량 제어 기록 조회
     async getVehicleHistory(vehicleId = null, options = {}) {
-        console.log('🔍 [DEBUG] getVehicleHistory 시작 - vehicleId:', vehicleId, 'options:', options);
 
         try {
             // vehicleId가 없으면 첫 번째 차량 사용
             let targetVehicleId = vehicleId;
             if (!targetVehicleId) {
-                console.log('🔍 [DEBUG] vehicleId 없음, 차량 목록 조회 중...');
                 const carsResponse = await fetch(`${BASE_URL}/api/cars`, { credentials: 'include' });
-                console.log('🔍 [DEBUG] 차량 API 응답 상태:', carsResponse.status);
 
                 const carsData = await carsResponse.json();
-                console.log('🔍 [DEBUG] 차량 목록 데이터:', carsData);
 
                 if (carsData.success && carsData.data && carsData.data.length > 0) {
                     targetVehicleId = carsData.data[0].id;
-                    console.log('🔍 [DEBUG] 첫 번째 차량 ID 선택:', targetVehicleId);
                 } else {
-                    console.error('❌ [ERROR] 차량이 없거나 API 실패:', carsData);
                     return { ok: false, message: '등록된 차량이 없습니다' };
                 }
             }
@@ -628,20 +600,16 @@ const RealApi = {
             });
 
             const historyUrl = `${BASE_URL}/api/vehicle/${targetVehicleId}/history?${params}`;
-            console.log('🔍 [DEBUG] 제어 기록 API 호출:', historyUrl);
 
             const response = await fetch(historyUrl, {
                 credentials: 'include',
             });
 
-            console.log('🔍 [DEBUG] 제어 기록 API 응답 상태:', response.status);
 
             const data = await response.json();
-            console.log('🔍 [DEBUG] 제어 기록 데이터:', data);
 
             if (data.success) {
                 const logs = data.data.records || [];
-                console.log('🔍 [DEBUG] 성공! 기록 개수:', logs.length);
                 return {
                     ok: true,
                     logs: logs,
@@ -649,11 +617,9 @@ const RealApi = {
                     vehicleId: targetVehicleId,
                 };
             } else {
-                console.error('❌ [ERROR] 제어 기록 API 실패:', data.error);
                 return { ok: false, message: data.error || '제어 기록 조회 실패' };
             }
         } catch (error) {
-            console.error('❌ [ERROR] 제어 기록 fetch 오류:', error);
             return { ok: false, message: `서버 연결 실패: ${error.message}` };
         }
     },
@@ -676,7 +642,6 @@ const RealApi = {
                 return { ok: false, message: data.error || '카드 목록 조회 실패' };
             }
         } catch (error) {
-            console.error('Cards fetch error:', error);
             return { ok: false, message: '서버 연결 실패' };
         }
     },
@@ -714,7 +679,6 @@ const RealApi = {
                 return { ok: false, message: data.error || '카드 등록 실패' };
             }
         } catch (error) {
-            console.error('Card add error:', error);
             return { ok: false, message: '서버 연결 실패' };
         }
     },
@@ -737,7 +701,6 @@ const RealApi = {
                 return { ok: false, message: data.error || '기본 카드 설정 실패' };
             }
         } catch (error) {
-            console.error('Set default card error:', error);
             return { ok: false, message: '서버 연결 실패' };
         }
     },
@@ -759,7 +722,6 @@ const RealApi = {
                 return { ok: false, message: data.error || '카드 삭제 실패' };
             }
         } catch (error) {
-            console.error('Delete card error:', error);
             return { ok: false, message: '서버 연결 실패' };
         }
     },
@@ -785,7 +747,6 @@ const RealApi = {
                 return { ok: false, message: data.error || '차량 정보 확인 실패' };
             }
         } catch (error) {
-            console.error('Car verification error:', error);
             return { ok: false, message: '서버 연결 실패' };
         }
     },
@@ -811,7 +772,6 @@ const RealApi = {
                 return { ok: false, message: data.error || '차량 등록 실패' };
             }
         } catch (error) {
-            console.error('Car registration error:', error);
             return { ok: false, message: '서버 연결 실패' };
         }
     },

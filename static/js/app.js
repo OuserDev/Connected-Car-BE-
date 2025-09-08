@@ -25,7 +25,6 @@ function clearAllAuthState() {
             localStorage.removeItem(key);
         }
     });
-    console.log('모든 인증 상태 초기화 완료');
 }
 
 function renderLoginRequired() {
@@ -103,7 +102,6 @@ export async function navigate() {
                 return;
             }
         } catch (error) {
-            console.error('차량 등록 상태 체크 실패:', error);
             // 오류 발생 시에도 토스트 메시지 표시하고 메인으로 리다이렉트
             UI.toast('차량을 먼저 등록해야 합니다');
             location.hash = '#/main';
@@ -116,35 +114,26 @@ export async function navigate() {
 }
 
 (async function boot() {
-    console.log('앱 시작 - localStorage 확인:', {
-        token: localStorage.getItem('cc_token'),
-        user: localStorage.getItem('cc_user'),
-        user_id: localStorage.getItem('cc_user_id'),
-    });
+    // localStorage 상태 확인 (디버깅용)
 
     // 완전 초기화 - 개발/디버깅 시에만 사용 (현재 비활성화)
     // localStorage.clear(); // 임시로 모든 localStorage 초기화
 
     // 세션 복원 - 토큰과 사용자 정보가 모두 있고 유효한 경우에만
     const { token, user } = State.get();
-    console.log('State에서 가져온 값:', { token: !!token, user: !!user, userHasCar: user?.hasCar });
 
     if (token && user) {
         try {
             const res = await Api.me(token);
             if (res.ok && res.user) {
                 State.setUser(res.user);
-                console.log('세션 복원 성공:', res.user);
             } else {
-                console.log('API.me 실패 - 상태 초기화');
                 clearAllAuthState();
             }
         } catch (e) {
-            console.log('API.me 에러 - 상태 초기화', e);
             clearAllAuthState();
         }
     } else {
-        console.log('토큰 또는 사용자 정보 없음 - 상태 초기화');
         clearAllAuthState();
     }
     await updateAuthBadge();
@@ -153,7 +142,6 @@ export async function navigate() {
     // 전역 차량 선택 이벤트 리스너
     window.addEventListener('carSelected', async (event) => {
         const selectedCar = event.detail;
-        console.log('차량 선택됨:', selectedCar);
         State.setSelectedCarId(selectedCar.id);
         UI.toast(`${selectedCar.model_name} 차량이 선택되었습니다`);
         // 헤더 차량 정보 업데이트

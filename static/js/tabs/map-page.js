@@ -44,35 +44,28 @@ export async function renderMap() {
 
         // 네이버 지도 서비스 확인
         if (!window.naver?.maps?.Service) {
-            console.error('❌ 네이버 지도 서비스 없음:', window.naver);
             return UI.toast('네이버 지도 서비스를 사용할 수 없습니다');
         }
 
         UI.toast('🔍 검색 중...');
 
         try {
-            console.log('🔍 검색 시작:', query);
 
             naver.maps.Service.geocode(
                 {
                     query: query,
                 },
                 function (status, response) {
-                    console.log('📍 Geocode 응답:', { status, response });
 
                     if (status !== naver.maps.Service.Status.OK) {
-                        console.warn('❌ Geocode 실패 - Status:', status);
-                        console.warn('❌ Response:', response);
 
                         return UI.toast('검색 결과를 찾을 수 없습니다');
                     }
-                    console.log('🗺️ 전체 응답:', response);
 
                     // 네이버 지도 API v3 응답 구조: response.v2.addresses
                     var result = response.v2;
                     var addresses = result.addresses;
 
-                    console.log('📍 주소 목록:', addresses);
 
                     if (addresses && addresses.length > 0) {
                         var item = addresses[0];
@@ -80,24 +73,19 @@ export async function renderMap() {
                         var lng = parseFloat(item.x);
                         var label = item.roadAddress || item.jibunAddress || query;
 
-                        console.log('✅ 찾은 주소:', { lat, lng, label, item });
 
                         if (Number.isFinite(lat) && Number.isFinite(lng)) {
-                            console.log('🎯 지도 이동:', { lat, lng, label });
                             markAndCenter(lat, lng, label);
                             UI.toast(`📍 ${label}`);
                         } else {
-                            console.error('❌ 좌표가 유효하지 않음:', { lat, lng });
                             UI.toast('좌표를 해석할 수 없습니다.');
                         }
                     } else {
-                        console.warn('❌ 주소 결과 없음');
                         UI.toast('검색 결과가 없습니다.');
                     }
                 }
             );
         } catch (err) {
-            console.error('❌ Geocode error:', err);
             UI.toast('검색 중 오류가 발생했습니다.');
         }
     }

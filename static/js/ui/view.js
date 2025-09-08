@@ -76,7 +76,6 @@ export async function mountControlsTab(root){
 
       render();
     } catch(err){
-      console.error(err);
       toast(`실패: ${err.message || err}`, "error", 3000);
       setBusy(btn, false);
     } finally{

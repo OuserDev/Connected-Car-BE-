@@ -41,7 +41,6 @@ async function checkActualCarRegistration() {
         }
         return false;
     } catch (error) {
-        console.error('차량 등록 상태 체크 실패:', error);
         return false;
     }
 }
@@ -162,7 +161,6 @@ export async function updateHeaderVehicleInfo() {
             headerVehicleInfo.style.display = 'none';
         }
     } catch (error) {
-        console.error('헤더 차량 정보 업데이트 실패:', error);
         headerVehicleInfo.style.display = 'none';
     }
 }

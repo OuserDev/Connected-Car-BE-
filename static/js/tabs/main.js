@@ -10,7 +10,6 @@ let _isRendering = false;
 
 export async function renderMain() {
     if (_isRendering) {
-        console.log('⚠️ renderMain already in progress, skipping...');
         return;
     }
     _isRendering = true;
@@ -22,21 +21,16 @@ export async function renderMain() {
 
     // 먼저 인증 상태 확인
     const { user, token } = State.get();
-    console.log('👤 Main.js - User State:', { token: !!token, user: !!user, userHasCar: user?.hasCar });
 
     // 로그인되어 있고 차량이 있는 경우에만 API 호출
     if (user && token && user.hasCar) {
         const [{ ok: okP, items = [] } = {}, vehicleResponse = {}] = await Promise.all([Api.recommendedPlaces(), Api.vehicleStatus()]);
 
         // 디버깅용 로그
-        console.log('🚗 Main.js - Vehicle Response:', vehicleResponse);
-        console.log('🚗 Vehicle Status:', vehicleResponse.status);
-        console.log('🚗 Car Info:', vehicleResponse.carInfo);
 
         renderAuthenticatedUser(root, user, vehicleResponse, okP, items);
     } else {
         // 로그인하지 않았거나 차량이 없으면 로그인 유도 화면만 표시
-        console.log('🚫 로그인하지 않았거나 차량 정보 없음 - 로그인 유도 화면 표시');
         renderUnauthenticatedUser(root);
     }
 
@@ -116,7 +110,6 @@ function renderRecommendedPlaces(root, okP, items) {
                 const index = parseInt(e.target.getAttribute('data-index'));
                 const place = items[index];
                 if (place && typeof place.lat === 'number' && typeof place.lng === 'number') {
-                    console.log('🗺️ Moving to place:', place.name, place.lat, place.lng);
                     moveToLocation(place.lat, place.lng, place.name);
 
                     // 지도로 스크롤 (지도가 위쪽에 있으므로 상단으로 스크롤)
@@ -149,22 +142,15 @@ function renderMapSection(root, items, vehicleStatus = null, carInfo = null) {
             mountMap('#map-main', { places: items });
 
             // 차량 위치 정보가 있으면 차량 마커 추가
-            console.log('🗺️ Checking vehicle location:', { vehicleStatus, carInfo });
             if (vehicleStatus?.location && carInfo) {
                 const { lat, lng } = vehicleStatus.location;
-                console.log('🗺️ Adding vehicle marker:', { lat, lng, carInfo });
 
                 addVehicleMarker(lat, lng, {
                     model: carInfo.model_name || carInfo.model,
                     plate: carInfo.license_plate || carInfo.licensePlate,
                 });
             } else {
-                console.log('❌ No vehicle location data:', {
-                    hasLocation: !!vehicleStatus?.location,
-                    hasCarInfo: !!carInfo,
-                    vehicleStatus,
-                    carInfo,
-                });
+                // 차량 위치 정보 없음
             }
         } catch (e) {
             const m = document.getElementById('map-main');
@@ -234,7 +220,6 @@ function setupMainEventListeners() {
                     UI.toast(response.message || '입력한 차량 정보와 일치하는 차량을 찾을 수 없습니다');
                 }
             } catch (error) {
-                console.error('Car verification error:', error);
                 UI.toast('서버 연결 실패');
             } finally {
                 const btnSubmit = document.getElementById('btnSubmitCarRegister');
@@ -341,7 +326,6 @@ async function registerCar(carId, licensePlate, vinCode) {
             UI.toast(response.message || '차량 등록에 실패했습니다');
         }
     } catch (error) {
-        console.error('Car registration error:', error);
         UI.toast('서버 연결 실패');
     } finally {
         const btnConfirm = document.getElementById('btnConfirmCarRegister');

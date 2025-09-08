@@ -19,7 +19,6 @@
 // export function mount(selectorOrEl, { places = [], centerOnCurrent = true } = {}){
 //   const el = typeof selectorOrEl === "string" ? document.querySelector(selectorOrEl) : selectorOrEl;
 //   if (!el) return;
-//   if (!window.naver || !naver.maps) { console.error("NAVER Maps not ready. Check ncpClientId and service URL allowlist."); return; }
 
 //   _disposeMap();
 
@@ -134,7 +133,6 @@ function _fitToPoints(points){
 export function mount(selectorOrEl, { places = [], addPlaceMarkers = true, centerOnCurrent = true } = {}){
   const el = typeof selectorOrEl === "string" ? document.querySelector(selectorOrEl) : selectorOrEl;
   if (!el) return;
-  if (!window.naver || !naver.maps) { console.error("NAVER Maps not ready. Check ncpClientId and service URL allowlist."); return; }
 
   _disposeMap();
 

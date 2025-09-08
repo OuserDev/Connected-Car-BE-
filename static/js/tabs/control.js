@@ -62,26 +62,21 @@ export async function renderControl() {
             const carsResponse = await fetch('/api/cars', { credentials: 'include' });
             if (carsResponse.ok) {
                 const carsData = await carsResponse.json();
-                console.log('Cars API response:', carsData);
                 if (carsData.success && carsData.data && carsData.data.length > 0) {
                     // selectedCarId가 없거나 목록에 없으면 첫 번째 차량 선택
                     if (!selectedCarId || !carsData.data.find((car) => car.id === selectedCarId)) {
                         const firstCarId = carsData.data[0].id;
                         State.setSelectedCarId(firstCarId);
                         selectedCarId = firstCarId;
-                        console.log(`차량 선택 설정: ${firstCarId}`);
                     } else {
-                        console.log(`현재 선택된 차량 유지: ${selectedCarId}`);
                     }
                     // 선택된 차량 정보 찾기
                     currentCar = carsData.data.find((car) => car.id === selectedCarId) || carsData.data[0];
                 } else {
-                    console.warn('등록된 차량이 없습니다');
                     selectedCarId = null;
                     currentCar = null;
                 }
             } else {
-                console.error('Cars API 호출 실패:', carsResponse.status);
             }
 
             const vehicleResponse = await Api.vehicleStatus();
@@ -95,7 +90,6 @@ export async function renderControl() {
                 vehicleStatus = vehicleResponse.status;
             }
         } catch (error) {
-            console.error('차량 정보 로드 실패:', error);
         }
 
         root.innerHTML = `
@@ -216,12 +210,10 @@ export async function renderControl() {
         const $statusUpdate = document.getElementById('statusUpdate');
 
         function reflect(state) {
-            console.log('reflect called with state:', state);
             vehicleStatus = state;
 
             // state가 없거나 undefined인 경우 기본값 처리
             if (!state) {
-                console.warn('reflect: state is undefined');
                 $locked.textContent = '—';
                 $engine.textContent = '—';
                 $ac.textContent = '—';
@@ -244,7 +236,6 @@ export async function renderControl() {
                 doorState = 'unlocked';
             }
             const doorText = doorState === 'locked' ? '잠김' : '열림';
-            console.log('Door state:', state.door_state, '-> doorState:', doorState, '-> Display:', doorText);
             $locked.textContent = doorText;
 
             // 시동 상태 표시 (실제 API boolean과 MockAPI 문자열 모두 지원)
@@ -259,7 +250,6 @@ export async function renderControl() {
                 engineState = 'off';
             }
             const engineText = engineState === 'on' ? 'ON' : 'OFF';
-            console.log('Engine state:', state.engine_state, '-> engineState:', engineState, '-> Display:', engineText);
             $engine.textContent = engineText;
 
             // 에어컨 상태 표시 (실제 API boolean과 MockAPI 문자열 모두 지원)
@@ -273,13 +263,11 @@ export async function renderControl() {
                 acState = 'off';
             }
             const acText = acState === 'on' ? 'ON' : 'OFF';
-            console.log('AC state:', acValue, '-> acState:', acState, '-> Display:', acText);
             $ac.textContent = acText;
 
             // 온도 표시 (MockAPI와 실제 API 형식 모두 지원)
             const currentTemp = state.climate?.current_temp || state.current_temp || state.cabinTemp;
             const targetTemp = state.climate?.target_temp || state.target_temp || state.targetTemp || state.cabinTempTarget || 22;
-            console.log('Temperature - current:', currentTemp, 'target:', targetTemp);
             $cabin.textContent = currentTemp !== null ? `${currentTemp.toFixed(2)}℃` : '—';
             $target.textContent = `${targetTemp}℃`;
 
@@ -294,7 +282,6 @@ export async function renderControl() {
                 battery = 12.6; // 기본값
             }
 
-            console.log('Fuel:', fuel, 'Battery:', battery);
             $fuel.textContent = `${fuel}%`;
             $battery.textContent = `${battery.toFixed(1)}V`;
 
@@ -336,7 +323,6 @@ export async function renderControl() {
 
         async function load() {
             if (!selectedCarId) {
-                console.warn('선택된 차량이 없어 상태를 불러올 수 없습니다.');
                 return;
             }
 
@@ -351,15 +337,12 @@ export async function renderControl() {
                     if (data.success) {
                         reflect(data.data);
                     } else {
-                        console.error('차량 상태 조회 실패:', data.error);
                         UI.toast('차량 상태를 불러오지 못했습니다.');
                     }
                 } else {
-                    console.error('차량 상태 API 호출 실패:', response.status);
                     UI.toast('차량 상태를 불러오지 못했습니다.');
                 }
             } catch (error) {
-                console.error('차량 상태 로드 오류:', error);
                 UI.toast('차량 상태를 불러오지 못했습니다.');
             }
         }
@@ -379,17 +362,13 @@ export async function renderControl() {
                 UI.toast(res.message || '제어 완료');
 
                 // 응답에 status가 있는 경우에만 reflect 호출
-                console.log('doAct result:', res);
                 if (res.status) {
-                    console.log('Updating status with:', res.status);
                     reflect(res.status);
                 } else {
-                    console.log('No status in response, reloading...');
                     // status가 없으면 전체 상태를 다시 로드
                     setTimeout(() => load(), 500); // 약간의 지연 후 상태 새로고침
                 }
             } catch (error) {
-                console.error('doAct error:', error);
                 UI.toast('제어 요청 중 오류가 발생했습니다');
             }
         }
@@ -797,33 +776,24 @@ export async function renderControl() {
         const $content = document.getElementById('logsContent');
 
         async function loadLogs() {
-            console.log('🔍 [DEBUG] control.js loadLogs() 시작');
 
             try {
                 loading = true;
                 $content.innerHTML = '로딩 중...';
-                console.log('🔍 [DEBUG] loading 상태 설정, UI 업데이트됨');
 
                 // RealAPI에서 제어 로그 가져오기
-                console.log('🔍 [DEBUG] Api.controlLogs() 호출 시작');
                 const result = await Api.controlLogs();
-                console.log('🔍 [DEBUG] Api.controlLogs() 결과:', result);
 
                 if (result.ok) {
                     logs = result.logs || [];
-                    console.log('🔍 [DEBUG] 로그 데이터 설정됨, 개수:', logs.length);
-                    console.log('🔍 [DEBUG] 첫 번째 로그 샘플:', logs[0]);
                     renderLogsList();
                 } else {
-                    console.error('❌ [ERROR] controlLogs 실패:', result.message);
                     $content.innerHTML = `<div class="muted">제어 기록을 불러올 수 없습니다: ${result.message}</div>`;
                 }
             } catch (error) {
-                console.error('❌ [ERROR] Control logs error:', error);
                 $content.innerHTML = `<div class="muted">제어 기록 로딩 중 오류: ${error.message}</div>`;
             } finally {
                 loading = false;
-                console.log('🔍 [DEBUG] loadLogs() 완료, loading = false');
             }
         }
 
