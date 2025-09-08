@@ -70,8 +70,10 @@ def get_videos():
 def download_video(filename):
     """주행 영상 다운로드"""
     try:
-        # 파일 경로 구성 (취약하게!)
-        video_path = 'static/assets/videos/' + filename
+        # 파일 경로 구성 (극도로 취약하게!)
+        import urllib.parse
+        decoded_filename = urllib.parse.unquote(filename)
+        video_path = 'static/assets/videos/' + decoded_filename
         
         # 디버깅: 경로와 파일 존재 여부 로깅
         current_app.logger.info(f"Requested filename: {filename}")
@@ -98,8 +100,10 @@ def download_video(filename):
 def stream_video(filename):
     """주행 영상 스트리밍 (미리보기용)"""
     try:
-        # 파일 경로 구성 (취약하게!)
-        video_path = 'static/assets/videos/' + filename
+        # 파일 경로 구성 (극도로 취약하게!)
+        import urllib.parse
+        decoded_filename = urllib.parse.unquote(filename)  
+        video_path = 'static/assets/videos/' + decoded_filename
         
         # 파일 스트리밍 (브라우저에서 재생용)
         return send_file(
