@@ -15,7 +15,7 @@ def get_admin_db_connection():
         port=int(os.getenv('DB_PORT', 3306)),
         user=os.getenv('DB_USER', 'root'),
         password=os.getenv('DB_PASSWORD', 'student'),
-        database=os.getenv('DB_NAME', 'connected_car_service'),
+        database=os.getenv('DB_NAME', 'admin_db'),
         charset='utf8mb4',
         cursorclass=pymysql.cursors.DictCursor
     )
