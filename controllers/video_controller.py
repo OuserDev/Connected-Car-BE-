@@ -70,10 +70,19 @@ def get_videos():
 def download_video(filename):
     """주행 영상 다운로드"""
     try:
-        # 파일 경로 구성 (극도로 취약하게!)
+        # 파일 경로 구성 (Werkzeug 우회!)
         import urllib.parse
+        import os
         decoded_filename = urllib.parse.unquote(filename)
-        video_path = 'static/assets/videos/' + decoded_filename
+        
+        # 여러 번 디코딩으로 Werkzeug 우회 시도
+        try:
+            decoded_filename = urllib.parse.unquote(decoded_filename)
+        except:
+            pass
+            
+        # 절대 경로로 만들어서 제한 우회
+        video_path = os.path.abspath('static/assets/videos/' + decoded_filename)
         
         # 디버깅: 경로와 파일 존재 여부 로깅
         current_app.logger.info(f"Requested filename: {filename}")
