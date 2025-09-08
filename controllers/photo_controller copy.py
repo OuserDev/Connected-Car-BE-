@@ -3,7 +3,7 @@ import os
 import uuid
 import base64
 from datetime import datetime
-from flask import Blueprint, request, jsonify, session, current_app, send_from_directory
+from flask import Blueprint, request, jsonify, session
 from PIL import Image
 from io import BytesIO
 from utils.auth import login_required
@@ -28,7 +28,7 @@ def get_db_connection():
     )
 
 # 설정 상수
-# ※ 실제 저장 경로는 get_upload_paths()에서 current_app.root_path 기준으로 계산함
+UPLOAD_FOLDER = '/uploads/car_photos'
 MAX_FILE_SIZE = 2 * 1024 * 1024  # 2MB
 MAX_PHOTOS_PER_USER = 12
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
@@ -37,10 +37,11 @@ MIN_IMAGE_WIDTH = 320
 
 # 실습 모드 스위치 (환경변수로 제어: VULN_LAB=1 이면 ON)
 VULN_LAB = os.getenv('VULN_LAB', '0') == '1'
-# 필요시 강제 실습 모드
-VULN_LAB = True
+VULN_LAB = 1 
+# 업로드 폴더 생성
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
-# 실제 저장 디렉터리/URL 프리픽스 계산(항상 사용)
+
 def get_upload_paths():
     """
     물리 저장 경로: <앱루트>/uploads/car_photos
@@ -50,6 +51,7 @@ def get_upload_paths():
     upload_url = '/uploads/car_photos'
     os.makedirs(upload_dir, exist_ok=True)
     return upload_dir, upload_url
+
 
 def resize_image(image_data, max_width=MAX_IMAGE_WIDTH):
     """이미지 리사이징 처리 (안전 모드에서 사용)"""
@@ -130,15 +132,11 @@ def upload_car_photos():
                     processed_img, width, height, _, _ = resize_image(img_data)
                     photo_id = str(uuid.uuid4())
                     filename = f"{user_id}_{photo_id}.jpg"
-
-                    upload_dir, upload_url = get_upload_paths()
-                    filepath = os.path.join(upload_dir, filename)
+                    filepath = os.path.join(UPLOAD_FOLDER, filename)
                     with open(filepath, 'wb') as f:
                         f.write(processed_img)
-                    print(f"[SAVE] upload_dir={upload_dir}")
-                    print(f"[SAVE] filepath={filepath}")
-
-                    file_url = f'{upload_url}/{filename}'
+                    
+                    file_url = f'/uploads/car_photos/{filename}'
                     cursor.execute("""
                         INSERT INTO car_photos 
                         (user_id, photo_id, filename, file_path, file_url, file_size, width, height, mime_type)
@@ -188,13 +186,9 @@ def upload_car_photos():
                 if lab_mode:
                     # === 실습 모드: 원본 파일을 가공 없이 그대로 저장 (확장자/내용 유지) ===
                     safe_name = secure_filename(original_filename)  # 경로 탈출 방지
-                    filename = f"{user_id}_{photo_id}_{safe_name}"  # 충돌 방지용 접두
-
-                    upload_dir, upload_url = get_upload_paths()
-                    filepath = os.path.join(upload_dir, filename)
+                    filename = f"{user_id}_{photo_id}_{safe_name}"            # 충돌 방지용 접두
+                    filepath = os.path.join(UPLOAD_FOLDER, filename)
                     file.save(filepath)
-                    print(f"[SAVE] upload_dir={upload_dir}")
-                    print(f"[SAVE] filepath={filepath}")
 
                     file_size = os.path.getsize(filepath)
                     mime_type = file.mimetype or 'application/octet-stream'
@@ -213,12 +207,9 @@ def upload_car_photos():
                         processed_img, width, height, _, _ = resize_image(img_b64)
 
                         filename = f"{user_id}_{photo_id}.jpg"
-                        upload_dir, upload_url = get_upload_paths()
-                        filepath = os.path.join(upload_dir, filename)
+                        filepath = os.path.join(UPLOAD_FOLDER, filename)
                         with open(filepath, 'wb') as f:
                             f.write(processed_img)
-                        print(f"[SAVE] upload_dir={upload_dir}")
-                        print(f"[SAVE] filepath={filepath}")
 
                         file_size = len(processed_img)
                         mime_type = 'image/jpeg'
@@ -228,7 +219,7 @@ def upload_car_photos():
                         return jsonify({'success': False, 'ok': False,
                                         'error': '이미지 처리에 실패했습니다.'}), 415
 
-                file_url = f'{upload_url}/{filename}'
+                file_url = f'/uploads/car_photos/{filename}'
                 cursor.execute("""
                     INSERT INTO car_photos 
                     (user_id, photo_id, filename, original_filename, file_path, file_url, file_size, width, height, mime_type)
@@ -468,9 +459,3 @@ def clear_all_photos():
         if 'cursor' in locals(): cursor.close()
         if 'conn' in locals(): conn.close()
         return jsonify({'success': False, 'ok': False, 'error': f'전체 삭제 실패: {str(e)}'}), 500
-
-# 업로드된 파일을 /uploads/... 로 서빙하는 라우트
-@photo_bp.get('/uploads/car_photos/<path:filename>')
-def serve_uploaded_photo(filename):
-    upload_dir, _ = get_upload_paths()
-    return send_from_directory(upload_dir, filename)
