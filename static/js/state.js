@@ -38,5 +38,5 @@ export const State = {
         localStorage.removeItem(KEY_TOKEN);
         localStorage.removeItem(KEY_USER);
         localStorage.removeItem(KEY_SELECTED_CAR_ID);
-    }
+    },
 };

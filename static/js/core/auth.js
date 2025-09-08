@@ -83,10 +83,10 @@ export async function doLogin() {
     State.setUser(res.user);
     UI.toast('로그인 되었습니다.');
     await updateAuthBadge();
-    
+
     // 로그인 성공 시 사용자 상태 주기적 확인 시작
     startUserStatusCheck();
-    
+
     closeLoginDialog();
     location.hash = '#/main';
     await navigate();
@@ -177,10 +177,10 @@ export function attachAuthDelegates() {
         // 로그아웃 버튼 클릭
         if (t.id === 'btnLogout') {
             e.preventDefault();
-            
+
             // 사용자 상태 확인 중지
             stopUserStatusCheck();
-            
+
             State.setToken(null);
             State.setUser(null);
             await updateAuthBadge();

@@ -29,7 +29,7 @@ function convertToMockApiAction(property, value, originalAction) {
     if (!property) {
         return originalAction || 'unknown';
     }
-    
+
     switch (property) {
         case 'door_state':
             return value === 'locked' ? 'lock' : 'unlock';
@@ -60,16 +60,16 @@ const RealApi = {
             });
 
             const data = await response.json();
-            
+
             // 403 Forbidden - 계정 정지 상태
             if (response.status === 403) {
-                return { 
-                    ok: false, 
+                return {
+                    ok: false,
                     status: 'suspended',
-                    message: data.error || '계정이 정지되었습니다. 관리자에게 문의하세요.' 
+                    message: data.error || '계정이 정지되었습니다. 관리자에게 문의하세요.',
                 };
             }
-            
+
             if (data.status === 'success') {
                 return {
                     ok: true,
@@ -117,19 +117,19 @@ const RealApi = {
             });
 
             const data = await response.json();
-            
+
             // 403 Forbidden - 계정 정지 상태
             if (response.status === 403) {
                 // 자동 로그아웃 처리
                 await this.logout();
                 // 상태 메시지와 함께 실패 반환
-                return { 
-                    ok: false, 
+                return {
+                    ok: false,
                     status: 'suspended',
-                    message: data.error || '계정이 정지되었습니다. 관리자에게 문의하세요.' 
+                    message: data.error || '계정이 정지되었습니다. 관리자에게 문의하세요.',
                 };
             }
-            
+
             if (data.status === 'success') {
                 return {
                     ok: true,
@@ -163,12 +163,10 @@ const RealApi = {
 
     async vehicleStatus() {
         try {
-
             // 1. BE 앱에서 차량 등록 정보 조회 (정적 데이터)
             const carsResponse = await fetch(`${BASE_URL}/api/cars`, {
                 credentials: 'include',
             });
-
 
             if (!carsResponse.ok) {
                 throw new Error('차량 목록 조회 실패');
@@ -353,15 +351,13 @@ const RealApi = {
                 throw new Error(controlData.error || '차량 제어 실패');
             }
         } catch (error) {
-
             // 구체적인 오류 메시지와 함께 MockAPI로 폴백
             const fallbackMessage = error.message.includes('서버') || error.message.includes('연결') ? '서버 연결 실패 - 시뮬레이션 모드로 동작합니다' : '제어 실패 - 시뮬레이션 모드로 동작합니다';
-
 
             // property, value가 정의되지 않았을 경우를 대비해 기본값 제공
             const safeProperty = typeof property !== 'undefined' ? property : null;
             const safeValue = typeof value !== 'undefined' ? value : null;
-            
+
             // MockAPI는 기존 action명을 사용하므로 변환 필요
             const mockAction = convertToMockApiAction(safeProperty, safeValue, action);
             const result = await MockApi.vehicleControl(mockAction, data);
@@ -614,7 +610,6 @@ const RealApi = {
 
     // 🚗 차량 제어 기록 조회
     async getVehicleHistory(vehicleId = null, options = {}) {
-
         try {
             // vehicleId가 없으면 첫 번째 차량 사용
             let targetVehicleId = vehicleId;
@@ -641,7 +636,6 @@ const RealApi = {
             const response = await fetch(historyUrl, {
                 credentials: 'include',
             });
-
 
             const data = await response.json();
 
