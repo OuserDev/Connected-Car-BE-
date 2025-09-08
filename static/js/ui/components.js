@@ -157,10 +157,9 @@ export const UI = (() => {
         const card = el('div', 'card');
         const body = el('div', 'body');
         body.innerHTML = `
-      <div class="kicker">접속 필요</div>
-      <div class="cta" style="text-align: center; padding: 24px 16px;">
-        <div style="margin-bottom: 20px;">차량 정보 보기를 위해 <b>로그인</b> 해주세요.</div>
-        <div class="row" style="justify-content: center; gap: 12px;">
+      <div class="cta" style="text-align: center; padding: 40px 20px;">
+        <p style="color: #88a9bf; margin-bottom: 24px;">차량 정보 보기를 위해 로그인 해주세요.</p>
+        <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
           <button class="btn brand" id="btnOpenLogin">로그인</button>
           <button class="btn ghost" id="btnSkip">회원가입</button>
         </div>

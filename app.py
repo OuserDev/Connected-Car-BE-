@@ -13,10 +13,10 @@ from controllers.auth_controller import auth_bp
 from controllers.vehicle_controller import vehicle_bp
 from controllers.vehicle_api_controller import vehicle_api_bp
 from controllers.user_controller import user_bp
-from controllers.driving_records_controller import driving_records_bp
 from controllers.photo_controller import photo_bp
 from controllers.market_controller import market_bp
 from controllers.card_controller import card_bp
+from controllers.community_controller import community_bp
 
 # 데이터베이스 연결 테스트
 from models.base import test_database_connection
@@ -104,10 +104,10 @@ app.register_blueprint(auth_bp)
 app.register_blueprint(user_bp)
 app.register_blueprint(vehicle_bp)
 app.register_blueprint(vehicle_api_bp)
-app.register_blueprint(driving_records_bp)
 app.register_blueprint(photo_bp)
 app.register_blueprint(market_bp)
 app.register_blueprint(card_bp)
+app.register_blueprint(community_bp)
 
 @app.route('/')
 def hello():

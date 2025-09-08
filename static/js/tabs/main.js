@@ -70,14 +70,17 @@ function renderAuthenticatedUser(root, user, vehicleResponse, okP, items) {
 
     // 추천 리스트는 지도 아래에 렌더링
     renderRecommendedPlaces(root, okP, items);
+    
+    // 공지사항과 FAQ 렌더링
+    renderCommunitySection(root);
 }
 
 function renderUnauthenticatedUser(root) {
     // 로그인 유도 화면 표시
     root.appendChild(UI.loginCallout());
 
-    // 로그인하지 않은 경우 추천 장소 섹션을 표시하지 않음
-    // renderRecommendedPlaces(root, false, []);
+    // 로그인하지 않은 경우에도 공지사항과 FAQ 표시
+    renderCommunitySection(root);
 }
 
 function renderRecommendedPlaces(root, okP, items) {
@@ -336,4 +339,171 @@ async function registerCar(carId, licensePlate, vinCode) {
     }
 
     // 차량 선택 이벤트는 app.js에서 전역적으로 처리됨
+}
+
+// 공지사항과 FAQ 섹션 렌더링
+async function renderCommunitySection(root) {
+    try {
+        // 공지사항과 FAQ 데이터 가져오기
+        const response = await fetch('/api/community/all');
+        const data = await response.json();
+        
+        if (!data.success) {
+            return; // 실패시 섹션 표시하지 않음
+        }
+        
+        const { notices = [], faqs = [] } = data.data;
+        
+        // 공지사항 섹션
+        if (notices.length > 0) {
+            const noticeCard = UI.el('div', 'card');
+            const noticeBody = UI.el('div', 'body');
+            noticeBody.innerHTML = `
+                <div class="kicker">📢 공지사항</div>
+                <div class="list" id="noticeList"></div>
+            `;
+            noticeCard.appendChild(noticeBody);
+            
+            const noticeList = noticeBody.querySelector('#noticeList');
+            notices.forEach((notice, index) => {
+                const noticeItem = UI.el('div', 'place');
+                noticeItem.innerHTML = `
+                    <div class="pin">📢</div>
+                    <div style="flex:1">
+                        <div class="title">${notice.title}</div>
+                        <div class="meta">${new Date(notice.created_at).toLocaleDateString('ko-KR')}</div>
+                    </div>
+                    <button class="btn ghost notice-detail-btn" data-index="${index}">자세히</button>
+                `;
+                noticeList.appendChild(noticeItem);
+            });
+            
+            // 공지사항 상세보기 이벤트
+            noticeList.addEventListener('click', (e) => {
+                if (e.target.classList.contains('notice-detail-btn')) {
+                    const index = parseInt(e.target.getAttribute('data-index'));
+                    const notice = notices[index];
+                    showNoticeDetail(notice);
+                }
+            });
+            
+            root.appendChild(noticeCard);
+        }
+        
+        // FAQ 섹션
+        if (faqs.length > 0) {
+            const faqCard = UI.el('div', 'card');
+            const faqBody = UI.el('div', 'body');
+            faqBody.innerHTML = `
+                <div class="kicker">❓ 자주 묻는 질문</div>
+                <div class="list" id="faqList"></div>
+            `;
+            faqCard.appendChild(faqBody);
+            
+            const faqList = faqBody.querySelector('#faqList');
+            faqs.forEach((faq, index) => {
+                const faqItem = UI.el('div', 'place');
+                faqItem.innerHTML = `
+                    <div class="pin">❓</div>
+                    <div style="flex:1">
+                        <div class="title">${faq.title}</div>
+                        <div class="meta">FAQ</div>
+                    </div>
+                    <button class="btn ghost faq-detail-btn" data-index="${index}">자세히</button>
+                `;
+                faqList.appendChild(faqItem);
+            });
+            
+            // FAQ 상세보기 이벤트
+            faqList.addEventListener('click', (e) => {
+                if (e.target.classList.contains('faq-detail-btn')) {
+                    const index = parseInt(e.target.getAttribute('data-index'));
+                    const faq = faqs[index];
+                    showFAQDetail(faq);
+                }
+            });
+            
+            root.appendChild(faqCard);
+        }
+        
+    } catch (error) {
+        // 오류 발생시 섹션 표시하지 않음
+    }
+}
+
+// 공지사항 상세보기 모달
+function showNoticeDetail(notice) {
+    const modal = UI.el('div');
+    modal.style.cssText = `
+        position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+        background: rgba(0,0,0,0.8); display: flex; align-items: center; justify-content: center;
+        z-index: 10000; padding: 20px;
+    `;
+    
+    modal.innerHTML = `
+        <div style="background: #173147; border: 1px solid #2b5d80; border-radius: 16px; 
+                    padding: 24px; max-width: 90vw; max-height: 90vh; width: 600px; overflow-y: auto;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h3 style="margin: 0; color: #52e8c6; font-size: 18px;">📢 ${notice.title}</h3>
+                <button class="close-modal" style="background: none; border: none; color: #88a9bf; 
+                                               font-size: 24px; cursor: pointer; padding: 0;">×</button>
+            </div>
+            <div style="color: #88a9bf; font-size: 14px; margin-bottom: 16px;">
+                ${new Date(notice.created_at).toLocaleString('ko-KR')}
+            </div>
+            <div style="color: #ffffff; line-height: 1.6; white-space: pre-wrap;">
+                ${notice.content}
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    // 모달 닫기
+    modal.querySelector('.close-modal').addEventListener('click', () => {
+        modal.remove();
+    });
+    
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+            modal.remove();
+        }
+    });
+}
+
+// FAQ 상세보기 모달
+function showFAQDetail(faq) {
+    const modal = UI.el('div');
+    modal.style.cssText = `
+        position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+        background: rgba(0,0,0,0.8); display: flex; align-items: center; justify-content: center;
+        z-index: 10000; padding: 20px;
+    `;
+    
+    modal.innerHTML = `
+        <div style="background: #173147; border: 1px solid #2b5d80; border-radius: 16px; 
+                    padding: 24px; max-width: 90vw; max-height: 90vh; width: 600px; overflow-y: auto;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h3 style="margin: 0; color: #52e8c6; font-size: 18px;">❓ ${faq.title}</h3>
+                <button class="close-modal" style="background: none; border: none; color: #88a9bf; 
+                                               font-size: 24px; cursor: pointer; padding: 0;">×</button>
+            </div>
+            <div style="color: #ffffff; line-height: 1.6; white-space: pre-wrap;">
+                ${faq.content}
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    // 모달 닫기
+    modal.querySelector('.close-modal').addEventListener('click', () => {
+        modal.remove();
+    });
+    
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+            modal.remove();
+        }
+    });
 }

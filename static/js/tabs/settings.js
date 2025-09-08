@@ -178,25 +178,35 @@ export function renderSettings() {
     // --------- 공통 카드(상단) ----------
     const baseCard = document.createElement('div');
     baseCard.className = 'card';
-    baseCard.innerHTML = `
-    <div class="body">
-      <div class="kicker">설정</div>
-      <div class="cta">
-        <div>인증 상태: <b id="authState">${token ? '로그인됨' : '게스트'}</b></div>
-        <div class="row" style="margin-top:10px; gap: 8px;">
-          ${
-              token
-                  ? `
-               <button class="btn brand" id="btnRegisterVehicle">🚗 차량 등록</button>
-               <button class="btn danger" id="btnLogout">로그아웃</button>
-              `
-                  : `
-               <button class="btn brand" id="btnOpenLogin2">로그인</button>
-              `
-          }
+    
+    if (!token) {
+        // 로그인하지 않은 상태 - 메인 페이지와 동일한 스타일
+        baseCard.innerHTML = `
+        <div class="body" style="text-align: center; padding: 40px 20px;">
+            <p style="color: #88a9bf; margin-bottom: 24px;">
+                차량 정보 보기를 위해 로그인 해주세요.
+            </p>
+            <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
+                <button class="btn brand" id="btnOpenLogin2">로그인</button>
+                <button class="btn ghost" id="btnRegister">회원가입</button>
+            </div>
         </div>
-      </div>
-    </div>`;
+        `;
+    } else {
+        // 로그인한 상태
+        baseCard.innerHTML = `
+        <div class="body">
+            <div class="kicker">설정</div>
+            <div class="cta">
+                <div>인증 상태: <b id="authState">로그인됨</b></div>
+                <div class="row" style="margin-top:10px; gap: 8px;">
+                    <button class="btn brand" id="btnRegisterVehicle">🚗 차량 등록</button>
+                    <button class="btn danger" id="btnLogout">로그아웃</button>
+                </div>
+            </div>
+        </div>
+        `;
+    }
 
     // 이벤트 바인딩
     if (token) {
@@ -217,10 +227,17 @@ export function renderSettings() {
             showVehicleRegistrationModal();
         });
     } else {
+        // 로그인 버튼
         baseCard.querySelector('#btnOpenLogin2')?.addEventListener('click', () => {
             // 상위에서 로그인 모달 열어주는 위임 로직이 있으므로 버튼만 노출
             const evt = new Event('click', { bubbles: true });
             baseCard.querySelector('#btnOpenLogin2').dispatchEvent(evt);
+        });
+        
+        // 회원가입 버튼
+        baseCard.querySelector('#btnRegister')?.addEventListener('click', () => {
+            // 회원가입 모달 열기 (app.js에서 전역적으로 처리됨)
+            document.querySelector('#btnOpenRegister')?.click();
         });
     }
     // --------- 차량 사진 카드(앨범 업로드 & 선택) ----------
@@ -627,208 +644,13 @@ export function renderSettings() {
     //     return c;
     //   })() : null;
 
-    // --------- 주행 기록 카드 (로그인 상태에서만) ----------
-    const drivingRecordsCard = token
-        ? (() => {
-              const c = document.createElement('div');
-              c.className = 'card';
-              c.innerHTML = `
-        <div class="body">
-            <div class="kicker">🚗 주행 기록</div>
-            <div class="cta">
-                <div style="margin-bottom: 16px; color: #88a9bf;">
-                    차량 주행 기록과 영상을 확인하고 다운로드할 수 있습니다.
-                </div>
-                <div class="row" style="gap: 8px; margin-bottom: 16px;">
-                    <button class="btn brand" id="btnLoadRecords">📋 기록 조회</button>
-                    <button class="btn ghost" id="btnRefreshRecords">🔄 새로고침</button>
-                </div>
-                <div id="recordsList" style="display: none;">
-                    <div class="muted" style="margin-bottom: 12px;">총 <span id="recordsCount">0</span>건의 주행 기록</div>
-                    <div id="recordsContainer" class="stack"></div>
-                </div>
-            </div>
-        </div>`;
-
-              // 주행 기록 로드 함수
-              async function loadDrivingRecords() {
-                  try {
-                      // 현재 사용자 상태 확인
-                      const state = State.get();
-
-                      const response = await fetch('/api/driving/records', { credentials: 'include' });
-
-                      const data = await response.json();
-
-                      const recordsList = c.querySelector('#recordsList');
-                      const recordsCount = c.querySelector('#recordsCount');
-                      const recordsContainer = c.querySelector('#recordsContainer');
-
-                      if (data.success && data.data && data.data.length > 0) {
-                          recordsCount.textContent = data.data.length;
-                          recordsList.style.display = 'block';
-
-                          recordsContainer.innerHTML = '';
-
-                          data.data.forEach((record, index) => {
-                              const recordDiv = document.createElement('div');
-                              recordDiv.style.cssText = `
-                            border: 1px solid #2b5d80; border-radius: 8px; padding: 16px; margin-bottom: 12px;
-                            background: rgba(0,0,0,0.2);
-                        `;
-
-                              const startTime = new Date(record.start_time).toLocaleString('ko-KR');
-                              const hasVideo = record.video_file;
-
-                              recordDiv.innerHTML = `
-                            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
-                                <div>
-                                    <div style="font-weight: 600; color: #52e8c6; margin-bottom: 4px;">
-                                        ${record.start_location?.address || '시작지'} → ${record.end_location?.address || '도착지'}
-                                    </div>
-                                    <div style="color: #88a9bf; font-size: 13px;">
-                                        ${startTime} · ${record.distance_km}km · ${record.duration_minutes}분
-                                    </div>
-                                </div>
-                                ${
-                                    hasVideo
-                                        ? `
-                                    <div style="display: flex; gap: 8px; align-items: center;">
-                                        <span style="color: #3b82f6; font-size: 12px;">📹 ${record.video_size_mb}MB</span>
-                                    </div>
-                                `
-                                        : '<span style="color: #666; font-size: 12px;">영상 없음</span>'
-                                }
-                            </div>
-                            <div style="display: flex; gap: 8px;">
-                                ${
-                                    hasVideo
-                                        ? `
-                                    <button class="btn brand" onclick="playVideo('${record.video_file}')" style="font-size: 12px; padding: 4px 8px;">
-                                        ▶️ 재생
-                                    </button>
-                                    <button class="btn ghost" onclick="downloadVideo(${record.id})" style="font-size: 12px; padding: 4px 8px;">
-                                        💾 다운로드
-                                    </button>
-                                `
-                                        : `
-                                    <span style="color: #666; font-size: 12px;">영상 파일이 없습니다</span>
-                                `
-                                }
-                            </div>
-                        `;
-
-                              recordsContainer.appendChild(recordDiv);
-                          });
-                      } else {
-                          recordsList.style.display = 'block';
-                          recordsCount.textContent = '0';
-                          recordsContainer.innerHTML = '<div style="color: #88a9bf; text-align: center; padding: 20px;">주행 기록이 없습니다.</div>';
-                      }
-                  } catch (error) {
-                      UI.toast('주행 기록을 불러오는데 실패했습니다.');
-                  }
-              }
-
-              // 이벤트 리스너
-              c.querySelector('#btnLoadRecords')?.addEventListener('click', loadDrivingRecords);
-              c.querySelector('#btnRefreshRecords')?.addEventListener('click', loadDrivingRecords);
-
-              return c;
-          })()
-        : null;
 
     // --------- 렌더링 ----------
     root.innerHTML = '';
     root.appendChild(baseCard);
     if (photoCard) root.appendChild(photoCard); // 로그인 상태에서만 사진 카드 추가
-    if (drivingRecordsCard) root.appendChild(drivingRecordsCard); // 로그인 상태에서만 주행 기록 카드 추가
 
     // 탭 상태 업데이트 (차량 등록 상태 변경 시 탭 활성화/비활성화)
     updateTabsDisabledState();
 }
 
-// ===== 전역 함수들 (주행 영상 관련) =====
-
-// 영상 재생 함수
-window.playVideo = function (videoFile) {
-    // 기존 비디오 모달이 있으면 제거
-    const existingModal = document.getElementById('videoModal');
-    if (existingModal) existingModal.remove();
-
-    // 비디오 모달 생성
-    const modal = document.createElement('div');
-    modal.id = 'videoModal';
-    modal.style.cssText = `
-        position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-        background: rgba(0,0,0,0.9); display: flex; align-items: center; justify-content: center;
-        z-index: 10000; padding: 20px;
-    `;
-
-    modal.innerHTML = `
-        <div style="background: #173147; border: 1px solid #2b5d80; border-radius: 16px; 
-                    padding: 24px; max-width: 90vw; max-height: 90vh; width: 800px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                <h3 style="margin: 0; color: #52e8c6; font-size: 18px;">📹 주행 영상 재생</h3>
-                <button id="closeVideoModal" style="background: none; border: none; color: #88a9bf; 
-                                                   font-size: 24px; cursor: pointer; padding: 0;">×</button>
-            </div>
-            
-            <div style="text-align: center; margin-bottom: 16px;">
-                <video controls style="width: 100%; max-width: 100%; height: auto; border-radius: 8px; background: black;">
-                    <source src="/static/assets/videos/${videoFile}" type="video/mp4">
-                    <p style="color: #88a9bf;">브라우저가 비디오 재생을 지원하지 않습니다.</p>
-                </video>
-            </div>
-            
-            <p style="margin: 0; color: #88a9bf; font-size: 14px; text-align: center;">
-                ⚠️ 실제 환경에서는 MP4 비디오 파일이 재생됩니다
-            </p>
-        </div>
-    `;
-
-    document.body.appendChild(modal);
-
-    // 모달 닫기 이벤트
-    modal.querySelector('#closeVideoModal').addEventListener('click', () => {
-        modal.remove();
-    });
-
-    // 배경 클릭 시 닫기
-    modal.addEventListener('click', (e) => {
-        if (e.target === modal) {
-            modal.remove();
-        }
-    });
-};
-
-// 영상 다운로드 함수
-window.downloadVideo = async function (recordId) {
-    try {
-        UI.toast('🔄 다운로드 준비 중...');
-
-        const response = await fetch(`/api/driving/records/${recordId}/video`, {
-            credentials: 'include',
-        });
-
-        if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.error || '다운로드 실패');
-        }
-
-        // 파일 다운로드
-        const blob = await response.blob();
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `주행기록_${recordId}.mp4`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        window.URL.revokeObjectURL(url);
-
-        UI.toast('💾 다운로드가 시작되었습니다!');
-    } catch (error) {
-        UI.toast(`❌ 다운로드 실패: ${error.message}`);
-    }
-};
