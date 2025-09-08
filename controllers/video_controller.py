@@ -66,7 +66,7 @@ def get_videos():
             "error": "주행 영상 목록을 조회하는 중 오류가 발생했습니다"
         }), 500
 
-@video_bp.route('/videos/<string:filename>/download', methods=['GET'])
+@video_bp.route('/videos/<path:filename>/download', methods=['GET'])
 def download_video(filename):
     """주행 영상 다운로드"""
     try:
@@ -94,7 +94,7 @@ def download_video(filename):
             "error": "영상 다운로드 중 오류가 발생했습니다"
         }), 500
 
-@video_bp.route('/videos/<string:filename>/stream', methods=['GET'])
+@video_bp.route('/videos/<path:filename>/stream', methods=['GET'])
 def stream_video(filename):
     """주행 영상 스트리밍 (미리보기용)"""
     try:
