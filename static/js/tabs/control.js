@@ -878,37 +878,30 @@ export async function renderControl() {
     // ③ 주행 영상 기록 (4개 영상 다운로드 가능)
     // ─────────────────────────────────────────────────────────
     async function rendervideosView() {
-        // 4개의 주행영상 정보
-        const videos = [
-            {
-                filename: '20250905_주행.mp4',
-                displayName: '2025.09.05 주행영상 #1',
-                date: '2025-09-05 14:23:15',
-                duration: '12분 34초',
-                size: '45.2 MB'
-            },
-            {
-                filename: '20250905_주행_2.mp4',
-                displayName: '2025.09.05 주행영상 #2',
-                date: '2025-09-05 16:45:32',
-                duration: '8분 17초',
-                size: '28.9 MB'
-            },
-            {
-                filename: '20250905_주행_3.mp4',
-                displayName: '2025.09.05 주행영상 #3',
-                date: '2025-09-05 18:12:09',
-                duration: '15분 21초',
-                size: '52.7 MB'
-            },
-            {
-                filename: '20250905_주행_4.mp4',
-                displayName: '2025.09.05 주행영상 #4',
-                date: '2025-09-05 20:08:44',
-                duration: '6분 52초',
-                size: '24.1 MB'
+        let videos = [];
+        let loading = true;
+
+        // API에서 영상 목록 로드
+        try {
+            const response = await fetch('/api/videos', { credentials: 'include' });
+            if (response.ok) {
+                const data = await response.json();
+                if (data.success) {
+                    videos = data.data;
+                } else {
+                    UI.toast('영상 목록을 불러올 수 없습니다');
+                    videos = [];
+                }
+            } else {
+                UI.toast('영상 목록을 불러올 수 없습니다');
+                videos = [];
             }
-        ];
+        } catch (error) {
+            UI.toast('영상 목록 로딩 중 오류가 발생했습니다');
+            videos = [];
+        } finally {
+            loading = false;
+        }
 
         root.innerHTML = `
       <div class="card"><div class="body">
@@ -928,9 +921,9 @@ export async function renderControl() {
             <div class="video-item" style="display: flex; align-items: center; gap: 12px; padding: 16px; border: 1px solid #2b5d80; border-radius: 8px; margin-bottom: 12px;">
               <div class="video-icon" style="font-size: 24px;">🎥</div>
               <div style="flex: 1;">
-                <div style="font-weight: 500; margin-bottom: 4px;">${video.displayName}</div>
+                <div style="font-weight: 500; margin-bottom: 4px;">${video.display_name}</div>
                 <div class="muted" style="font-size: 12px; margin-bottom: 2px;">
-                  📅 ${video.date} • ⏱️ ${video.duration} • 📁 ${video.size}
+                  📅 ${new Date(video.recorded_at).toLocaleString()} • ⏱️ ${video.duration_display} • 📁 ${video.file_size_display}
                 </div>
               </div>
               <div style="display: flex; gap: 8px;">
@@ -961,18 +954,39 @@ export async function renderControl() {
         document.getElementById('btnBackHome2')?.addEventListener('click', renderHome);
 
         // 전역 함수로 다운로드 및 미리보기 기능 등록
-        window.downloadVideo = (filename) => {
-            const link = document.createElement('a');
-            link.href = `/static/assets/videos/${filename}`;
-            link.download = filename;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            UI.toast(`${filename} 다운로드 시작`);
+        window.downloadVideo = async (filename) => {
+            try {
+                const response = await fetch(`/api/videos/${filename}/download`, {
+                    credentials: 'include'
+                });
+                
+                if (response.ok) {
+                    // Blob으로 응답 받기
+                    const blob = await response.blob();
+                    
+                    // 다운로드 링크 생성
+                    const link = document.createElement('a');
+                    link.href = window.URL.createObjectURL(blob);
+                    link.download = filename;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    
+                    // URL 객체 해제
+                    window.URL.revokeObjectURL(link.href);
+                    
+                    UI.toast(`${filename} 다운로드 시작`);
+                } else {
+                    const errorData = await response.json();
+                    UI.toast(errorData.error || '다운로드 중 오류가 발생했습니다');
+                }
+            } catch (error) {
+                UI.toast('다운로드 중 네트워크 오류가 발생했습니다');
+            }
         };
 
         window.previewVideo = (filename) => {
-            // 새 창에서 비디오 미리보기
+            // 새 창에서 비디오 미리보기 (스트리밍 API 사용)
             const previewWindow = window.open('', '_blank', 'width=800,height=600');
             previewWindow.document.write(`
         <!DOCTYPE html>
@@ -990,7 +1004,7 @@ export async function renderControl() {
         <body>
           <h2>${filename}</h2>
           <video controls autoplay muted>
-            <source src="/static/assets/videos/${filename}" type="video/mp4">
+            <source src="/api/videos/${filename}/stream" type="video/mp4">
             브라우저가 비디오를 지원하지 않습니다.
           </video>
           <div class="controls">
@@ -998,13 +1012,27 @@ export async function renderControl() {
             <button class="btn" onclick="downloadVideo()">다운로드</button>
           </div>
           <script>
-            function downloadVideo() {
-              const link = document.createElement('a');
-              link.href = '/static/assets/videos/${filename}';
-              link.download = '${filename}';
-              document.body.appendChild(link);
-              link.click();
-              document.body.removeChild(link);
+            async function downloadVideo() {
+              try {
+                const response = await fetch('/api/videos/${filename}/download', {
+                  credentials: 'include'
+                });
+                
+                if (response.ok) {
+                  const blob = await response.blob();
+                  const link = document.createElement('a');
+                  link.href = window.URL.createObjectURL(blob);
+                  link.download = '${filename}';
+                  document.body.appendChild(link);
+                  link.click();
+                  document.body.removeChild(link);
+                  window.URL.revokeObjectURL(link.href);
+                } else {
+                  alert('다운로드 중 오류가 발생했습니다');
+                }
+              } catch (error) {
+                alert('다운로드 중 네트워크 오류가 발생했습니다');
+              }
             }
           </script>
         </body>

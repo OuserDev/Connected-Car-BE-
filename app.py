@@ -17,6 +17,7 @@ from controllers.photo_controller import photo_bp
 from controllers.market_controller import market_bp
 from controllers.card_controller import card_bp
 from controllers.community_controller import community_bp
+from controllers.video_controller import video_bp
 
 # 데이터베이스 연결 테스트
 from models.base import test_database_connection
@@ -108,6 +109,7 @@ app.register_blueprint(photo_bp)
 app.register_blueprint(market_bp)
 app.register_blueprint(card_bp)
 app.register_blueprint(community_bp)
+app.register_blueprint(video_bp)
 
 @app.route('/')
 def hello():
