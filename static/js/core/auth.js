@@ -1,7 +1,7 @@
 // core/auth.js
 import { Api } from '../api.js';
 import { State } from '../state.js';
-import { updateAuthBadge, getScrim } from './shared.js';
+import { updateAuthBadge, getScrim, startUserStatusCheck, stopUserStatusCheck } from './shared.js';
 import { UI } from '../ui/components.js';
 import { navigate } from '../app.js';
 
@@ -71,13 +71,22 @@ export async function doLogin() {
     const pw = document.getElementById('pw')?.value;
     const res = await Api.login(id, pw);
     if (!res.ok) {
-        UI.toast(res.message || '로그인 실패');
+        // 계정 정지 상태인 경우 특별한 메시지 표시
+        if (res.status === 'suspended') {
+            UI.toast('⚠️ ' + (res.message || '계정이 정지되었습니다. 관리자에게 문의하세요.'));
+        } else {
+            UI.toast(res.message || '로그인 실패');
+        }
         return;
     }
     State.setToken(res.token);
     State.setUser(res.user);
     UI.toast('로그인 되었습니다.');
     await updateAuthBadge();
+    
+    // 로그인 성공 시 사용자 상태 주기적 확인 시작
+    startUserStatusCheck();
+    
     closeLoginDialog();
     location.hash = '#/main';
     await navigate();
@@ -168,6 +177,10 @@ export function attachAuthDelegates() {
         // 로그아웃 버튼 클릭
         if (t.id === 'btnLogout') {
             e.preventDefault();
+            
+            // 사용자 상태 확인 중지
+            stopUserStatusCheck();
+            
             State.setToken(null);
             State.setUser(null);
             await updateAuthBadge();

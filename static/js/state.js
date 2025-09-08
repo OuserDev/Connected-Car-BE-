@@ -34,4 +34,9 @@ export const State = {
     set selectedCarId(carId) {
         this.setSelectedCarId(carId);
     },
+    clearAll() {
+        localStorage.removeItem(KEY_TOKEN);
+        localStorage.removeItem(KEY_USER);
+        localStorage.removeItem(KEY_SELECTED_CAR_ID);
+    }
 };

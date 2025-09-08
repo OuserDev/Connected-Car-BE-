@@ -60,6 +60,16 @@ const RealApi = {
             });
 
             const data = await response.json();
+            
+            // 403 Forbidden - 계정 정지 상태
+            if (response.status === 403) {
+                return { 
+                    ok: false, 
+                    status: 'suspended',
+                    message: data.error || '계정이 정지되었습니다. 관리자에게 문의하세요.' 
+                };
+            }
+            
             if (data.status === 'success') {
                 return {
                     ok: true,
@@ -67,6 +77,7 @@ const RealApi = {
                     user: {
                         id: data.user.username,
                         name: data.user.name,
+                        status: data.user.status || 'active',
                         hasCar: true,
                         car: { model: 'GRANDEUR', plate: '12가 3456', color: '#79d1ff' },
                     },
@@ -106,12 +117,26 @@ const RealApi = {
             });
 
             const data = await response.json();
+            
+            // 403 Forbidden - 계정 정지 상태
+            if (response.status === 403) {
+                // 자동 로그아웃 처리
+                await this.logout();
+                // 상태 메시지와 함께 실패 반환
+                return { 
+                    ok: false, 
+                    status: 'suspended',
+                    message: data.error || '계정이 정지되었습니다. 관리자에게 문의하세요.' 
+                };
+            }
+            
             if (data.status === 'success') {
                 return {
                     ok: true,
                     user: {
                         id: data.user.username,
                         name: data.user.name,
+                        status: data.user.status || 'active',
                         hasCar: true,
                         car: { model: 'GRANDEUR', plate: '12가 3456', color: '#79d1ff' },
                     },
@@ -119,6 +144,18 @@ const RealApi = {
             } else {
                 return { ok: false };
             }
+        } catch (error) {
+            return { ok: false };
+        }
+    },
+
+    async logout() {
+        try {
+            const response = await fetch(`${BASE_URL}/api/auth/logout`, {
+                method: 'POST',
+                credentials: 'include',
+            });
+            return { ok: response.ok };
         } catch (error) {
             return { ok: false };
         }

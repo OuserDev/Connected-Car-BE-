@@ -25,6 +25,15 @@ def login():
         if not user:
             return jsonify({'error': 'Invalid username or password'}), 401
         
+        # 사용자 상태 확인
+        if user.get('status') == 'suspended':
+            return jsonify({
+                'error': '계정이 정지되었습니다. 관리자에게 문의하세요.',
+                'status': 'suspended'
+            }), 403
+        elif user.get('status') == 'deleted':
+            return jsonify({'error': 'Invalid username or password'}), 401
+        
         # 비밀번호 검증 (해시 비교)
         if not User.verify_password(username, password):
             return jsonify({'error': 'Invalid username or password'}), 401
@@ -113,6 +122,19 @@ def get_current_user():
         if not user:
             return jsonify({'error': 'User not found'}), 404
         
+        # 사용자 상태 확인
+        if user.get('status') == 'suspended':
+            # 정지된 사용자는 세션 정리
+            session.clear()
+            return jsonify({
+                'error': '계정이 정지되었습니다. 관리자에게 문의하세요.',
+                'status': 'suspended'
+            }), 403
+        elif user.get('status') == 'deleted':
+            # 삭제된 사용자는 세션 정리
+            session.clear()
+            return jsonify({'error': 'User not found'}), 404
+        
         return jsonify({
             'status': 'success',
             'user': {
@@ -120,7 +142,8 @@ def get_current_user():
                 'username': user['username'],
                 'email': user.get('email', ''),
                 'name': user.get('name', ''),
-                'phone': user.get('phone', '')
+                'phone': user.get('phone', ''),
+                'status': user.get('status', 'active')
             }
         })
         

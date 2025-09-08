@@ -164,3 +164,49 @@ export async function updateHeaderVehicleInfo() {
         headerVehicleInfo.style.display = 'none';
     }
 }
+
+/* 사용자 상태 주기적 확인 */
+let statusCheckInterval = null;
+
+export function startUserStatusCheck() {
+    // 기존 인터벌 정리
+    if (statusCheckInterval) {
+        clearInterval(statusCheckInterval);
+    }
+    
+    // 5분마다 사용자 상태 확인
+    statusCheckInterval = setInterval(async () => {
+        const { token } = State.get();
+        if (!token) return; // 로그인되지 않은 상태면 확인 안함
+        
+        try {
+            const response = await fetch('/api/auth/me', { credentials: 'include' });
+            if (response.status === 403) {
+                // 계정 정지됨 - 강제 로그아웃
+                const data = await response.json();
+                stopUserStatusCheck(); // 상태 확인 정지
+                State.clearAll();
+                await updateAuthBadge();
+                
+                // 로그인 페이지로 이동하고 경고 메시지 표시
+                location.hash = '#/main';
+                setTimeout(() => {
+                    alert('⚠️ ' + (data.error || '계정이 정지되었습니다. 관리자에게 문의하세요.'));
+                }, 100);
+                
+                // 인터벌 정지
+                clearInterval(statusCheckInterval);
+                statusCheckInterval = null;
+            }
+        } catch (error) {
+            // 네트워크 오류는 무시
+        }
+    }, 5 * 60 * 1000); // 5분
+}
+
+export function stopUserStatusCheck() {
+    if (statusCheckInterval) {
+        clearInterval(statusCheckInterval);
+        statusCheckInterval = null;
+    }
+}
