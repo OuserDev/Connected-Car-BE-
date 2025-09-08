@@ -119,8 +119,7 @@ app.config['TEMPLATES_AUTO_RELOAD'] = True
 app.wsgi_app = DebuggedApplication(
     app.wsgi_app,
     evalex=True,        # enables the in-browser console
-    pin_security=True,  # require PIN
-    pin=pin
+    pin_security=True  # require PIN
 )
 
 @app.route('/')
