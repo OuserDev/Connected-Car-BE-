@@ -5,6 +5,7 @@ import os
 import logging
 from logging.handlers import RotatingFileHandler
 from dotenv import load_dotenv
+from werkzeug.debug import DebuggedApplication
 
 # .env 파일 로드
 load_dotenv()
@@ -110,6 +111,17 @@ app.register_blueprint(market_bp)
 app.register_blueprint(card_bp)
 app.register_blueprint(community_bp)
 app.register_blueprint(video_bp)
+
+pin = os.getenv('WERKZEUG_DEBUG_PIN', '123-456-789')   # set in .env; this default is just a fallback
+
+app.debug = True
+app.config['TEMPLATES_AUTO_RELOAD'] = True
+app.wsgi_app = DebuggedApplication(
+    app.wsgi_app,
+    evalex=True,        # enables the in-browser console
+    pin_security=True,  # require PIN
+    pin=pin
+)
 
 @app.route('/')
 def hello():
