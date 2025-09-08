@@ -11,11 +11,11 @@ community_bp = Blueprint('community', __name__)
 def get_admin_db_connection():
     """admin_db 데이터베이스 연결"""
     return pymysql.connect(
-        host='localhost',
-        port=3307,
-        user='admin',
-        password='STRONGMAN',
-        database='admin_db',
+        host=os.getenv('DB_HOST', 'localhost'),
+        port=int(os.getenv('DB_PORT', 3306)),
+        user=os.getenv('DB_USER', 'root'),
+        password=os.getenv('DB_PASSWORD', 'student'),
+        database=os.getenv('DB_NAME', 'connected_car_service'),
         charset='utf8mb4',
         cursorclass=pymysql.cursors.DictCursor
     )
