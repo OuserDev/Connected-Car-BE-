@@ -45,36 +45,42 @@ export async function renderMap() {
         UI.toast('🔍 검색 중...');
 
         try {
-            // 네이버 Local Search API 사용 (지역/장소명 검색)
-            naver.maps.Service.search(naver.maps.Service.SearchType.PLACE, {
-                query: query,
-                count: 5
-            }, (status, response) => {
-                if (status === naver.maps.Service.Status.ERROR) {
-                    UI.toast('검색 중 오류가 발생했습니다.');
-                    return;
-                }
-                
-                if (response?.places && response.places.length > 0) {
-                    const place = response.places[0];
-                    const lat = parseFloat(place.y);
-                    const lng = parseFloat(place.x);
-                    
-                    // HTML 태그 제거
-                    const title = place.title?.replace(/<[^>]*>/g, '') || place.name || query;
-                    const address = place.address || place.roadAddress || '';
-                    const label = address ? `${title} (${address})` : title;
-
-                    if (Number.isFinite(lat) && Number.isFinite(lng)) {
-                        markAndCenter(lat, lng, label);
-                        UI.toast(`📍 ${title}`);
-                    } else {
-                        UI.toast('좌표를 해석할 수 없습니다.');
-                    }
-                } else {
-                    UI.toast('검색 결과가 없습니다.');
+            // 네이버 Search Local API 직접 호출
+            const response = await fetch(`https://openapi.naver.com/v1/search/local.json?query=${encodeURIComponent(query)}&display=5&start=1&sort=random`, {
+                method: 'GET',
+                headers: {
+                    'X-Naver-Client-Id': 'hCLNYd7oxu5YwWOcJIWq',
+                    'X-Naver-Client-Secret': 'ofXo3chVUZ'
                 }
             });
+
+            if (!response.ok) {
+                throw new Error(`API 요청 실패: ${response.status}`);
+            }
+
+            const data = await response.json();
+            
+            if (data.items && data.items.length > 0) {
+                const item = data.items[0];
+                
+                // 네이버 Search API 응답에서 좌표 추출 (정수형 좌표를 실수형으로 변환)
+                const lat = parseFloat(item.mapy) / 10000000;
+                const lng = parseFloat(item.mapx) / 10000000;
+                
+                // HTML 태그 제거
+                const title = item.title.replace(/<[^>]*>/g, '');
+                const address = item.roadAddress || item.address;
+                const label = `${title} (${address})`;
+
+                if (Number.isFinite(lat) && Number.isFinite(lng)) {
+                    markAndCenter(lat, lng, label);
+                    UI.toast(`📍 ${title}`);
+                } else {
+                    UI.toast('좌표를 해석할 수 없습니다.');
+                }
+            } else {
+                UI.toast('검색 결과가 없습니다.');
+            }
         } catch (err) {
             console.error('Search error:', err);
             UI.toast('검색 중 오류가 발생했습니다.');
