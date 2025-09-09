@@ -204,7 +204,7 @@ export function renderSettings() {
         baseCard.querySelector('#btnLogout')?.addEventListener('click', async () => {
             // 사용자 상태 확인 중지
             stopUserStatusCheck();
-            
+
             State.setToken(null);
             State.setUser(null);
             UI.toast('로그아웃 되었습니다.');
@@ -248,13 +248,18 @@ export function renderSettings() {
 
         <!-- 업로드/도구줄 -->
         <div class="row" style="gap:8px; flex-wrap:wrap">
-          <!-- [VULN-LAB] accept 제거. 어떤 확장자든 선택 가능 -->
-          <input id="carPhotoFiles" type="file" multiple style="display: none;">
+          <!-- 이미지 파일만 선택 가능하도록 accept 속성 추가 -->
+          <input id="carPhotoFiles" type="file" accept="image/*" multiple style="display: none;">
 
           <button class="btn brand" id="btnAddPhotos">📷 사진 추가</button>
           <button class="btn ghost" id="btnClearAll">전체 삭제</button>
           <div class="spacer"></div>
           <div class="muted" id="albumCount"></div>
+        </div>
+        
+        <!-- 파일 업로드 안내 -->
+        <div class="muted" style="font-size:12px; margin-top:8px; padding:8px; background:#f5f5f5; border-radius:4px;">
+          이미지 파일만 업로드 가능합니다. (jpg, jpeg, png, gif)
         </div>
 
         <!-- 앨범 썸네일 그리드 -->
@@ -356,7 +361,7 @@ export function renderSettings() {
                       });
               }
 
-              // 사진 추가 처리 (파일 리스트) — [VULN-LAB] FormData + 원본 filename 유지
+              // 사진 추가 처리 (파일 리스트) — FormData + 원본 filename 유지
               async function addPhotosFromFiles(fileList) {
                   const photos = await loadUserPhotos(); // 서버에서 현재 사진 목록 로드
 
@@ -366,15 +371,24 @@ export function renderSettings() {
                       return;
                   }
 
-                  // [VULN-LAB] 원본 파일을 그대로 FormData로 모은다.
+                  // 원본 파일을 그대로 FormData로 모은다.
                   const form = new FormData();
                   let appended = 0;
+
+                  // 허용된 이미지 확장자만 검증
+                  const allowedExtensions = ['.jpg', '.jpeg', '.png', '.gif'];
 
                   for (const file of Array.from(fileList || [])) {
                       if (photos.length + appended >= MAX_PHOTOS) break;
 
-                      // [VULN-LAB] 실습을 위해 클라이언트 확장자/타입 검사를 하지 않음
-                      // if (!/^image\//.test(file.type)) { UI.toast('이미지 파일만 업로드할 수 있습니다.'); continue; }
+                      // 파일 확장자 검증만
+                      const fileName = file.name.toLowerCase();
+                      const fileExtension = fileName.substring(fileName.lastIndexOf('.'));
+
+                      if (!allowedExtensions.includes(fileExtension)) {
+                          UI.toast('이미지 파일만 업로드 가능합니다. (jpg, jpeg, png, gif)');
+                          continue;
+                      }
 
                       // filename 유지가 핵심 (Burp에서 filename= 변조 지점)
                       form.append('files', file, file.name);
@@ -390,7 +404,7 @@ export function renderSettings() {
                       // [VULN-LAB] DataURL 업로드 경로 대신, 서버에 multipart/form-data로 전송
                       const resp = await fetch('/api/car-photos/upload', {
                           method: 'POST',
-                          body: form,               // Content-Type은 브라우저가 자동 지정(boundary 포함)
+                          body: form, // Content-Type은 브라우저가 자동 지정(boundary 포함)
                           credentials: 'include',
                       });
 
@@ -604,7 +618,6 @@ export function renderSettings() {
     //     return c;
     //   })() : null;
 
-
     // --------- 렌더링 ----------
     root.innerHTML = '';
     root.appendChild(baseCard);
@@ -613,4 +626,3 @@ export function renderSettings() {
     // 탭 상태 업데이트 (차량 등록 상태 변경 시 탭 활성화/비활성화)
     updateTabsDisabledState();
 }
-
