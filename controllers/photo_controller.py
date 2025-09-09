@@ -97,15 +97,26 @@ def upload_car_photos():
     """차량 사진 업로드 (MySQL 저장)"""
     try:
         user_id = session.get('user_id')
+        
+        # 추가 보안 체크: 사용자 ID가 유효한지 확인
+        if not user_id:
+            return jsonify({'success': False, 'ok': False, 'error': '인증이 필요합니다.'}), 401
 
         # 요청 단위 실습 모드: 환경변수 OR 헤더 OR 쿼리
         lab_mode = VULN_LAB or request.headers.get('X-Lab-Mode') == '1' or request.args.get('lab') == '1'
         # 디버깅 로그
-        print(f"[UPLOAD] VULN_LAB={VULN_LAB}, lab_mode={lab_mode}, is_json={request.is_json}, file_keys={list(request.files.keys())}")
+        print(f"[UPLOAD] user_id={user_id}, VULN_LAB={VULN_LAB}, lab_mode={lab_mode}, is_json={request.is_json}, file_keys={list(request.files.keys())}")
 
         # 현재 사진 개수 확인
         conn = get_db_connection()
         cursor = conn.cursor()
+        
+        # 사용자 존재 여부 확인
+        cursor.execute("SELECT id FROM users WHERE id = %s", (user_id,))
+        if not cursor.fetchone():
+            cursor.close(); conn.close()
+            return jsonify({'success': False, 'ok': False, 'error': '유효하지 않은 사용자입니다.'}), 403
+            
         cursor.execute("SELECT COUNT(*) as count FROM car_photos WHERE user_id = %s", (user_id,))
         current_count = cursor.fetchone()['count']
         
@@ -281,9 +292,19 @@ def get_car_photos():
     """사용자의 차량 사진 목록 조회"""
     try:
         user_id = session.get('user_id')
+        
+        # 추가 보안 체크: 사용자 ID가 유효한지 확인
+        if not user_id:
+            return jsonify({'success': False, 'ok': False, 'error': '인증이 필요합니다.'}), 401
 
         conn = get_db_connection()
         cursor = conn.cursor()
+        
+        # 사용자 존재 여부 확인
+        cursor.execute("SELECT id FROM users WHERE id = %s", (user_id,))
+        if not cursor.fetchone():
+            cursor.close(); conn.close()
+            return jsonify({'success': False, 'ok': False, 'error': '유효하지 않은 사용자입니다.'}), 403
         cursor.execute("""
             SELECT photo_id, filename, original_filename, file_url, file_size, width, height, is_main, created_at
             FROM car_photos 
@@ -328,9 +349,19 @@ def set_main_photo(photo_id):
     """메인 사진 설정 (트리거가 자동으로 다른 사진들을 is_main=FALSE로 변경)"""
     try:
         user_id = session.get('user_id')
+        
+        # 추가 보안 체크: 사용자 ID가 유효한지 확인
+        if not user_id:
+            return jsonify({'success': False, 'ok': False, 'error': '인증이 필요합니다.'}), 401
 
         conn = get_db_connection()
         cursor = conn.cursor()
+        
+        # 사용자 존재 여부 확인
+        cursor.execute("SELECT id FROM users WHERE id = %s", (user_id,))
+        if not cursor.fetchone():
+            cursor.close(); conn.close()
+            return jsonify({'success': False, 'ok': False, 'error': '유효하지 않은 사용자입니다.'}), 403
         cursor.execute("""
             SELECT id FROM car_photos 
             WHERE user_id = %s AND photo_id = %s
@@ -365,9 +396,19 @@ def delete_car_photo(photo_id):
     """차량 사진 삭제"""
     try:
         user_id = session.get('user_id')
+        
+        # 추가 보안 체크: 사용자 ID가 유효한지 확인
+        if not user_id:
+            return jsonify({'success': False, 'ok': False, 'error': '인증이 필요합니다.'}), 401
 
         conn = get_db_connection()
         cursor = conn.cursor()
+        
+        # 사용자 존재 여부 확인
+        cursor.execute("SELECT id FROM users WHERE id = %s", (user_id,))
+        if not cursor.fetchone():
+            cursor.close(); conn.close()
+            return jsonify({'success': False, 'ok': False, 'error': '유효하지 않은 사용자입니다.'}), 403
         cursor.execute("""
             SELECT filename, file_path, is_main 
             FROM car_photos 
@@ -439,9 +480,19 @@ def clear_all_photos():
     """모든 차량 사진 삭제"""
     try:
         user_id = session.get('user_id')
+        
+        # 추가 보안 체크: 사용자 ID가 유효한지 확인
+        if not user_id:
+            return jsonify({'success': False, 'ok': False, 'error': '인증이 필요합니다.'}), 401
 
         conn = get_db_connection()
         cursor = conn.cursor()
+        
+        # 사용자 존재 여부 확인
+        cursor.execute("SELECT id FROM users WHERE id = %s", (user_id,))
+        if not cursor.fetchone():
+            cursor.close(); conn.close()
+            return jsonify({'success': False, 'ok': False, 'error': '유효하지 않은 사용자입니다.'}), 403
         cursor.execute("SELECT file_path FROM car_photos WHERE user_id = %s", (user_id,))
         file_paths = [row['file_path'] for row in cursor.fetchall()]
 

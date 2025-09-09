@@ -363,7 +363,7 @@ header.appbar {
     padding: 10px 14px;
     box-shadow: var(--shadow);
     font-size: 13px;
-    z-index: 1400;
+    z-index: 15000;
     display: none;
 }
 .toast.show {
