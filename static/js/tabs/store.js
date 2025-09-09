@@ -35,9 +35,6 @@ export function renderStore() {
             </div>
           </div>
           <div class="pay-cards" id="cardsWrap"></div>
-          <div class="muted" style="margin-top:6px">
-            실제 카드번호는 보안상 마스킹됩니다. (모의/테스트 카드만 전체 표시 허용)
-          </div>
         </div>
       </div></div>
 

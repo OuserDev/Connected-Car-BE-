@@ -942,12 +942,6 @@ export async function renderControl() {
               .join('')}
         </div>
         
-        <div style="margin-top: 16px; padding: 12px; background: #102235; border-radius: 6px;">
-          <div class="muted" style="font-size: 12px;">
-            💡 <strong>안내:</strong> 주행 영상은 차량의 블랙박스에서 자동으로 기록되며, 
-            모든 계정에서 공통으로 제공되는 샘플 영상입니다.
-          </div>
-        </div>
       </div></div>
     `;
 

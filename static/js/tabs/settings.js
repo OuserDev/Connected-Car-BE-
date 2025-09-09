@@ -265,8 +265,6 @@ export function renderSettings() {
         <!-- 앨범 썸네일 그리드 -->
         <div id="albumGrid" class="product-grid" style="grid-template-columns:repeat(auto-fill,minmax(140px,1fr)); gap:10px;"></div>
 
-        <!-- [VULN-LAB] 문구 수정 -->
-        <div class="muted">실습 모드: 원본 파일을 그대로 업로드하며 <code>filename</code>을 유지합니다 (Burp로 확장자 변조 가능).</div>
       </div>
     </div>
   `;
