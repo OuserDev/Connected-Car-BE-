@@ -45,23 +45,29 @@ export async function renderMap() {
         UI.toast('🔍 검색 중...');
 
         try {
-            // 네이버 Maps SDK의 geocode 서비스 사용 (CORS 문제 없음)
-            naver.maps.Service.geocode({ query: query }, (status, response) => {
+            // 네이버 Local Search API 사용 (지역/장소명 검색)
+            naver.maps.Service.search(naver.maps.Service.SearchType.PLACE, {
+                query: query,
+                count: 5
+            }, (status, response) => {
                 if (status === naver.maps.Service.Status.ERROR) {
                     UI.toast('검색 중 오류가 발생했습니다.');
                     return;
                 }
                 
-                if (response?.v2?.addresses && response.v2.addresses.length > 0) {
-                    const address = response.v2.addresses[0];
-                    const lat = parseFloat(address.y);
-                    const lng = parseFloat(address.x);
+                if (response?.places && response.places.length > 0) {
+                    const place = response.places[0];
+                    const lat = parseFloat(place.y);
+                    const lng = parseFloat(place.x);
                     
-                    const label = address.roadAddress || address.jibunAddress || query;
+                    // HTML 태그 제거
+                    const title = place.title?.replace(/<[^>]*>/g, '') || place.name || query;
+                    const address = place.address || place.roadAddress || '';
+                    const label = address ? `${title} (${address})` : title;
 
                     if (Number.isFinite(lat) && Number.isFinite(lng)) {
                         markAndCenter(lat, lng, label);
-                        UI.toast(`📍 ${label}`);
+                        UI.toast(`📍 ${title}`);
                     } else {
                         UI.toast('좌표를 해석할 수 없습니다.');
                     }
