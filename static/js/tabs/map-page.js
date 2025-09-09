@@ -14,7 +14,7 @@ export async function renderMap() {
       <div class="kicker">네이버 지도</div>
       <div class="map">
         <div class="searchbar">
-          <input id="map-q" placeholder="주소 또는 장소를 입력하세요 (예: 강남역 / 서울특별시청)">
+          <input id="map-q" placeholder="장소명을 입력하세요 (예: 스타벅스 강남점, 롯데월드타워)">
           <button class="btn brand" id="map-go">검색</button>
         </div>
         <div id="map-page"></div>
@@ -42,50 +42,47 @@ export async function renderMap() {
         const query = $q.value.trim();
         if (!query) return UI.toast('검색어를 입력하세요.');
 
-        // 네이버 지도 서비스 확인
-        if (!window.naver?.maps?.Service) {
-            return UI.toast('네이버 지도 서비스를 사용할 수 없습니다');
-        }
-
         UI.toast('🔍 검색 중...');
 
         try {
-
-            naver.maps.Service.geocode(
-                {
-                    query: query,
-                },
-                function (status, response) {
-
-                    if (status !== naver.maps.Service.Status.OK) {
-
-                        return UI.toast('검색 결과를 찾을 수 없습니다');
-                    }
-
-                    // 네이버 지도 API v3 응답 구조: response.v2.addresses
-                    var result = response.v2;
-                    var addresses = result.addresses;
-
-
-                    if (addresses && addresses.length > 0) {
-                        var item = addresses[0];
-                        var lat = parseFloat(item.y);
-                        var lng = parseFloat(item.x);
-                        var label = item.roadAddress || item.jibunAddress || query;
-
-
-                        if (Number.isFinite(lat) && Number.isFinite(lng)) {
-                            markAndCenter(lat, lng, label);
-                            UI.toast(`📍 ${label}`);
-                        } else {
-                            UI.toast('좌표를 해석할 수 없습니다.');
-                        }
-                    } else {
-                        UI.toast('검색 결과가 없습니다.');
-                    }
+            // 네이버 Search API를 사용하여 지역 검색
+            const response = await fetch(`https://openapi.naver.com/v1/search/local.json?query=${encodeURIComponent(query)}&display=5&start=1&sort=random`, {
+                method: 'GET',
+                headers: {
+                    'X-Naver-Client-Id': 'hCLNYd7oxu5YwWOcJIWq',
+                    'X-Naver-Client-Secret': 'ofXo3chVUZ'
                 }
-            );
+            });
+
+            if (!response.ok) {
+                throw new Error(`API 요청 실패: ${response.status}`);
+            }
+
+            const data = await response.json();
+            
+            if (data.items && data.items.length > 0) {
+                const item = data.items[0];
+                
+                // 네이버 Search API 응답에서 좌표 추출
+                const lat = parseFloat(item.mapy) / 10000000; // 네이버 좌표계를 WGS84로 변환
+                const lng = parseFloat(item.mapx) / 10000000;
+                
+                // HTML 태그 제거
+                const title = item.title.replace(/<[^>]*>/g, '');
+                const address = item.address;
+                const label = `${title} (${address})`;
+
+                if (Number.isFinite(lat) && Number.isFinite(lng)) {
+                    markAndCenter(lat, lng, label);
+                    UI.toast(`📍 ${title}`);
+                } else {
+                    UI.toast('좌표를 해석할 수 없습니다.');
+                }
+            } else {
+                UI.toast('검색 결과가 없습니다.');
+            }
         } catch (err) {
+            console.error('Search error:', err);
             UI.toast('검색 중 오류가 발생했습니다.');
         }
     }
