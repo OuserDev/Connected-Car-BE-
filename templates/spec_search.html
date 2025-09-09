@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>차종 스펙 검색 - Connected Car</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
+    <style>
+        body {
+            margin: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #0f1419 0%, #1a1a2e 100%);
+            color: white;
+            min-height: 100vh;
+        }
+        
+        
+        .search-section {
+            padding: 60px 0;
+            text-align: center;
+        }
+        
+        .search-title {
+            font-size: 48px;
+            font-weight: 300;
+            margin-bottom: 20px;
+            color: white;
+        }
+        
+        .search-subtitle {
+            font-size: 18px;
+            color: #aaa;
+            margin-bottom: 50px;
+        }
+        
+        .search-form {
+            max-width: 800px;
+            margin: 0 auto;
+            background: rgba(22, 33, 62, 0.5);
+            border-radius: 15px;
+            padding: 40px;
+            border: 1px solid #2b5d80;
+        }
+        
+        .form-row {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 30px;
+            align-items: center;
+        }
+        
+        .search-input {
+            flex: 1;
+            padding: 15px 20px;
+            border: 1px solid #2b5d80;
+            border-radius: 8px;
+            background: #0f0f23;
+            color: white;
+            font-size: 16px;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+        
+        .search-input:focus {
+            border-color: #58d3ff;
+            box-shadow: 0 0 0 2px rgba(88, 211, 255, 0.2);
+        }
+        
+        .filter-select {
+            padding: 15px;
+            border: 1px solid #2b5d80;
+            border-radius: 8px;
+            background: #0f0f23;
+            color: white;
+            font-size: 16px;
+            min-width: 150px;
+        }
+        
+        .search-btn {
+            padding: 15px 40px;
+            background: linear-gradient(135deg, #58d3ff, #3b82f6);
+            border: none;
+            border-radius: 8px;
+            color: white;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        
+        .search-btn:hover {
+            transform: translateY(-2px);
+        }
+        
+        .popular-searches {
+            margin-top: 40px;
+        }
+        
+        .popular-title {
+            color: #aaa;
+            margin-bottom: 20px;
+            font-size: 16px;
+        }
+        
+        .popular-tags {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .popular-tag {
+            padding: 8px 16px;
+            background: rgba(88, 211, 255, 0.1);
+            border: 1px solid #2b5d80;
+            border-radius: 20px;
+            color: #58d3ff;
+            text-decoration: none;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+        
+        .popular-tag:hover {
+            background: rgba(88, 211, 255, 0.2);
+            transform: translateY(-1px);
+        }
+        
+        .error {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid #ef4444;
+            color: #fca5a5;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        
+        .features {
+            padding: 80px 0;
+            background: rgba(15, 20, 25, 0.5);
+        }
+        
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin-top: 50px;
+        }
+        
+        .feature-card {
+            background: rgba(22, 33, 62, 0.3);
+            border: 1px solid #2b5d80;
+            border-radius: 12px;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .feature-icon {
+            font-size: 48px;
+            margin-bottom: 20px;
+        }
+        
+        .feature-title {
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: white;
+        }
+        
+        .feature-desc {
+            color: #aaa;
+            line-height: 1.6;
+        }
+    </style>
+</head>
+<body>
+    <header class="appbar">
+      <div class="header-left">
+        <h1>Connected Car</h1>
+        <a href="/spec" class="nav-link">🔍 차종 검색</a>
+      </div>
+      <div class="header-right">
+        <div class="badge">게스트</div>
+      </div>
+    </header>
+
+    <main>
+        <section class="search-section">
+            <div class="container">
+                <h1 class="search-title">차종 스펙 검색</h1>
+                <p class="search-subtitle">원하는 차종의 상세 스펙 정보를 찾아보세요</p>
+
+                {% if error %}
+                <div class="error">{{ error }}</div>
+                {% endif %}
+
+                <form class="search-form" action="/spec/search" method="GET">
+                    <div class="form-row">
+                        <input type="text" name="q" class="search-input" 
+                               placeholder="차종명을 입력하세요 (예: 아반떼, 소나타, 투싼)" 
+                               value="{{ request.args.get('q', '') }}" required>
+                        
+                        <select name="filter" class="filter-select">
+                            <option value="all" {% if request.args.get('filter') == 'all' %}selected{% endif %}>전체 검색</option>
+                            <option value="model" {% if request.args.get('filter') == 'model' %}selected{% endif %}>모델명</option>
+                        </select>
+                        
+                        <button type="submit" class="search-btn">🔍 검색</button>
+                    </div>
+                </form>
+
+                <div class="popular-searches">
+                    <div class="popular-title">빠른 이동</div>
+                    <div class="popular-tags">
+                        <a href="/#/main" class="popular-tag">🏠 홈으로</a>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="features">
+            <div class="container">
+                <h2 style="text-align: center; font-size: 36px; margin-bottom: 20px;">검색 기능</h2>
+                <p style="text-align: center; color: #aaa; margin-bottom: 50px;">다양한 방법으로 원하는 차종을 찾아보세요</p>
+                
+                <div class="features-grid">
+                    <div class="feature-card">
+                        <div class="feature-icon">🔍</div>
+                        <h3 class="feature-title">전체 검색</h3>
+                        <p class="feature-desc">브랜드, 모델명, 연료 타입 등 모든 정보를 종합하여 검색합니다.</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">🏷️</div>
+                        <h3 class="feature-title">브랜드 검색</h3>
+                        <p class="feature-desc">현대, 기아, 제네시스 등 특정 브랜드의 모든 차종을 확인할 수 있습니다.</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">🚗</div>
+                        <h3 class="feature-title">모델 검색</h3>
+                        <p class="feature-desc">아반떼, 소나타 등 특정 모델의 다양한 연도별 스펙을 비교해보세요.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+</body>
+</html>

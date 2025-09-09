@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ spec.model }} 상세 스펙 - Connected Car</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
+    <style>
+        body {
+            margin: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #0f1419 0%, #1a1a2e 100%);
+            color: white;
+            min-height: 100vh;
+        }
+        
+        
+        .main-content {
+            padding: 40px 0;
+        }
+        
+        .spec-hero {
+            background: rgba(22, 33, 62, 0.5);
+            border: 1px solid #2b5d80;
+            border-radius: 12px;
+            padding: 60px 40px;
+            margin-bottom: 40px;
+            text-align: center;
+            min-height: 300px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            position: relative;
+        }
+        
+        .spec-brand {
+            background: linear-gradient(135deg, #58d3ff, #3b82f6);
+            color: white;
+            padding: 8px 20px;
+            border-radius: 25px;
+            font-size: 14px;
+            font-weight: bold;
+            display: inline-block;
+            margin-bottom: 20px;
+        }
+        
+        .spec-title {
+            font-size: 48px;
+            font-weight: bold;
+            margin: 20px 0;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+            color: white;
+        }
+        
+        .spec-subtitle {
+            font-size: 20px;
+            color: #fff;
+            margin-bottom: 30px;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
+        }
+        
+        .spec-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+        }
+        
+        .spec-section {
+            background: rgba(22, 33, 62, 0.3);
+            border: 1px solid #2b5d80;
+            border-radius: 12px;
+            padding: 30px;
+        }
+        
+        .section-title {
+            color: #58d3ff;
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 25px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .spec-table {
+            width: 100%;
+        }
+        
+        .spec-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 15px 0;
+            border-bottom: 1px solid rgba(43, 93, 128, 0.3);
+        }
+        
+        .spec-row:last-child {
+            border-bottom: none;
+        }
+        
+        .spec-label {
+            color: #aaa;
+            font-weight: 500;
+        }
+        
+        .spec-value {
+            color: white;
+            font-weight: bold;
+        }
+        
+        
+        .back-actions {
+            margin: 40px 0;
+            text-align: center;
+        }
+        
+        .btn {
+            padding: 15px 30px;
+            margin: 0 10px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            text-decoration: none;
+            display: inline-block;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #58d3ff, #3b82f6);
+            color: white;
+        }
+        
+        .btn-secondary {
+            background: rgba(88, 211, 255, 0.1);
+            border: 1px solid #58d3ff;
+            color: #58d3ff;
+        }
+        
+        @media (max-width: 768px) {
+            .spec-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .spec-hero {
+                padding: 30px 20px;
+            }
+            
+            .spec-title {
+                font-size: 36px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="appbar">
+      <div class="header-left">
+        <h1>Connected Car</h1>
+        <a href="/spec" class="nav-link">🔍 차종 검색</a>
+      </div>
+      <div class="header-right">
+        <div class="badge">게스트</div>
+      </div>
+    </header>
+
+    <main class="main-content">
+        <div class="container">
+            <div class="spec-hero" {% if hero_image %}style="background-image: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), url('{{ hero_image }}'); background-size: cover; background-position: center; background-repeat: no-repeat;"{% endif %}>
+                <div class="spec-brand">현대자동차</div>
+                <h1 class="spec-title">{{ spec.model }}</h1>
+                <p class="spec-subtitle">{{ spec.category }} 상세 스펙</p>
+            </div>
+
+            <div class="spec-grid">
+                <div class="spec-section">
+                    <h2 class="section-title">🚗 기본 정보</h2>
+                    <div class="spec-table">
+                        <div class="spec-row">
+                            <span class="spec-label">모델명</span>
+                            <span class="spec-value">{{ spec.model }}</span>
+                        </div>
+                        <div class="spec-row">
+                            <span class="spec-label">카테고리</span>
+                            <span class="spec-value">{{ spec.category }}</span>
+                        </div>
+                        <div class="spec-row">
+                            <span class="spec-label">세그먼트</span>
+                            <span class="spec-value">{{ spec.segment or '-' }}</span>
+                        </div>
+                        <div class="spec-row">
+                            <span class="spec-label">전압 시스템</span>
+                            <span class="spec-value">{{ spec.voltage }}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="spec-section">
+                    <h2 class="section-title">⚙️ 엔진 및 성능</h2>
+                    <div class="spec-table">
+                        <div class="spec-row">
+                            <span class="spec-label">엔진 타입</span>
+                            <span class="spec-value">{{ spec.engine_type }}</span>
+                        </div>
+                        <div class="spec-row">
+                            <span class="spec-label">배기량</span>
+                            <span class="spec-value">{{ spec.displacement or '-' }}</span>
+                        </div>
+                        <div class="spec-row">
+                            <span class="spec-label">최고출력</span>
+                            <span class="spec-value">{{ spec.power or '-' }}</span>
+                        </div>
+                        <div class="spec-row">
+                            <span class="spec-label">최대토크</span>
+                            <span class="spec-value">{{ spec.torque or '-' }}</span>
+                        </div>
+                        <div class="spec-row">
+                            <span class="spec-label">연비/주행거리</span>
+                            <span class="spec-value">{{ spec.fuel_efficiency or '-' }}</span>
+                        </div>
+                        <div class="spec-row">
+                            <span class="spec-label">변속기</span>
+                            <span class="spec-value">{{ spec.transmission or '-' }}</span>
+                        </div>
+                        <div class="spec-row">
+                            <span class="spec-label">구동방식</span>
+                            <span class="spec-value">{{ spec.drive_type or '-' }}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="spec-section">
+                    <h2 class="section-title">📏 제원</h2>
+                    <div class="spec-table">
+                        <div class="spec-row">
+                            <span class="spec-label">길이</span>
+                            <span class="spec-value">{{ spec.length or '-' }}</span>
+                        </div>
+                        <div class="spec-row">
+                            <span class="spec-label">폭</span>
+                            <span class="spec-value">{{ spec.width or '-' }}</span>
+                        </div>
+                        <div class="spec-row">
+                            <span class="spec-label">높이</span>
+                            <span class="spec-value">{{ spec.height or '-' }}</span>
+                        </div>
+                        <div class="spec-row">
+                            <span class="spec-label">휠베이스</span>
+                            <span class="spec-value">{{ spec.wheelbase or '-' }}</span>
+                        </div>
+                        <div class="spec-row">
+                            <span class="spec-label">중량</span>
+                            <span class="spec-value">{{ spec.weight or '-' }}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="spec-section">
+                    <h2 class="section-title">🏁 주행 성능</h2>
+                    <div class="spec-table">
+                        <div class="spec-row">
+                            <span class="spec-label">최고속도</span>
+                            <span class="spec-value">{{ spec.max_speed or '-' }}</span>
+                        </div>
+                        <div class="spec-row">
+                            <span class="spec-label">가속성능</span>
+                            <span class="spec-value">{{ spec.acceleration or '-' }}</span>
+                        </div>
+                        <div class="spec-row">
+                            <span class="spec-label">연료탱크</span>
+                            <span class="spec-value">{{ spec.fuel_capacity or '-' }}</span>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="back-actions">
+                <a href="javascript:history.back()" class="btn btn-secondary">🔙 이전 페이지</a>
+                <a href="/spec" class="btn btn-primary">🔍 새로운 검색</a>
+            </div>
+        </div>
+    </main>
+</body>
+</html>

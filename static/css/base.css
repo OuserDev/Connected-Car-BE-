@@ -113,6 +113,31 @@ header.appbar {
     color: var(--muted);
     line-height: 1.2;
 }
+
+/* 헤더 왼쪽 영역 */
+.appbar .header-left {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.appbar .nav-link {
+    font-size: 13px;
+    padding: 6px 12px;
+    border-radius: 6px;
+    text-decoration: none;
+    color: var(--muted);
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border);
+    transition: all 0.2s;
+}
+
+.appbar .nav-link:hover {
+    color: var(--brand);
+    background: rgba(94, 230, 168, 0.1);
+    border-color: var(--brand);
+}
+
 .container {
     width: min(980px, 100%);
     margin: 0 auto;
