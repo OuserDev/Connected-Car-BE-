@@ -45,42 +45,30 @@ export async function renderMap() {
         UI.toast('🔍 검색 중...');
 
         try {
-            // 네이버 Search API를 사용하여 지역 검색
-            const response = await fetch(`https://openapi.naver.com/v1/search/local.json?query=${encodeURIComponent(query)}&display=5&start=1&sort=random`, {
-                method: 'GET',
-                headers: {
-                    'X-Naver-Client-Id': 'hCLNYd7oxu5YwWOcJIWq',
-                    'X-Naver-Client-Secret': 'ofXo3chVUZ'
+            // 네이버 Maps SDK의 geocode 서비스 사용 (CORS 문제 없음)
+            naver.maps.Service.geocode({ query: query }, (status, response) => {
+                if (status === naver.maps.Service.Status.ERROR) {
+                    UI.toast('검색 중 오류가 발생했습니다.');
+                    return;
+                }
+                
+                if (response?.v2?.addresses && response.v2.addresses.length > 0) {
+                    const address = response.v2.addresses[0];
+                    const lat = parseFloat(address.y);
+                    const lng = parseFloat(address.x);
+                    
+                    const label = address.roadAddress || address.jibunAddress || query;
+
+                    if (Number.isFinite(lat) && Number.isFinite(lng)) {
+                        markAndCenter(lat, lng, label);
+                        UI.toast(`📍 ${label}`);
+                    } else {
+                        UI.toast('좌표를 해석할 수 없습니다.');
+                    }
+                } else {
+                    UI.toast('검색 결과가 없습니다.');
                 }
             });
-
-            if (!response.ok) {
-                throw new Error(`API 요청 실패: ${response.status}`);
-            }
-
-            const data = await response.json();
-            
-            if (data.items && data.items.length > 0) {
-                const item = data.items[0];
-                
-                // 네이버 Search API 응답에서 좌표 추출
-                const lat = parseFloat(item.mapy) / 10000000; // 네이버 좌표계를 WGS84로 변환
-                const lng = parseFloat(item.mapx) / 10000000;
-                
-                // HTML 태그 제거
-                const title = item.title.replace(/<[^>]*>/g, '');
-                const address = item.address;
-                const label = `${title} (${address})`;
-
-                if (Number.isFinite(lat) && Number.isFinite(lng)) {
-                    markAndCenter(lat, lng, label);
-                    UI.toast(`📍 ${title}`);
-                } else {
-                    UI.toast('좌표를 해석할 수 없습니다.');
-                }
-            } else {
-                UI.toast('검색 결과가 없습니다.');
-            }
         } catch (err) {
             console.error('Search error:', err);
             UI.toast('검색 중 오류가 발생했습니다.');
