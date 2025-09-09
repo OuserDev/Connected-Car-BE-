@@ -9,15 +9,23 @@ class User:
     """사용자 모델 클래스"""
     
     @staticmethod
+    def hash_password(password: str) -> str:
+        """비밀번호를 SHA-256으로 해시화"""
+        return hashlib.sha256(password.encode('utf-8')).hexdigest()
+    
+    @staticmethod
     def create(username: str, password: str, email: str, name: str = '', phone: str = '') -> Optional[int]:
         """새 사용자 생성"""
         try:
+            # 비밀번호 해시화
+            hashed_password = User.hash_password(password)
+            
             query = """
             INSERT INTO users (username, password, email, name, phone, created_at) 
             VALUES (%s, %s, %s, %s, %s, %s)
             """
             user_id = DatabaseHelper.execute_insert(query, (
-                username, password, email, name, phone, datetime.now()
+                username, hashed_password, email, name, phone, datetime.now()
             ))
             return user_id
         except Exception as e:
@@ -40,12 +48,14 @@ class User:
     
     @staticmethod
     def verify_password(username: str, password: str) -> bool:
-        """비밀번호 확인"""
+        """비밀번호 확인 (해시 비교)"""
         user = User.get_by_username(username)
         if not user:
             return False
         
-        return user.get('password') == password
+        # 입력된 비밀번호를 해시화하여 저장된 해시와 비교
+        hashed_input_password = User.hash_password(password)
+        return user.get('password') == hashed_input_password
     
     @staticmethod
     def update_profile(user_id: int, **kwargs) -> bool:
@@ -69,6 +79,29 @@ class User:
             return DatabaseHelper.execute_update(query, tuple(params)) > 0
         except Exception as e:
             print(f"Profile update error: {e}")
+            return False
+    
+    @staticmethod
+    def change_password(user_id: int, old_password: str, new_password: str) -> bool:
+        """비밀번호 변경"""
+        try:
+            # 현재 사용자 조회
+            user = User.get_by_id(user_id)
+            if not user:
+                return False
+            
+            # 기존 비밀번호 확인
+            hashed_old_password = User.hash_password(old_password)
+            if user.get('password') != hashed_old_password:
+                return False
+            
+            # 새 비밀번호 해시화하여 업데이트
+            hashed_new_password = User.hash_password(new_password)
+            query = "UPDATE users SET password = %s WHERE id = %s"
+            
+            return DatabaseHelper.execute_update(query, (hashed_new_password, user_id)) > 0
+        except Exception as e:
+            print(f"Password change error: {e}")
             return False
     
     @staticmethod

@@ -150,6 +150,33 @@ def get_current_user():
     except Exception as e:
         return jsonify({'error': f'사용자 정보 조회 중 오류 발생: {str(e)}'}), 500
 
+# 비밀번호 변경 처리
+@auth_bp.route('/api/auth/change-password', methods=['POST'])
+def change_password():
+    """비밀번호 변경"""
+    try:
+        if 'user_id' not in session:
+            return jsonify({'error': 'Authentication required'}), 401
+        
+        data = request.get_json() or {}
+        old_password = data.get('old_password')
+        new_password = data.get('new_password')
+        
+        if not old_password or not new_password:
+            return jsonify({'error': 'Old password and new password are required'}), 400
+        
+        # 비밀번호 변경
+        if User.change_password(session['user_id'], old_password, new_password):
+            return jsonify({
+                'message': 'Password changed successfully',
+                'status': 'success'
+            })
+        else:
+            return jsonify({'error': 'Invalid old password'}), 400
+        
+    except Exception as e:
+        return jsonify({'error': f'비밀번호 변경 중 오류 발생: {str(e)}'}), 500
+
 # 세션 상태 확인
 @auth_bp.route('/api/auth/status', methods=['GET'])
 def check_auth_status():
