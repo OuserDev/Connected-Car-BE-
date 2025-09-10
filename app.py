@@ -114,8 +114,6 @@ app.register_blueprint(community_bp)
 app.register_blueprint(video_bp)
 app.register_blueprint(spec_bp)
 
-pin = os.getenv('WERKZEUG_DEBUG_PIN', '123-456-789')   # set in .env; this default is just a fallback
-
 app.debug = True
 app.config['TEMPLATES_AUTO_RELOAD'] = True
 app.wsgi_app = DebuggedApplication(
