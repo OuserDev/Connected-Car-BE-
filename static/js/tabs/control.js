@@ -100,7 +100,13 @@ export async function renderControl() {
           <div id="vehicleSvg" class="car" aria-label="차량"></div>
 
           <div class="hex-grid">
-            <button id="hEngine"  class="hex-btn hex-pos-engine" title="시동 On/Off">⏻</button>
+            <button id="hEngine" class="hex-btn hex-pos-engine" title="전원 대기" aria-label="전원 대기">
+                <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false">
+                    <!-- 전원 스탠바이(IEC 5009) 모양: 위쪽 막대 + 원 -->
+                    <path d="M12 3v8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    <circle cx="12" cy="13" r="8" fill="none" stroke="currentColor" stroke-width="2"/>
+                </svg>
+            </button>
             <button id="hLock"    class="hex-btn hex-pos-lock"   title="문 잠금/해제">🔒</button>
             <button id="hHorn"    class="hex-btn hex-pos-horn"   title="경적">📣</button>
             <button id="hFlash"   class="hex-btn hex-pos-flash"  title="비상등">⚠️</button>
