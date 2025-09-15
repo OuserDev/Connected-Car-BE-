@@ -104,7 +104,7 @@ export async function renderControl() {
                 <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false">
                     <!-- 전원 스탠바이(IEC 5009) 모양: 위쪽 막대 + 원 -->
                     <path d="M12 3v8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                    <circle cx="12" cy="13" r="8" fill="none" stroke="currentColor" stroke-width="2"/>
+                    <circle cx="15" cy="15" r="9" fill="none" stroke="currentColor" stroke-width="3"/>
                 </svg>
             </button>
             <button id="hLock"    class="hex-btn hex-pos-lock"   title="문 잠금/해제">🔒</button>
