@@ -103,7 +103,7 @@ export async function renderControl() {
             <button id="hEngine" class="hex-btn hex-pos-engine" title="전원 대기" aria-label="전원 대기">
                 <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" focusable="false">
                     <!-- 전원 스탠바이(IEC 5009) 모양: 위쪽 막대 + 원 -->
-                    <path d="M12 3v8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    <path d="M12 3v10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
                     <circle cx="12" cy="13" r="10" fill="none" stroke="currentColor" stroke-width="2"/>
                 </svg>
             </button>
