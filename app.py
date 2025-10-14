@@ -157,27 +157,27 @@ def health_check():
 if __name__ == '__main__':
     # 서버 시작 로그
     startup_message = "커넥티드카 BE 서버 시작 중..."
-    print("🚗 " + startup_message)
+    print("[START] " + startup_message)
     app.logger.info(startup_message)
-    
+
     db_message = "MySQL 기반 데이터 관리"
-    print("📊 " + db_message)
+    print("[DB] " + db_message)
     app.logger.info(db_message)
-    
+
     api_message = "car-api 서버 연동 (localhost:9000)"
-    print("🔗 " + api_message)
+    print("[API] " + api_message)
     app.logger.info(api_message)
-    
+
     # 데이터베이스 연결 확인
     if test_database_connection():
         success_message = "MySQL 데이터베이스 연결 성공"
-        print("✅ " + success_message)
+        print("[OK] " + success_message)
         app.logger.info(success_message)
     else:
         error_message = "MySQL 데이터베이스 연결 실패"
         warning_message = "로컬 MySQL 서버가 실행 중인지 확인하세요"
-        print("❌ " + error_message)
-        print("⚠️ " + warning_message)
+        print("[ERROR] " + error_message)
+        print("[WARN] " + warning_message)
         app.logger.error(error_message)
         app.logger.warning(warning_message)
     
