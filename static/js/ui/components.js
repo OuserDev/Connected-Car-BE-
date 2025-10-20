@@ -139,8 +139,8 @@ export const UI = (() => {
         };
 
         // 실제 차량 상태 데이터 사용
-        const fuel = status && typeof status.fuel === 'number' ? `${status.fuel}%` : '데이터 없음';
-        const engineState = status?.engine_state === true ? 'ON' : status?.engine_state === false ? 'OFF' : '알 수 없음';
+        const fuel = status && typeof status.fuel === 'number' ? `${status.fuel}%` : 'API 서버 연결 실패';
+        const engineState = status?.engine_state === true ? 'ON' : status?.engine_state === false ? 'OFF' : 'API 서버 연결 실패';
 
         // 연료가 낮으면 경고 색상
         const isFuelLow = status && typeof status.fuel === 'number' && status.fuel < 30;

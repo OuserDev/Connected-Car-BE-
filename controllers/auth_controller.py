@@ -2,6 +2,8 @@
 
 from flask import Blueprint, request, jsonify, session
 from models.user import User
+from models.vehicle_spec import VehicleSpec
+from models.car import Car
 import json
 
 # 인증 관련 Blueprint 생성
@@ -99,12 +101,71 @@ def register():
         
         # 새 사용자 생성
         user_id = User.create(username, password, email, name, phone)
-        
-        return jsonify({
+
+        # 자동 차량 등록 로직
+        car_info = None
+        try:
+            # 1. vehicle_specs에서 랜덤으로 차량 모델 선택
+            random_vehicle_spec = VehicleSpec.get_random()
+
+            if random_vehicle_spec:
+                model_id = random_vehicle_spec['id']
+
+                # 2. 랜덤 VIN 및 번호판 생성 (중복 확인)
+                max_attempts = 10
+                vin = None
+                license_plate = None
+
+                for _ in range(max_attempts):
+                    # VIN 생성 및 중복 확인
+                    temp_vin = Car.generate_random_vin()
+                    if not Car.get_by_vin(temp_vin):
+                        vin = temp_vin
+                        break
+
+                for _ in range(max_attempts):
+                    # 번호판 생성 및 중복 확인
+                    temp_license_plate = Car.generate_random_license_plate()
+                    if not Car.get_by_license_plate(temp_license_plate):
+                        license_plate = temp_license_plate
+                        break
+
+                # 3. 차량 등록
+                if vin and license_plate:
+                    car_id = Car.register(
+                        owner_id=user_id,
+                        model_id=model_id,
+                        license_plate=license_plate,
+                        vin=vin
+                    )
+
+                    if car_id:
+                        # 등록된 차량 정보 조회
+                        car_info = Car.get_by_id(car_id)
+                        print(f"Auto-registered car for user {user_id}: car_id={car_id}, model={random_vehicle_spec.get('model')}, vin={vin}, license_plate={license_plate}")
+
+        except Exception as car_error:
+            # 차량 등록 실패 시 로그만 남기고 회원가입은 성공 처리
+            print(f"Auto car registration failed for user {user_id}: {str(car_error)}")
+
+        response_data = {
             'message': 'Registration successful',
             'status': 'success',
             'user_id': user_id
-        })
+        }
+
+        # 차량 정보가 있으면 응답에 포함
+        if car_info:
+            response_data['auto_registered_car'] = {
+                'car_id': car_info['id'],
+                'model_name': car_info.get('model_name'),
+                'license_plate': car_info['license_plate'],
+                'vin': car_info['vin'],
+                'category': car_info.get('category'),
+                'engine_type': car_info.get('engine_type')
+            }
+
+        return jsonify(response_data)
         
     except Exception as e:
         return jsonify({'error': f'회원가입 처리 중 오류 발생: {str(e)}'}), 500

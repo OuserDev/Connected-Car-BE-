@@ -3,6 +3,8 @@
 from typing import Dict, List, Optional, Any
 from .base import DatabaseHelper
 from datetime import datetime
+import random
+import string
 
 class Car:
     """차량 모델 클래스"""
@@ -147,3 +149,40 @@ class Car:
         query = "SELECT * FROM cars WHERE license_plate = %s"
         result = DatabaseHelper.execute_query(query, (license_plate,))
         return result[0] if result else None
+
+    @staticmethod
+    def generate_random_vin() -> str:
+        """랜덤 VIN(차대번호) 생성 - 17자리 영숫자"""
+        # VIN은 일반적으로 17자리 영숫자로 구성 (I, O, Q 제외)
+        # 실제 VIN 형식을 간소화한 버전
+        allowed_chars = string.ascii_uppercase.replace('I', '').replace('O', '').replace('Q', '') + string.digits
+
+        # WMI (World Manufacturer Identifier) - 3자리
+        wmi = ''.join(random.choices(allowed_chars, k=3))
+
+        # VDS (Vehicle Descriptor Section) - 6자리
+        vds = ''.join(random.choices(allowed_chars, k=6))
+
+        # VIS (Vehicle Identifier Section) - 8자리
+        vis = ''.join(random.choices(allowed_chars, k=8))
+
+        vin = wmi + vds + vis
+        return vin
+
+    @staticmethod
+    def generate_random_license_plate() -> str:
+        """랜덤 차량 번호판 생성 - 한국 형식 (예: 12가3456)"""
+        # 지역번호 (2자리)
+        region_num = random.randint(10, 99)
+
+        # 용도 문자 (가, 나, 다, 라, 마, 거, 너, 더, 러, 머, 버, 서, 어, 저, 고, 노, 도, 로, 모, 보, 소, 오, 조, 구, 누, 두, 루, 무, 부, 수, 우, 주, 하, 허, 호)
+        usage_chars = ['가', '나', '다', '라', '마', '거', '너', '더', '러', '머', '버', '서', '어', '저',
+                       '고', '노', '도', '로', '모', '보', '소', '오', '조', '구', '누', '두', '루', '무',
+                       '부', '수', '우', '주', '하', '허', '호']
+        usage_char = random.choice(usage_chars)
+
+        # 일련번호 (4자리)
+        serial_num = random.randint(1000, 9999)
+
+        license_plate = f"{region_num}{usage_char}{serial_num}"
+        return license_plate
