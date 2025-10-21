@@ -79,7 +79,6 @@ const RealApi = {
                         name: data.user.name,
                         status: data.user.status || 'active',
                         hasCar: true,
-                        car: { model: 'GRANDEUR', plate: '12가 3456', color: '#79d1ff' },
                     },
                 };
             } else {
@@ -138,7 +137,6 @@ const RealApi = {
                         name: data.user.name,
                         status: data.user.status || 'active',
                         hasCar: true,
-                        car: { model: 'GRANDEUR', plate: '12가 3456', color: '#79d1ff' },
                     },
                 };
             } else {

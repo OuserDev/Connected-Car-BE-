@@ -73,8 +73,8 @@ export const UI = (() => {
         const card = el('div', 'card');
         const hero = el('div', 'hero');
 
-        const model = carInfo?.model_name || carInfo?.model || user?.car?.model || 'Vehicle';
-        const plate = carInfo?.license_plate || carInfo?.licensePlate || user?.car?.plate || '등록번호';
+        const model = carInfo?.model_name || carInfo?.model || '차량 정보 없음';
+        const plate = carInfo?.license_plate || carInfo?.licensePlate || '번호판 정보 없음';
         const caption = el('div', 'caption', `${model} · ${plate}`);
 
         // 차량 모델 ID에 맞는 이미지 경로 생성 (main_car_images 폴더 사용)
@@ -83,8 +83,8 @@ export const UI = (() => {
             carImagePath = `/static/assets/cars/main_car_images/${carInfo.model_id}.jpg`;
         }
 
-        // 우선순위: user.carPhotoData > 차량별 이미지 > carInfo.imageUrl > user.car.imageUrl > PLACEHOLDER > SVG
-        const prefer = [user?.carPhotoData, carImagePath, carInfo?.imageUrl, user?.car?.imageUrl, PLACEHOLDER_IMG].filter(Boolean);
+        // 우선순위: user.carPhotoData > 차량별 이미지 > carInfo.imageUrl > PLACEHOLDER > SVG
+        const prefer = [user?.carPhotoData, carImagePath, carInfo?.imageUrl, PLACEHOLDER_IMG].filter(Boolean);
 
         const img = new Image();
         img.className = 'hero-img';
@@ -98,7 +98,7 @@ export const UI = (() => {
             } else {
                 // 모든 시도 실패 → SVG 폴백
                 hero.innerHTML = '';
-                hero.appendChild(svgFallback(user?.car?.color, model, plate));
+                hero.appendChild(svgFallback('#79d1ff', model, plate));
                 hero.appendChild(caption);
             }
         };
@@ -112,7 +112,7 @@ export const UI = (() => {
             hero.appendChild(caption);
         } else {
             // 아무 소스도 없으면 바로 폴백
-            hero.appendChild(svgFallback(user?.car?.color, model, plate));
+            hero.appendChild(svgFallback('#79d1ff', model, plate));
             hero.appendChild(caption);
         }
 
